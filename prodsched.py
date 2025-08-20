@@ -1,0 +1,1212 @@
+import streamlit as st
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+from streamlit_option_menu import option_menu
+import base64
+from io import BytesIO
+from PIL import Image
+import warnings
+warnings.filterwarnings('ignore')
+
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="Commissary Production Scheduler",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- Convert Logo to Base64 ---
+def logo_to_base64(img):
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode()
+
+# --- Load and Encode Logo ---
+try:
+    logo = Image.open("cloudeats.png")
+    logo_base64 = logo_to_base64(logo)
+    
+    # --- Sidebar Logo without Rounded Corners ---
+    st.sidebar.markdown(
+        f"""
+        <img src="data:image/png;base64,{logo_base64}" 
+             style="width: 320px; height: auto; border-radius: 0px; display: block; margin: 0 auto;" />
+        """,
+        unsafe_allow_html=True
+    )
+except FileNotFoundError:
+    st.sidebar.markdown(
+        """
+        <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50; margin: 0;">CloudEats</h3>
+            <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Production Scheduler</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# --- CUSTOM CSS ---
+# Read and encode font (if available)
+try:
+    with open("TTNorms-Medium.ttf", "rb") as font_file:
+        font_base64 = base64.b64encode(font_file.read()).decode()
+    font_available = True
+except FileNotFoundError:
+    font_base64 = ""
+    font_available = False
+
+# Enhanced CSS including filter styles
+font_face_css = f"""
+    @font-face {{
+        font-family: 'TT Norms';
+        src: url(data:font/ttf;base64,{font_base64}) format('truetype');
+        font-weight: 500;
+        font-stretch: expanded;
+    }}
+""" if font_available else ""
+
+st.markdown(f"""
+<style>
+    {font_face_css}
+
+    /* Background */
+    body, .main, .block-container {{
+        background-color: #ffffff;
+    }}
+
+    /* Main Header */
+    .main-header {{
+        background: #f7d42c;
+        padding: 1rem 1rem;
+        border-radius: 40px;
+        color: #1E2328;
+        text-align: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }}
+
+    .main-header h1 {{
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-weight: normal;
+        font-size: 2.5em;
+        margin: 0;
+        letter-spacing: 2px;
+    }}
+
+    .main-header p {{
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-weight: normal;
+        margin: 0.5rem 0 0 0;
+    }}
+
+    /* Modern Filter Container with Glassmorphism */
+    .filter-container {{
+        background: #000000;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid;
+        border-radius: 24px;
+        padding: 2.5rem;
+        margin: 2rem 0;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+
+    /* Animated Background Gradient */
+    .filter-container::before {{
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: #000000;
+        animation: rotateGradient 20s linear infinite;
+        pointer-events: none;
+        z-index: -1;
+    }}
+
+    @keyframes rotateGradient {{
+        0% {{ transform: rotate(0deg); }}
+        100% {{ transform: rotate(360deg); }}
+    }}
+
+    .filter-container:hover {{
+        transform: translateY(-4px);
+    }}
+
+    /* Enhanced Filter Header */
+    .filter-header {{
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }}
+
+    .filter-header h3 {{
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-size: 1.6em;
+        margin: 0;
+        background: linear-gradient(135deg, #ff8765, #f4d602);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: none;
+        font-weight: 600;
+    }}
+
+    .filter-header p {{
+        margin: 0.5rem 0 0 0;
+        font-size: 0.95em;
+        color: #000000;
+        font-style: italic;
+        opacity: 0.8;
+    }}
+
+    /* Enhanced Selectbox Styling */
+    .stSelectbox > label {{
+        font-weight: 700 !important;
+        color: #000000 !important;
+        font-size: 0.95em !important;
+        margin-bottom: 0.8rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }}
+
+    .stSelectbox > div > div {{
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid !important;
+        border-radius: 16px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 4px 12px rgba(237, 174, 73, 0.08) !important;
+        backdrop-filter: blur(8px);
+    }}
+
+    .stSelectbox > div > div:hover {{
+        border-color: rgba(255, 135, 101, 0.6) !important;
+        box-shadow: 0 8px 20px rgba(237, 174, 73, 0.15) !important;
+        transform: translateY(-1px);
+    }}
+
+    .stSelectbox > div > div:focus-within {{
+        border-color: #000000 !important;
+        box-shadow: 
+            0 0 0 4px rgba(255, 135, 101, 0.15) !important,
+            0 8px 24px rgba(237, 174, 73, 0.15) !important;
+    }}
+
+    /* KPI Cards */
+    .kpi-card {{
+        background: #ff8765;
+        color: #f0ebe4;
+        padding: 1rem;
+        border-radius: 25px;
+        text-align: center;
+        margin: 0rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 170px;
+        position: relative;
+    }}
+    
+    .kpi-card::before {{
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: #272c2f;
+        background-size: 400% 400%;
+        border-radius: 27px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        animation: gradientShift 3s ease infinite;
+    }}
+
+    @keyframes gradientShift {{
+        0%, 100% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+    }}
+
+    .kpi-card:hover {{
+        transform: scale(1.05) translateY(-8px) rotateY(5deg);
+        box-shadow: 
+            0 25px 50px rgba(244, 214, 2, 0.3),
+            0 0 30px rgba(247, 212, 44, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }}
+
+    .kpi-card:hover::before {{
+        opacity: 1;
+    }}
+    
+    .kpi-card:hover .kpi-number {{
+        transform: scale(1.1);
+    }}
+
+    .kpi-number {{
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-size: 2.2em;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        transition: all 0.3s ease;
+    }}
+
+    .kpi-label {{
+        font-size: 1.1em;
+        opacity: 1;
+    }}
+
+    /* SKU Table */
+    .sku-table {{
+        background: #fffef6;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #3b3f46;
+    }}
+    .table-header {{
+        background: #1e2323;
+        color: #f4d602;
+        padding: 1rem;
+        font-weight: bold;
+        text-align: center;
+    }}
+    .sku-row {{
+        padding: 1rem;
+        border-bottom: 1px solid #3b3f46;
+        transition: background-color 0.2s;
+    }}
+    .sku-row:hover {{
+        background-color: rgba(244, 214, 2, 0.15);
+    }}
+    .sku-row:last-child {{
+        border-bottom: none;
+    }}
+
+    /* Sidebar */
+    [data-testid="stSidebar"] > div:first-child {{
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        justify-content: flex-start;
+        background-color: #fffef6;
+        color: #f4d602;
+    }}
+    .css-1d391kg {{
+        width: 280px !important;
+        min-width: 280px !important;
+    }}
+
+    /* Sidebar headers with custom font */
+    [data-testid="stSidebar"] h3 {{
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+    }}
+
+    /* Responsive Design */
+    @media (max-width: 768px) {{
+        .main-header h1 {{
+            font-size: 2em;
+        }}
+        
+        .kpi-number {{
+            font-size: 1.8em;
+        }}
+        
+        .kpi-card {{
+            min-height: 140px;
+        }}
+    }}
+    
+</style>
+""", unsafe_allow_html=True)
+
+# --- STATION MAPPING ---
+STATIONS = {
+    'All Stations': {'color': '#34495e'},
+    'Hot Kitchen': {'color': '#e74c3c'},
+    'Cold Sauce': {'color': '#f39c12'},
+    'Fabrication': {'color': '#3498db'},
+    'Pastry': {'color': '#9b59b6'}
+}
+
+STATION_RANGES = {
+    'Hot Kitchen': [(8, 21), (38, 65)],  # Hot Sauce + Hot Savory
+    'Cold Sauce': [(74, 105)],
+    'Fabrication': [(115, 125), (130, 139)],  # Poultry + Meats
+    'Pastry': [(154, 172)]
+}
+
+# FIXED Column mappings with proper key names
+COLUMNS = {
+    'sku': 1,                    # Column B
+    'batch_qty': 2,              # Column C
+    'kg_per_hr': 3,              # Column D - Fixed key name
+    'man_hr': 4,                 # Column E - Fixed key name  
+    'hrs_per_batch': 5,          # Column F - Fixed key name
+    'std_manpower': 7,           # Column H
+    'batches_start': 8,          # Column I
+    'batches_end': 14,           # Column O
+    'volume_start': 17,          # Column R
+    'volume_end': 23,            # Column X
+    'hours_start': 25,           # Column Z
+    'hours_end': 31,             # Column AF
+    'manpower_start': 41,        # Column AP
+    'manpower_end': 47,          # Column AV
+    'overtime_start': 49,        # Column AX (individual SKU overtime)
+    'overtime_end': 55,          # Column BD (individual SKU overtime)
+    'overtime_percentage_start': 65, # Column BN (overall percentage) - FIXED: Updated to match your screenshot
+    'overtime_percentage_end': 70,   # Column BS (overall percentage) - FIXED: Changed from 71 to 70
+    'overtime_percentage_row': 5     # Row 6 (0-based index 5)
+}
+
+# Machine Utilization Column mappings
+MACHINE_COLUMNS = {
+    'machine': 1,                # Column B (machines in rows 7-22)
+    'run_capacity': 2,           # Column C (kg/hr)
+    'ideal_run_time': 3,         # Column D (ideal machine run time rate)
+    'working_hours': 4,          # Column E 
+    'run_time': 5,              # Column F
+    'qty': 6,                   # Column G
+    'available_hrs': 7,         # Column H
+    'run_hrs_start': 10,        # Column K (run hrs data)
+    'run_hrs_end': 16,          # Column Q
+    'available_hrs_start': 18,  # Column S (available hours data)
+    'available_hrs_end': 24,    # Column Y
+    'machine_needed_start': 26, # Column AA (machine needed data)
+    'machine_needed_end': 32,   # Column AG
+    'machine_start_row': 6,     # Row 7 (0-based index 6)
+    'machine_end_row': 21,      # Row 22 (0-based index 21)
+    'header_row': 1             # Row 2 (0-based index 1)
+}
+
+# --- UTILITY FUNCTIONS ---
+def safe_float_convert(value):
+    """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
+    if not value:
+        return 0.0
+    
+    # Convert to string and clean up
+    str_val = str(value).strip()
+    
+    # Handle empty strings
+    if not str_val or str_val == '':
+        return 0.0
+    
+    # Handle explicit zeros
+    if str_val == '0':
+        return 0.0
+    
+    # Handle negative signs with no number or malformed decimals
+    if str_val in ['-', '-.', '- .', '-.0', '- .0']:
+        return 0.0
+    
+    # Try to clean up the string
+    str_val = str_val.replace(' ', '')  # Remove spaces
+    
+    # Handle cases like '-.' or '-0'
+    if str_val.startswith('-') and len(str_val) <= 2:
+        return 0.0
+    
+    # NEW: Check if the string starts with a negative sign - treat as 0
+    if str_val.startswith('-'):
+        return 0.0
+    
+    try:
+        result = float(str_val)
+        # NEW: If the result is negative, return 0
+        return max(0.0, result)
+    except ValueError:
+        # If conversion fails, return 0
+        return 0.0
+    
+# --- Helper functions for safe summing ---
+def safe_sum(values):
+    """Safely sum a list, ignoring None or non-numeric values."""
+    return sum(v for v in values if isinstance(v, (int, float)) and v is not None)
+
+def safe_sum_for_day(values, index):
+    """Safely get a value for a specific day, ignoring errors."""
+    if index < len(values):
+        v = values[index]
+        return v if isinstance(v, (int, float)) and v is not None else 0
+    return 0
+
+# --- DATA LOADER ---
+@st.cache_data(ttl=120)
+def load_production_data(sheet_index=0):
+    """Load production data from Google Sheets"""
+    try:
+        credentials_path = "production-schedule-calculator-0dceed735b36.json"
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+        gc = gspread.authorize(credentials)
+
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return None
+        
+
+def update_week_dropdown(worksheet, selected_week):
+    """Update the week dropdown selection in the spreadsheet"""
+    try:
+        # Adjust this cell reference to match where your week dropdown is located
+        worksheet.update('H1', selected_week)  # Adjust cell reference
+        
+        # Clear cache to force reload of updated data
+        load_production_data.clear()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error updating spreadsheet: {str(e)}")
+        return False
+
+
+class ProductionDataExtractor:
+    def __init__(self, df):
+        self.df = df
+
+    def get_unique_skus_by_station(self, station_filter="All Stations"):
+        """Get list of unique SKU names filtered by station"""
+        skus = self.get_all_skus(station_filter=station_filter)
+        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))        
+
+    def get_week_info(self):
+        """Extract week dates for title with improved error handling"""
+        try:
+            # Try multiple strategies to find date information
+            dates = []
+            
+            # Strategy 1: Look in row 1 (index 1) for dates in batches columns
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                if col < len(self.df.columns):
+                    date_val = str(self.df.iloc[1, col]).strip()
+                    if date_val and date_val != '' and date_val != 'nan':
+                        dates.append(date_val)
+            
+            # Strategy 2: If no dates found, try row 0
+            if not dates:
+                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                    if col < len(self.df.columns):
+                        date_val = str(self.df.iloc[0, col]).strip()
+                        if date_val and date_val != '' and date_val != 'nan':
+                            dates.append(date_val)
+            
+            # Strategy 3: If still no dates, look for any date-like patterns in first few rows
+            if not dates:
+                for row_idx in range(min(5, len(self.df))):
+                    for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                        if col < len(self.df.columns):
+                            cell_val = str(self.df.iloc[row_idx, col]).strip()
+                            # Look for date patterns (containing /, -, or numbers)
+                            if cell_val and any(char in cell_val for char in ['/', '-']) and any(char.isdigit() for char in cell_val):
+                                dates.append(cell_val)
+                                if len(dates) >= 7:  # Stop after finding enough dates
+                                    break
+                    if len(dates) >= 7:
+                        break
+            
+            if len(dates) >= 2:
+                start_date = dates[0]
+                end_date = dates[-1]
+                return start_date, end_date
+            elif len(dates) == 1:
+                # If only one date found, use it as both start and end
+                return dates[0], dates[0]
+            else:
+                # Fallback: use current date
+                current_date = datetime.now().strftime("%m/%d/%Y")
+                return current_date, current_date
+                
+        except Exception as e:
+            # Fallback to current date
+            current_date = datetime.now().strftime("%m/%d/%Y")
+            return current_date, current_date
+    
+    def get_days_of_week(self):
+        """Extract days of week from row 4 (index 3)"""
+        try:
+            days = []
+            # Try row 4 first (index 3) as shown in your screenshot
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                if col < len(self.df.columns):
+                    day_val = str(self.df.iloc[2, col]).strip()  # Changed from index 2 to 3
+                    if day_val and day_val != '':
+                        days.append(day_val)
+            
+            # If no days found in row 4, try row 3 (index 2) as fallback
+            if not days:
+                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                    if col < len(self.df.columns):
+                        day_val = str(self.df.iloc[2, col]).strip()
+                        if day_val and day_val != '':
+                            days.append(day_val)
+            
+            return days
+        except Exception as e:
+            return []
+        
+    def get_week_number(self):
+        """Extract week number from column H, row 1"""
+        try:
+            # Column H is index 7 (0-based), Row 1 is index 0 (0-based)
+            week_number = str(self.df.iloc[0, 7]).strip()
+            if week_number and week_number != '' and week_number != 'nan':
+                return week_number
+            else:
+                return "Week N/A"
+        except Exception as e:
+            return "Week N/A"
+    
+    def get_all_skus(self, station_filter="All Stations", sku_filter="All SKUs", day_filter="All Days"):
+        """Get all SKUs based on filters"""
+        skus = []
+        
+        # Determine which ranges to process
+        if station_filter == "All Stations":
+            ranges_to_process = []
+            for station_ranges in STATION_RANGES.values():
+                ranges_to_process.extend(station_ranges)
+        else:
+            ranges_to_process = STATION_RANGES.get(station_filter, [])
+        
+        # Extract SKUs from ranges
+        for start_row, end_row in ranges_to_process:
+            for row_idx in range(start_row - 1, end_row):
+                if row_idx < len(self.df):
+                    sku_data = self.extract_sku_data(row_idx)
+                    if sku_data and sku_data['sku']:
+                        # Determine station
+                        sku_data['station'] = self.determine_station(row_idx + 1)
+                        skus.append(sku_data)
+        
+        # Apply SKU filter
+        if sku_filter != "All SKUs":
+            skus = [sku for sku in skus if sku['sku'] == sku_filter]
+        
+        # Apply day filter (filter based on which days have production)
+        if day_filter != "Current Week":
+            days = self.get_days_of_week()
+            if day_filter in days:
+                day_index = days.index(day_filter)
+                filtered_skus = []
+                for sku in skus:
+                    if (day_index < len(sku['daily_batches']) and 
+                        sku['daily_batches'][day_index] and 
+                        sku['daily_batches'][day_index] != '' and 
+                        sku['daily_batches'][day_index] != '0'):
+                        filtered_skus.append(sku)
+                skus = filtered_skus
+        
+        return skus
+    
+    def determine_station(self, row_number):
+        """Determine which station a row belongs to"""
+        for station, ranges in STATION_RANGES.items():
+            for start_row, end_row in ranges:
+                if start_row <= row_number <= end_row:
+                    return station
+        return "Unknown"
+    
+    def extract_sku_data(self, row_idx):
+        """Extract all data for a SKU row"""
+        try:
+            row = self.df.iloc[row_idx]
+            
+            def safe_value(col_idx, default=''):
+                try:
+                    return str(row[col_idx]).strip() if col_idx < len(row) else default
+                except:
+                    return default
+            
+            sku_name = safe_value(COLUMNS['sku'])
+            if not sku_name:
+                return None
+            
+            sku_data = {
+                'sku': sku_name,
+                'batch_qty': safe_value(COLUMNS['batch_qty']),
+                'daily_batches': [],
+                'daily_volume': [],
+                'daily_hours': [],
+                'daily_manpower': [],
+                'overtime': [],
+                'overtime_percentage': [],           
+            }
+            
+            # Extract daily data
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                sku_data['daily_batches'].append(safe_value(col))
+            
+            for col in range(COLUMNS['volume_start'], COLUMNS['volume_end'] + 1):
+                sku_data['daily_volume'].append(safe_value(col))
+            
+            for col in range(COLUMNS['hours_start'], COLUMNS['hours_end'] + 1):
+                sku_data['daily_hours'].append(safe_value(col))
+            
+            # Extract manpower from columns AP to AV (41-47)
+            for col in range(COLUMNS['manpower_start'], COLUMNS['manpower_end'] + 1):
+                sku_data['daily_manpower'].append(safe_value(col))
+
+            # Extract overtime per person (AX-BD, columns 49-55)
+            for col in range(COLUMNS['overtime_start'], COLUMNS['overtime_end'] + 1):
+                sku_data['overtime'].append(safe_value(col))
+
+            # Extract overtime percentage
+            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
+                sku_data['overtime_percentage'].append(safe_value(col))
+
+            return sku_data
+            
+        except Exception as e:
+            return None
+        
+    def get_overtime_percentage(self):
+        """Get overtime percentage from row 6 (index 5), columns BN to BS (65-70)"""
+        try:
+            overtime_percentages = []
+            row_idx = COLUMNS['overtime_percentage_row']
+            
+            # Extract values from columns BN (65) to BS (70) - overtime percentage range
+            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
+                if col < len(self.df.columns) and row_idx < len(self.df):
+                    value = str(self.df.iloc[row_idx, col]).strip()
+                    # Clean up percentage values - remove % sign if present
+                    if value.endswith('%'):
+                        value = value[:-1]
+                    overtime_percentages.append(value)
+                else:
+                    overtime_percentages.append('')
+            
+            # Debug: Print the extracted values
+            # st.write(f"Debug - Extracted overtime percentages: {overtime_percentages}")
+            
+            return overtime_percentages
+        except Exception as e:
+            # st.error(f"Error extracting overtime percentage: {str(e)}")
+            return []
+    
+    def get_unique_skus(self):
+        """Get list of unique SKU names"""
+        skus = self.get_all_skus()
+        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))
+
+def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None):
+    """Calculate KPI totals with day-specific filtering for manpower and overtime percentage"""
+    def safe_sum_daily_values(values_list, attr):
+        total = 0
+        for sku in values_list:
+            daily_values = sku.get(attr, [])
+            for val in daily_values:
+                total += safe_float_convert(val)
+        return total
+    
+    def safe_sum_daily_values_for_day(values_list, attr, day_index):
+        """Sum values for a specific day index"""
+        total = 0
+        for sku in values_list:
+            daily_values = sku.get(attr, [])
+            if day_index < len(daily_values):
+                total += safe_float_convert(daily_values[day_index])
+        return total
+    
+    # Standard calculations (unchanged)
+    total_batches = safe_sum_daily_values(skus, 'daily_batches')
+    total_volume = safe_sum_daily_values(skus, 'daily_volume')  
+    total_hours = safe_sum_daily_values(skus, 'daily_hours')
+    
+    # FIXED: Manpower calculation based on day filter
+    if day_filter == "Current Week":
+        # Sum all manpower for the week
+        total_manpower = safe_sum_daily_values(skus, 'daily_manpower')
+    else:
+        # Sum manpower for specific day only
+        if days and day_filter in days:
+            day_index = days.index(day_filter)
+            total_manpower = safe_sum_daily_values_for_day(skus, 'daily_manpower', day_index)
+        else:
+            total_manpower = 0.0
+
+    # FIXED: Overtime percentage calculation based on day filter
+    overtime_percentage = 0.0
+    if extractor:
+        overtime_percentages = extractor.get_overtime_percentage()
+        if day_filter == "Current Week":
+            # Average of all valid percentages for the week
+            valid_percentages = [safe_float_convert(p) for p in overtime_percentages if safe_float_convert(p) > 0]
+            if valid_percentages:
+                overtime_percentage = sum(valid_percentages) / len(valid_percentages)
+        else:
+            # Get percentage for specific day
+            if days and day_filter in days:
+                day_index = days.index(day_filter)
+                if day_index < len(overtime_percentages):
+                    overtime_percentage = safe_float_convert(overtime_percentages[day_index])
+    
+    return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
+
+def render_sku_table(skus, day_filter="Current Week", days=None):
+    """Render the main SKU table with day-specific manpower calculation"""
+    if not skus:
+        st.warning("No SKUs match the current filters.")
+        return
+    
+    st.markdown("### Production List")
+    
+    # Prepare table data
+    table_data = []
+    for sku in skus:
+        def safe_sum(values):
+            """Safely sum values with improved error handling"""
+            total = 0
+            for v in values:
+                total += safe_float_convert(v)
+            return total
+        
+        def safe_sum_for_day(values, day_index):
+            """Sum value for specific day"""
+            if day_index < len(values):
+                return safe_float_convert(values[day_index])
+            return 0.0
+        
+        # Standard calculations (unchanged)
+        sku_overtime_per_person = safe_sum(sku.get('overtime', []))
+        
+        # FIXED: Manpower calculation based on day filter
+        if day_filter == "Current Week":
+            # Show total manpower for the week
+            sku_manpower = safe_sum(sku.get('daily_manpower', []))
+        else:
+            # Show manpower for specific day only
+            if days and day_filter in days:
+                day_index = days.index(day_filter)
+                sku_manpower = safe_sum_for_day(sku.get('daily_manpower', []), day_index)
+            else:
+                sku_manpower = 0.0
+        
+        table_data.append({
+            'Station': sku.get('station', 'Unknown'),
+            'SKU': sku['sku'],
+            'Batches': safe_sum(sku.get('daily_batches', [])),
+            'Volume (kg)': safe_sum(sku.get('daily_volume', [])),
+            'Hours': safe_sum(sku.get('daily_hours', [])),
+            'Manpower': sku_manpower,  # FIXED: Now shows correct manpower based on day filter
+            'Overtime per Person': sku_overtime_per_person
+        })
+
+    # Create DataFrame
+    df_display = pd.DataFrame(table_data)
+    
+    # Style the dataframe
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Station": st.column_config.TextColumn("Station", width="medium"),
+            "SKU": st.column_config.TextColumn("SKU", width="large"),
+            "Batches": st.column_config.NumberColumn("Total Batches", format="%.0f"),
+            "Volume (kg)": st.column_config.NumberColumn("Total Volume (kg)", format="%.1f"),
+            "Hours": st.column_config.NumberColumn("Total Hours", format="%.1f"),
+            "Manpower": st.column_config.NumberColumn("Total Manpower", format="%.0f"),
+            "Overtime per Person": st.column_config.NumberColumn("Total Overtime per Person", format="%.1f")
+        }
+    )
+
+# --- MACHINE UTILIZATION EXTRACTOR ---
+class MachineUtilizationExtractor:
+    def __init__(self, df):
+        self.df = df
+
+    def get_machine_data(self):
+        """Extract machine utilization data from 'Machine' sheet"""
+        machines = []
+        header_row = MACHINE_COLUMNS['header_row']
+        start_row = MACHINE_COLUMNS['machine_start_row']
+        end_row = MACHINE_COLUMNS['machine_end_row']
+
+        for row_idx in range(start_row, end_row + 1):
+            if row_idx < len(self.df):
+                row = self.df.iloc[row_idx]
+
+                def safe_val(col_idx):
+                    return safe_float_convert(row[col_idx]) if col_idx < len(row) else 0
+
+                machines.append({
+                    'machine': str(row[MACHINE_COLUMNS['machine']]).strip(),
+                    'run_capacity': safe_val(MACHINE_COLUMNS['run_capacity']),
+                    'ideal_run_time': safe_val(MACHINE_COLUMNS['ideal_run_time']),
+                    'working_hours': safe_val(MACHINE_COLUMNS['working_hours']),
+                    'run_time': safe_val(MACHINE_COLUMNS['run_time']),
+                    'qty': safe_val(MACHINE_COLUMNS['qty']),
+                    'available_hrs': safe_val(MACHINE_COLUMNS['available_hrs']),
+                    'daily_run_hrs': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['run_hrs_start'], MACHINE_COLUMNS['run_hrs_end'] + 1)
+                    ],
+                    'daily_available_hrs': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['available_hrs_start'], MACHINE_COLUMNS['available_hrs_end'] + 1)
+                    ],
+                    'daily_machine_needed': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['machine_needed_start'], MACHINE_COLUMNS['machine_needed_end'] + 1)
+                    ]
+                })
+        return machines
+
+    def calculate_totals(self, machines, day_index=None):
+        """Calculate totals for KPI cards, with optional day filter"""
+        # Instead of unique count, sum the machine qty
+        total_machines = sum(m.get("qty", 1) for m in machines if m['machine'])
+        
+        if day_index is None:  # whole week
+            total_run_hrs = sum(sum(m['daily_run_hrs']) for m in machines)
+            total_available_hrs = sum(sum(m['daily_available_hrs']) for m in machines)
+            total_machine_needed = sum(sum(m['daily_machine_needed']) for m in machines)
+        else:  # filter by day
+            total_run_hrs = sum(m['daily_run_hrs'][day_index] for m in machines if len(m['daily_run_hrs']) > day_index)
+            total_available_hrs = sum(m['daily_available_hrs'][day_index] for m in machines if len(m['daily_available_hrs']) > day_index)
+            total_machine_needed = sum(m['daily_machine_needed'][day_index] for m in machines if len(m['daily_machine_needed']) > day_index)
+
+        return total_machines, total_run_hrs, total_available_hrs, total_machine_needed
+
+def main():
+    # --- Sidebar Menu Header ---
+            st.sidebar.markdown("""
+            <div style="color: #2c3e50; font-size: 14px; font-weight: 650; margin: 1rem 0 0.5rem 0; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
+                Production Dashboard
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # --- Sidebar Navigation with option_menu ---
+            with st.sidebar:
+                page = option_menu(
+                    menu_title=None,
+                    options=[
+                        "Weekly Production Schedule", 
+                        "Weekly Machine Utilization",
+                        "Consolidated Production Schedule",
+                        "Consolidated Weekly Utilization"
+                    ],
+                    icons=["calendar-week", "layers", "clipboard-data", "bar-chart"],
+                    default_index=0,
+                    key="production_menu",
+                    styles={
+                        "container": {
+                            "padding": "0rem",
+                            "background-color": "#fffef6",  # dark gray sidebar
+                            "border-radius": "8px",
+                            "margin": "0",
+                            "width": "280px",
+                            "min-width": "280px",
+                            "overflow": "hidden",
+                        },
+                        "icon": {
+                            "color": "#f4d602",  # yellow icons
+                            "font-size": "14px",
+                            "margin-right": "8px",
+                            "position": "relative",
+                            "left": "-1px"
+                        },
+                        "nav-link": {
+                            "font-family": "Segoe UI, sans-serif",
+                            "font-size": "13px",
+                            "font-weight": "450",
+                            "text-align": "left",
+                            "color": "#262622",  # light text
+                            "margin": "4px 0",
+                            "padding": "12px 12px",
+                            "border-radius": "6px",
+                            "white-space": "nowrap",
+                            "overflow": "hidden",
+                            "text-overflow": "ellipsis",
+                            "transition": "all 0.3s ease",
+                            "--hover-color": "rgba(244, 214, 2, 0.2)"  # soft yellow hover
+                        },
+                        "nav-link-selected": {
+                            "font-family": "Segoe UI, sans-serif",
+                            "background-color": "#f4d602",  # yellow highlight
+                            "color": "#000000",  # black text when active
+                            "font-weight": "600",
+                        }
+                    }
+                )
+                
+            
+            # Main Header
+            if page == "Weekly Production Schedule":
+
+                st.markdown("""
+                <div class="main-header">
+                    <h1><b>Commissary Production Scheduler</b></h1>
+                    <p><b>Weekly Production Schedule Management</b></p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Load data
+                with st.spinner("Loading production schedule..."):
+                    df = load_production_data()
+                
+                if df is None:
+                    st.stop()
+                
+                # Initialize extractor
+                extractor = ProductionDataExtractor(df)
+                
+                # Get week info, week number, and days
+                start_date, end_date = extractor.get_week_info()
+                week_number = extractor.get_week_number()
+                days = extractor.get_days_of_week()
+
+                # Filters with dynamic SKU dropdown and sheet selection
+                col1, col2, col3, col4 = st.columns(4)
+
+                with col1:
+                    # Week number display (read-only)
+                    st.selectbox(
+                        "Week Number",
+                        options=[week_number],
+                        index=0,
+                        key="week_display",
+                        disabled=True,
+                        help="Current week number from the selected spreadsheet"
+                    )
+
+                with col2:
+                    station_filter = st.selectbox(
+                        "Filter per Station",
+                        options=list(STATIONS.keys()),
+                        index=0,
+                        key="station_filter"
+                    )
+
+                with col3:
+                    # Get SKUs filtered by selected station
+                    if station_filter == "All Stations":
+                        unique_skus = extractor.get_unique_skus()
+                    else:
+                        unique_skus = extractor.get_unique_skus_by_station(station_filter)
+                    
+                    sku_options = ["All SKUs"] + unique_skus
+                    sku_filter = st.selectbox(
+                        "Filter per SKU",
+                        options=sku_options,
+                        index=0,
+                        key="sku_filter"
+                    )
+
+                with col4:
+                    day_options = ["Current Week"] + days
+                    day_filter = st.selectbox(
+                        "Filter per Day",
+                        options=day_options,
+                        index=0,
+                        key="day_filter"
+                    )
+
+                # Get filtered SKUs
+                filtered_skus = extractor.get_all_skus(station_filter, sku_filter, day_filter)
+                
+                # FIXED: Calculate totals with day filter and days parameters
+                total_batches, total_volume, total_hours, total_total_manpower, overtime_percentage = calculate_totals(
+                    filtered_skus, extractor, day_filter, days
+                )
+                
+                # KPI Cards
+                st.markdown("### Summary")
+                
+                col1, col2, col3, col4, col5, col6 = st.columns(6)
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{len(filtered_skus)}</div>
+                        <div class="kpi-label">Total SKUs</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_batches:,.0f}</div>
+                        <div class="kpi-label">Total Batches</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_volume:,.0f}</div>
+                        <div class="kpi-label">Total Volume (kg)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col4:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_hours:,.0f}</div>
+                        <div class="kpi-label">Total Hours</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with col5:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_total_manpower:,.0f}</div>
+                        <div class="kpi-label">Total Manpower</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                with col6:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{overtime_percentage:.1f}%</div>
+                        <div class="kpi-label">Overtime %</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # FIXED: SKU Table with day filter and days parameters
+                render_sku_table(filtered_skus, day_filter, days)
+                
+
+            elif page == "Weekly Machine Utilization":
+                # --- Header ---
+                st.markdown("""
+                <div class="main-header">
+                    <h1><b>Machine Utilization Dashboard</b></h1>
+                    <p><b>Track machine usage vs capacity</b></p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # --- Load Data ---
+                df_machine = load_production_data(sheet_index=1)  
+                extractor = MachineUtilizationExtractor(df_machine)
+                machines = extractor.get_machine_data()
+
+                # --- Filters (day & machine) ---
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    machine_options = ["All Machines"] + [m['machine'] for m in machines if m['machine'].lower() != "manual labor"]
+                    machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
+                
+                with col2:
+                    # Row 2 = weekdays
+                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['run_hrs_start']:MACHINE_COLUMNS['run_hrs_end']+1].tolist()
+
+                    # Just use weekdays (no dates)
+                    day_labels = [str(wd) for wd in weekdays]
+
+                    # Dropdown options
+                    day_options = ["Current Week"] + day_labels
+                    day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
+
+
+                # Filter out manual labor completely
+                machines = [m for m in machines if m['machine'].lower() != "manual labor"]
+
+                # --- Apply filters ---
+                if machine_filter != "All Machines":
+                    machines = [m for m in machines if m['machine'] == machine_filter]
+
+                # --- Totals for KPI cards ---
+                if day_filter == "Current Week":
+                    totals = extractor.calculate_totals(machines)
+                else:
+                    day_index = day_options.index(day_filter) - 1
+                    totals = extractor.calculate_totals(machines, day_index=day_index)
+
+                total_machines, total_run_hrs, total_available_hrs, total_machine_needed = totals
+
+                # Adjust "Total Machines" display
+                if machine_filter != "All Machines" and machines:
+                    # If filtered by machine → show only that machine's qty
+                    total_machines = machines[0].get("qty", 1)
+
+                st.markdown("### Summary")
+
+                colA, colB, colC, colD = st.columns(4)
+                kpi_data = [
+                    ("Total Machines", total_machines),
+                    ("Total Run Hours", total_run_hrs),
+                    ("Total Available Hours", total_available_hrs),
+                    ("Total Machine Needed", total_machine_needed)
+                ]
+                for col, (label, value) in zip([colA, colB, colC, colD], kpi_data):
+                    with col:
+                        st.markdown(f"""
+                        <div class="kpi-card">
+                            <div class="kpi-number">{value:,.0f}</div>
+                            <div class="kpi-label">{label}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                # --- Machine Utilization Table ---
+                machine_table = []
+                for machine in machines:
+                    daily_run = machine.get("daily_run_hrs", [])
+                    daily_available = machine.get("daily_available_hrs", [])
+                    daily_machine = machine.get("daily_machine_needed", [])
+
+                    if day_filter == "Current Week":
+                        run_hours = safe_sum(daily_run)
+                        available_hours = safe_sum(daily_available)
+                        machine_needed = safe_sum(daily_machine)
+                    else:
+                        if day_filter in day_options:
+                            day_index = day_options.index(day_filter) - 1
+                            run_hours = safe_sum_for_day(daily_run, day_index)
+                            available_hours = safe_sum_for_day(daily_available, day_index)
+                            machine_needed = safe_sum_for_day(daily_machine, day_index)
+                        else:
+                            run_hours, available_hours, machine_needed = 0, 0, 0
+
+                    machine_table.append({
+                        "Machine": machine["machine"],
+                        "Run Capacity": machine.get("run_capacity", 0),
+                        "Qty": machine.get("qty", 1),
+                        "Run Hours": run_hours,
+                        "Available Hours": available_hours,
+                        "Machine Needed": machine_needed,
+                    })
+
+                df_machines = pd.DataFrame(machine_table)
+
+                st.markdown("### Machine Utilization Details")
+                st.dataframe(
+                    df_machines,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Machine": st.column_config.TextColumn("Machine", width="large"),
+                        "Run Capacity": st.column_config.NumberColumn("Run Capacity", format="%.0f"),
+                        "Qty": st.column_config.NumberColumn("Qty", format="%.0f"),
+                        "Run Hours": st.column_config.NumberColumn("Run Hours", format="%.1f"),
+                        "Available Hours": st.column_config.NumberColumn("Available Hours", format="%.1f"),
+                        "Machine Needed": st.column_config.NumberColumn("Machine Needed", format="%.0f"),
+                    }
+                )
+
+
+if __name__ == "__main__":
+    main()
