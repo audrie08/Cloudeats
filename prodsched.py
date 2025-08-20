@@ -459,43 +459,42 @@ def load_production_data(sheet_index=0):
         "https://www.googleapis.com/auth/drive"
     ]
     
-    try:
-        # Try JSON string method first
-        import json
-        credentials_json = st.secrets["google_credentials_json"]
-        credentials_dict = json.loads(credentials_json)
-        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-    except KeyError:
-        try:
-            # Try TOML method
-            credentials_dict = dict(st.secrets["google_credentials"])
-            credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-        except KeyError:
-            # Fallback for local development
-            try:
-                credentials_path = 'production-schedule-calculator-0dceed735b36.json'
-                credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
-            except FileNotFoundError:
-                st.error("Google credentials not found. Please check your secrets configuration.")
-                st.stop()
+    # ... credentials loading code (same as above) ...
     
-    # Create the Google Sheets client
-    import gspread
-    gc = gspread.authorize(credentials)
+    # Create the Google Sheets API service
+    from googleapiclient.discovery import build
+    service = build('sheets', 'v4', credentials=credentials)
     
-    # Open your spreadsheet (replace with your actual spreadsheet key/URL)
-    spreadsheet_key = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # From your secrets
-    sh = gc.open_by_key(spreadsheet_key)
+    # Your spreadsheet ID
+    spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
     
-    # Now you can use sh.get_worksheet(sheet_index)
-    worksheet = sh.get_worksheet(sheet_index)
+    # Get spreadsheet metadata to find sheet names
+    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    sheets = spreadsheet.get('sheets', [])
+    
+    if sheet_index >= len(sheets):
+        st.error(f"Sheet index {sheet_index} not found. Available sheets: {len(sheets)}")
+        st.stop()
+    
+    # Get the sheet name
+    sheet_name = sheets[sheet_index]['properties']['title']
     
     # Get the data
-    data = worksheet.get_all_records()
+    range_name = f"{sheet_name}!A:Z"  # Adjust range as needed
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id, 
+        range=range_name
+    ).execute()
+    
+    values = result.get('values', [])
+    
+    if not values:
+        st.error('No data found in the sheet.')
+        return pd.DataFrame()
     
     # Convert to DataFrame
     import pandas as pd
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(values[1:], columns=values[0])  # First row as headers
     
     return df
 
