@@ -12,6 +12,9 @@ from PIL import Image
 import warnings
 warnings.filterwarnings('ignore')
 
+from credentials import get_gspread_client, SPREADSHEET_ID
+
+
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Commissary Production Scheduler",
@@ -445,18 +448,11 @@ def safe_sum_for_day(values, index):
 # --- DATA LOADER ---
 @st.cache_data(ttl=120)
 def load_production_data(sheet_index=0):
-    """Load production data from Google Sheets"""
+    """Load production data from Google Sheets using credentials module"""
     try:
-        credentials_path = "production-schedule-calculator-0dceed735b36.json"
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
-        gc = gspread.authorize(credentials)
-
-        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-        sh = gc.open_by_key(spreadsheet_id)
+        # Use the new credentials system
+        gc = get_gspread_client()
+        sh = gc.open_by_key(SPREADSHEET_ID)
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
 
@@ -469,9 +465,13 @@ def load_production_data(sheet_index=0):
         return None
         
 
-def update_week_dropdown(worksheet, selected_week):
+def update_week_dropdown(selected_week):
     """Update the week dropdown selection in the spreadsheet"""
     try:
+        gc = get_gspread_client()
+        sh = gc.open_by_key(SPREADSHEET_ID)
+        worksheet = sh.get_worksheet(0)  # Assuming first sheet for updates
+        
         # Adjust this cell reference to match where your week dropdown is located
         worksheet.update('H1', selected_week)  # Adjust cell reference
         
