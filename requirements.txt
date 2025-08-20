@@ -29,7 +29,6 @@ grpcio==1.71.0
 grpcio-status==1.71.0
 gspread==5.0.0
 google-auth==2.0.0
-google-auth-httplib2==0.1.0
 gspread-dataframe==4.0.0
 gspread-formatting==1.2.1
 gspread-pandas==3.3.0
@@ -108,4 +107,5 @@ uritemplate==4.1.1
 urllib3==2.2.2
 validators==0.34.0
 watchdog==4.0.2
+
 
