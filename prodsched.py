@@ -450,53 +450,96 @@ def safe_sum_for_day(values, index):
     return 0
 
 # --- DATA LOADER ---
-# Replace your current load_production_data function with this:
-
-@st.cache_data(ttl=120)
 def load_production_data(sheet_index=0):
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     
-    # ... credentials loading code (same as above) ...
+    credentials = None
     
-    # Create the Google Sheets API service
-    from googleapiclient.discovery import build
-    service = build('sheets', 'v4', credentials=credentials)
-    
-    # Your spreadsheet ID
-    spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-    
-    # Get spreadsheet metadata to find sheet names
-    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-    sheets = spreadsheet.get('sheets', [])
-    
-    if sheet_index >= len(sheets):
-        st.error(f"Sheet index {sheet_index} not found. Available sheets: {len(sheets)}")
+    try:
+        # Try JSON string method first
+        import json
+        credentials_json = st.secrets["google_credentials_json"]
+        credentials_dict = json.loads(credentials_json)
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+    except KeyError:
+        try:
+            # Try TOML method
+            credentials_dict = dict(st.secrets["google_credentials"])
+            credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        except KeyError:
+            try:
+                # Fallback for local development
+                credentials_path = 'production-schedule-calculator-0dceed735b36.json'
+                credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+            except FileNotFoundError:
+                st.error("Google credentials not found. Please check your secrets configuration.")
+                st.stop()
+    except Exception as e:
+        st.error(f"Error loading credentials: {str(e)}")
         st.stop()
     
-    # Get the sheet name
-    sheet_name = sheets[sheet_index]['properties']['title']
+    # Check if credentials were successfully loaded
+    if credentials is None:
+        st.error("Failed to load Google credentials.")
+        st.stop()
     
-    # Get the data
-    range_name = f"{sheet_name}!A:Z"  # Adjust range as needed
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheet_id, 
-        range=range_name
-    ).execute()
-    
-    values = result.get('values', [])
-    
-    if not values:
-        st.error('No data found in the sheet.')
+    try:
+        # Create the Google Sheets API service
+        from googleapiclient.discovery import build
+        service = build('sheets', 'v4', credentials=credentials)
+        
+        # Your spreadsheet ID
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        
+        # Get spreadsheet metadata
+        spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        sheets = spreadsheet.get('sheets', [])
+        
+        if sheet_index >= len(sheets):
+            st.error(f"Sheet index {sheet_index} not found. Available sheets: {len(sheets)}")
+            return pd.DataFrame()
+        
+        # Get the sheet name
+        sheet_name = sheets[sheet_index]['properties']['title']
+        
+        # Get the data
+        range_name = f"{sheet_name}!A:Z"
+        result = service.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, 
+            range=range_name
+        ).execute()
+        
+        values = result.get('values', [])
+        
+        if not values:
+            st.error('No data found in the sheet.')
+            return pd.DataFrame()
+        
+        # Handle duplicate headers
+        headers = values[0] if values else []
+        unique_headers = []
+        header_counts = {}
+        
+        for header in headers:
+            if header in header_counts:
+                header_counts[header] += 1
+                unique_headers.append(f"{header}_{header_counts[header]}")
+            else:
+                header_counts[header] = 0
+                unique_headers.append(header)
+        
+        # Create DataFrame
+        import pandas as pd
+        df = pd.DataFrame(values[1:] if len(values) > 1 else [], columns=unique_headers)
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error accessing Google Sheets: {str(e)}")
         return pd.DataFrame()
-    
-    # Convert to DataFrame
-    import pandas as pd
-    df = pd.DataFrame(values[1:], columns=values[0])  # First row as headers
-    
-    return df
 
 def update_week_dropdown(worksheet, selected_week):
     """Update the week dropdown selection in the spreadsheet"""
