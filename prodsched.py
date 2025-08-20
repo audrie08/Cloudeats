@@ -452,34 +452,22 @@ def safe_sum_for_day(values, index):
 
 @st.cache_data(ttl=120)
 def load_production_data(sheet_index=0):
-    """Load production data from Google Sheets using secrets"""
+    """Load production data from Google Sheets using JSON file"""
     try:
-        # Load credentials from Streamlit secrets instead of JSON file
-        credentials_info = {
-            "type": st.secrets["gsheets_1"]["type"],
-            "project_id": st.secrets["gsheets_1"]["project_id"],
-            "private_key_id": st.secrets["gsheets_1"]["private_key_id"],
-            "private_key": st.secrets["gsheets_1"]["private_key"],
-            "client_email": st.secrets["gsheets_1"]["client_email"],
-            "client_id": st.secrets["gsheets_1"]["client_id"],
-            "auth_uri": st.secrets["gsheets_1"]["auth_uri"],
-            "token_uri": st.secrets["gsheets_1"]["token_uri"],
-            "auth_provider_x509_cert_url": st.secrets["gsheets_1"]["auth_provider_x509_cert_url"],
-            "client_x509_cert_url": st.secrets["gsheets_1"]["client_x509_cert_url"],
-            "universe_domain": st.secrets["gsheets_1"]["universe_domain"]
-        }
+        # Use JSON file instead of secrets
+        credentials_path = "production-schedule-calculator-0dceed735b36.json"
         
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # Create credentials from the secrets
-        credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
         gc = gspread.authorize(credentials)
 
-        # Use the spreadsheet ID from secrets
-        spreadsheet_id = st.secrets["gsheets_1"]["spreadsheet"]
+        # Use hardcoded spreadsheet ID or get from secrets if available
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # Your spreadsheet ID
+        
         sh = gc.open_by_key(spreadsheet_id)
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
@@ -488,8 +476,11 @@ def load_production_data(sheet_index=0):
         df = df.fillna('')
         
         return df
+        
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
+        import traceback
+        st.error(f"Traceback: {traceback.format_exc()}")
         return None
         
 
