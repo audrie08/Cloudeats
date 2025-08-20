@@ -17,6 +17,21 @@ import warnings
 from google.oauth2 import service_account
 warnings.filterwarnings('ignore')
 
+# Create connection right after imports
+conn = st.connection("gsheets_1", type=GSheetsConnection)
+
+# Load data once at the start
+@st.cache_data
+def load_data():
+    try:
+        df = conn.read(spreadsheet=st.secrets["gsheets_1"]["spreadsheet"])
+        return df
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return None
+
+# Load the data
+df = load_data()
 
 # --- PAGE CONFIG ---
 st.set_page_config(
