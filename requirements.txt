@@ -1,12 +1,33 @@
+# Core
 streamlit
 pandas
-gspread
-google-auth
-oauth2client
-st-gsheets-connection
-streamlit-option-menu
+numpy
+matplotlib
+altair
 plotly
-pillow
-jsonschema
-jsonschema-specifications
 
+# Google Sheets / API
+gspread
+gspread-dataframe
+gspread-formatting
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+st-gsheets-connection
+oauth2client
+
+# Streamlit extras
+streamlit-option-menu
+streamlit-aggrid
+streamlit-camera-input-live
+streamlit-card
+streamlit-embedcode
+streamlit-extras
+streamlit-faker
+streamlit-image-coordinates
+streamlit-keyup
+streamlit-toggle-switch
+streamlit-vertical-slider
+st-annotated-text
+markdownlit
