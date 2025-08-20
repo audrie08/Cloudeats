@@ -461,17 +461,24 @@ def load_production_data():
     
     # NEW CODE - Replace everything related to credentials loading:
     try:
-        # Try to load from Streamlit secrets (for deployed app)
-        credentials_dict = dict(st.secrets["google_credentials"])
+        # Try JSON string method first
+        import json
+        credentials_json = st.secrets["google_credentials_json"]
+        credentials_dict = json.loads(credentials_json)
         credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-    except (FileNotFoundError, KeyError):
-        # Fallback to local file (for local development)
+    except KeyError:
         try:
-            credentials_path = 'production-schedule-calculator-0dceed735b36.json'
-            credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
-        except FileNotFoundError:
-            st.error("Google credentials not found. Please check your secrets configuration.")
-            st.stop()
+            # Try TOML method
+            credentials_dict = dict(st.secrets["google_credentials"])
+            credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        except KeyError:
+            # Fallback for local development
+            try:
+                credentials_path = 'production-schedule-calculator-0dceed735b36.json'
+                credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+            except FileNotFoundError:
+                st.error("Google credentials not found. Please check your secrets configuration.")
+                st.stop()
             
         gc = gspread.authorize(credentials)
 
@@ -1124,7 +1131,7 @@ def main():
                 """, unsafe_allow_html=True)
 
                 # --- Load Data ---
-                df_machine = load_production_data(sheet_index=1)  
+                df_machine = load_production_data()  
                 extractor = MachineUtilizationExtractor(df_machine)
                 machines = extractor.get_machine_data()
 
