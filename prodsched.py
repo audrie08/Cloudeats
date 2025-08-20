@@ -453,13 +453,12 @@ def safe_sum_for_day(values, index):
 # Replace your current load_production_data function with this:
 
 @st.cache_data(ttl=120)
-def load_production_data():
+def load_production_data(sheet_index=0):
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     
-    # NEW CODE - Replace everything related to credentials loading:
     try:
         # Try JSON string method first
         import json
@@ -479,20 +478,26 @@ def load_production_data():
             except FileNotFoundError:
                 st.error("Google credentials not found. Please check your secrets configuration.")
                 st.stop()
-            
-        gc = gspread.authorize(credentials)
-
-        # Use hardcoded spreadsheet ID or get from secrets if available
-        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # Your spreadsheet ID
-        
-        sh = gc.open_by_key(spreadsheet_id)
-        worksheet = sh.get_worksheet(sheet_index)
-        data = worksheet.get_all_values()
-
-        df = pd.DataFrame(data)
-        df = df.fillna('')
-        
-        return df
+    
+    # Create the Google Sheets client
+    import gspread
+    gc = gspread.authorize(credentials)
+    
+    # Open your spreadsheet (replace with your actual spreadsheet key/URL)
+    spreadsheet_key = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # From your secrets
+    sh = gc.open_by_key(spreadsheet_key)
+    
+    # Now you can use sh.get_worksheet(sheet_index)
+    worksheet = sh.get_worksheet(sheet_index)
+    
+    # Get the data
+    data = worksheet.get_all_records()
+    
+    # Convert to DataFrame
+    import pandas as pd
+    df = pd.DataFrame(data)
+    
+    return df
         
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
