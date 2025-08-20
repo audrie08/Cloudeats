@@ -498,13 +498,6 @@ def load_production_data(sheet_index=0):
     df = pd.DataFrame(data)
     
     return df
-        
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        import traceback
-        st.error(f"Traceback: {traceback.format_exc()}")
-        return None
-        
 
 def update_week_dropdown(worksheet, selected_week):
     """Update the week dropdown selection in the spreadsheet"""
