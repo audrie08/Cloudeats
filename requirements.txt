@@ -7,3 +7,6 @@ st-gsheets-connection
 streamlit-option-menu
 plotly
 pillow
+jsonschema
+jsonschema-specifications
+
