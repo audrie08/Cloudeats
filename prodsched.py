@@ -20,15 +20,6 @@ warnings.filterwarnings('ignore')
 # Create connection right after imports
 conn = st.connection("gsheets_1", type=GSheetsConnection)
 
-# Load data once at the start
-@st.cache_data
-def load_data():
-    try:
-        df = conn.read(spreadsheet=st.secrets["gsheets_1"]["spreadsheet"])
-        return df
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return None
 
 # Load the data
 df = load_data()
@@ -464,19 +455,38 @@ def safe_sum_for_day(values, index):
     return 0
 
 # --- DATA LOADER ---
+# Replace your current load_production_data function with this:
+
 @st.cache_data(ttl=120)
 def load_production_data(sheet_index=0):
-    """Load production data from Google Sheets"""
+    """Load production data from Google Sheets using secrets"""
     try:
-        credentials_path = "production-schedule-calculator-0dceed735b36.json"
+        # Load credentials from Streamlit secrets instead of JSON file
+        credentials_info = {
+            "type": st.secrets["gsheets_1"]["type"],
+            "project_id": st.secrets["gsheets_1"]["project_id"],
+            "private_key_id": st.secrets["gsheets_1"]["private_key_id"],
+            "private_key": st.secrets["gsheets_1"]["private_key"],
+            "client_email": st.secrets["gsheets_1"]["client_email"],
+            "client_id": st.secrets["gsheets_1"]["client_id"],
+            "auth_uri": st.secrets["gsheets_1"]["auth_uri"],
+            "token_uri": st.secrets["gsheets_1"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["gsheets_1"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["gsheets_1"]["client_x509_cert_url"],
+            "universe_domain": st.secrets["gsheets_1"]["universe_domain"]
+        }
+        
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
-        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+        
+        # Create credentials from the secrets
+        credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
         gc = gspread.authorize(credentials)
 
-        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        # Use the spreadsheet ID from secrets
+        spreadsheet_id = st.secrets["gsheets_1"]["spreadsheet"]
         sh = gc.open_by_key(spreadsheet_id)
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
