@@ -17,13 +17,6 @@ import warnings
 from google.oauth2 import service_account
 warnings.filterwarnings('ignore')
 
-# Create connection right after imports
-conn = st.connection("gsheets_1", type=GSheetsConnection)
-
-
-# Load the data
-df = load_data()
-
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Commissary Production Scheduler",
