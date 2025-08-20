@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+from oauth2client.service_account import ServiceAccountCredentials
+from streamlit_gsheets import GSheetsConnection
+from streamlit_option_menu import option_menu
+from google.oauth2.service_account import Credentials
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
@@ -10,9 +14,8 @@ import base64
 from io import BytesIO
 from PIL import Image
 import warnings
+from google.oauth2 import service_account
 warnings.filterwarnings('ignore')
-
-from credentials import get_gspread_client, SPREADSHEET_ID
 
 
 # --- PAGE CONFIG ---
@@ -448,11 +451,18 @@ def safe_sum_for_day(values, index):
 # --- DATA LOADER ---
 @st.cache_data(ttl=120)
 def load_production_data(sheet_index=0):
-    """Load production data from Google Sheets using credentials module"""
+    """Load production data from Google Sheets"""
     try:
-        # Use the new credentials system
-        gc = get_gspread_client()
-        sh = gc.open_by_key(SPREADSHEET_ID)
+        credentials_path = "production-schedule-calculator-0dceed735b36.json"
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+        gc = gspread.authorize(credentials)
+
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        sh = gc.open_by_key(spreadsheet_id)
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
 
@@ -465,13 +475,9 @@ def load_production_data(sheet_index=0):
         return None
         
 
-def update_week_dropdown(selected_week):
+def update_week_dropdown(worksheet, selected_week):
     """Update the week dropdown selection in the spreadsheet"""
     try:
-        gc = get_gspread_client()
-        sh = gc.open_by_key(SPREADSHEET_ID)
-        worksheet = sh.get_worksheet(0)  # Assuming first sheet for updates
-        
         # Adjust this cell reference to match where your week dropdown is located
         worksheet.update('H1', selected_week)  # Adjust cell reference
         
