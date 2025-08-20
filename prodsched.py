@@ -14,6 +14,7 @@ import base64
 from io import BytesIO
 from PIL import Image
 import warnings
+import json
 from google.oauth2 import service_account
 warnings.filterwarnings('ignore')
 
@@ -454,15 +455,17 @@ def safe_sum_for_day(values, index):
 def load_production_data(sheet_index=0):
     """Load production data from Google Sheets using JSON file"""
     try:
-        # Use JSON file instead of secrets
-        credentials_path = "production-schedule-calculator-0dceed735b36.json"
-        
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        
-        credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+        # Try to load from Streamlit secrets (for deployed app)
+        credentials_dict = dict(st.secrets["google_credentials"])
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+    except (FileNotFoundError, KeyError):
+        # Fallback to local file (for local development)
+        try:
+            credentials_path = 'production-schedule-calculator-0dceed735b36.json'
+            credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+        except FileNotFoundError:
+            st.error("Google credentials not found. Please check your secrets configuration.")
+            st.stop()
         gc = gspread.authorize(credentials)
 
         # Use hardcoded spreadsheet ID or get from secrets if available
