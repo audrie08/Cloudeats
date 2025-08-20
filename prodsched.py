@@ -16,6 +16,7 @@ from PIL import Image
 import warnings
 import json
 from google.oauth2 import service_account
+from googleapiclient.discovery import build
 warnings.filterwarnings('ignore')
 
 # --- PAGE CONFIG ---
@@ -452,8 +453,13 @@ def safe_sum_for_day(values, index):
 # Replace your current load_production_data function with this:
 
 @st.cache_data(ttl=120)
-def load_production_data(sheet_index=0):
-    """Load production data from Google Sheets using JSON file"""
+def load_production_data():
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    
+    # NEW CODE - Replace everything related to credentials loading:
     try:
         # Try to load from Streamlit secrets (for deployed app)
         credentials_dict = dict(st.secrets["google_credentials"])
@@ -466,6 +472,7 @@ def load_production_data(sheet_index=0):
         except FileNotFoundError:
             st.error("Google credentials not found. Please check your secrets configuration.")
             st.stop()
+            
         gc = gspread.authorize(credentials)
 
         # Use hardcoded spreadsheet ID or get from secrets if available
