@@ -480,63 +480,30 @@ def safe_sum_for_day(values, index):
     return 0
 
 # --- DATA LOADER FUNCTION ---
+@st.cache_data(ttl=60)
 def load_production_data(sheet_index=0):
+    """Load production data from Google Sheets"""
     credentials = load_credentials()
     if not credentials:
         return pd.DataFrame()
     
     try:
-        # Create the Google Sheets API service
-        from googleapiclient.discovery import build
-        service = build('sheets', 'v4', credentials=credentials)
-        
-        # Your spreadsheet ID
+        # Use gspread instead of googleapiclient for consistency with working version
+        import gspread
+        gc = gspread.authorize(credentials)
+
         spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-        
-        # Get spreadsheet metadata
-        spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-        sheets = spreadsheet.get('sheets', [])
-        
-        if sheet_index >= len(sheets):
-            st.error(f"Sheet index {sheet_index} not found. Available sheets: {len(sheets)}")
-            return pd.DataFrame()
-        
-        # Get the sheet name
-        sheet_name = sheets[sheet_index]['properties']['title']
-        
-        # Get the data
-        range_name = f"{sheet_name}!A:Z"
-        result = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id, 
-            range=range_name
-        ).execute()
-        
-        values = result.get('values', [])
-        
-        if not values:
-            st.error('No data found in the sheet.')
-            return pd.DataFrame()
-        
-        # Handle duplicate headers
-        headers = values[0] if values else []
-        unique_headers = []
-        header_counts = {}
-        
-        for header in headers:
-            if header in header_counts:
-                header_counts[header] += 1
-                unique_headers.append(f"{header}_{header_counts[header]}")
-            else:
-                header_counts[header] = 0
-                unique_headers.append(header)
-        
-        # Create DataFrame
-        df = pd.DataFrame(values[1:] if len(values) > 1 else [], columns=unique_headers)
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+
+        df = pd.DataFrame(data)
+        df = df.fillna('')
         
         return df
         
     except Exception as e:
-        st.error(f"Error accessing Google Sheets: {str(e)}")
+        st.error(f"Error loading data: {str(e)}")
         return pd.DataFrame()
 
 def update_week_dropdown(worksheet, selected_week):
