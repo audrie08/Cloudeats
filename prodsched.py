@@ -388,23 +388,25 @@ STATION_RANGES = {
 COLUMNS = {
     'sku': 1,                    # Column B
     'batch_qty': 2,              # Column C
-    'kg_per_hr': 3,              # Column D - Fixed key name
-    'man_hr': 4,                 # Column E - Fixed key name  
-    'hrs_per_batch': 5,          # Column F - Fixed key name
+    'kg_per_hr': 3,              # Column D
+    'man_hr': 4,                 # Column E
+    'hrs_per_batch': 5,          # Column F
     'std_manpower': 7,           # Column H
-    'batches_start': 8,          # Column I
-    'batches_end': 14,           # Column O
-    'volume_start': 17,          # Column R
-    'volume_end': 23,            # Column X
-    'hours_start': 25,           # Column Z
-    'hours_end': 31,             # Column AF
-    'manpower_start': 41,        # Column AP
-    'manpower_end': 47,          # Column AV
-    'overtime_start': 49,        # Column AX (individual SKU overtime)
-    'overtime_end': 55,          # Column BD (individual SKU overtime)
-    'overtime_percentage_start': 65, # Column BN (overall percentage) - FIXED: Updated to match your screenshot
-    'overtime_percentage_end': 70,   # Column BS (overall percentage) - FIXED: Changed from 71 to 70
-    'overtime_percentage_row': 5     # Row 6 (0-based index 5)
+    'frequency': 9,
+    'batches_start': 10,          # Column I (18Aug)
+    'batches_end': 16,           # Column O (24Aug)
+    'volume_start': 19,          # Column R (18Aug volume)
+    'volume_end': 25,            # Column X (24Aug volume)
+    'hours_start': 27,           # Column Z (18Aug hours)
+    'hours_end': 33,             # Column AF (24Aug hours)
+    'manpower_start': 36,        # Column AP (18Aug manpower)
+    'manpower_end': 42,          # Column AV (24Aug manpower)
+    'overtime_start': 44,        # Column AX (18Aug individual OT)
+    'overtime_end': 50,          # Column BD (24Aug individual OT)
+    'overtime_percentage_start': 60, # Column BN (18Aug overall %)
+    'overtime_percentage_end': 66,   # Column BS (24Aug overall %)
+    'data_start_row': 6,         # Row 7 (0-based index 6) - where actual SKU data starts
+    'header_row': 5              # Row 6 (0-based index 5) - where date headers are
 }
 
 # Machine Utilization Column mappings
