@@ -26,6 +26,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- CREDENTIALS HANDLING ---
+def load_credentials():
+    """Load Google credentials from Streamlit secrets"""
+    try:
+        # Convert secrets to the format expected by google-auth
+        credentials_dict = {
+            "type": st.secrets["google_credentials"]["type"],
+            "project_id": st.secrets["google_credentials"]["project_id"],
+            "private_key_id": st.secrets["google_credentials"]["private_key_id"],
+            "private_key": st.secrets["google_credentials"]["private_key"].replace('\\n', '\n'),
+            "client_email": st.secrets["google_credentials"]["client_email"],
+            "client_id": st.secrets["google_credentials"]["client_id"],
+            "auth_uri": st.secrets["google_credentials"]["auth_uri"],
+            "token_uri": st.secrets["google_credentials"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_credentials"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_credentials"]["client_x509_cert_url"]
+        }
+        
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        return credentials
+        
+    except Exception as e:
+        st.error(f"Error loading credentials: {str(e)}")
+        return None
+
 # --- Convert Logo to Base64 ---
 def logo_to_base64(img):
     buffer = BytesIO()
@@ -449,42 +479,11 @@ def safe_sum_for_day(values, index):
         return v if isinstance(v, (int, float)) and v is not None else 0
     return 0
 
-# --- DATA LOADER ---
+# --- DATA LOADER FUNCTION ---
 def load_production_data(sheet_index=0):
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-    
-    credentials = None
-    
-    try:
-        # Try JSON string method first
-        import json
-        credentials_json = st.secrets["google_credentials_json"]
-        credentials_dict = json.loads(credentials_json)
-        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-    except KeyError:
-        try:
-            # Try TOML method
-            credentials_dict = dict(st.secrets["google_credentials"])
-            credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-        except KeyError:
-            try:
-                # Fallback for local development
-                credentials_path = 'production-schedule-calculator-0dceed735b36.json'
-                credentials = Credentials.from_service_account_file(credentials_path, scopes=scopes)
-            except FileNotFoundError:
-                st.error("Google credentials not found. Please check your secrets configuration.")
-                st.stop()
-    except Exception as e:
-        st.error(f"Error loading credentials: {str(e)}")
-        st.stop()
-    
-    # Check if credentials were successfully loaded
-    if credentials is None:
-        st.error("Failed to load Google credentials.")
-        st.stop()
+    credentials = load_credentials()
+    if not credentials:
+        return pd.DataFrame()
     
     try:
         # Create the Google Sheets API service
@@ -532,7 +531,6 @@ def load_production_data(sheet_index=0):
                 unique_headers.append(header)
         
         # Create DataFrame
-        import pandas as pd
         df = pd.DataFrame(values[1:] if len(values) > 1 else [], columns=unique_headers)
         
         return df
