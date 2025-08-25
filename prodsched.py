@@ -805,73 +805,159 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
     return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
 
 def render_sku_table(skus, day_filter="Current Week", days=None):
-    """Render the main SKU table with day-specific manpower calculation"""
+    """Render the main SKU table with day-specific manpower calculation and color-coded station pills"""
     if not skus:
         st.warning("No SKUs match the current filters.")
         return
     
+    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
+
     st.markdown("### Production List")
+    
+    # Station color mapping for pills
+    station_colors = {
+        'Hot Kitchen': "#f26556",
+        'Cold Sauce': "#7dbfea", 
+        'Fabrication': "#febc51",
+        'Pastry': "#ba85cf",
+        'Unknown': "#94abad"
+    }
     
     # Prepare table data
     table_data = []
     for sku in skus:
         def safe_sum(values):
-            """Safely sum values with improved error handling"""
             total = 0
             for v in values:
                 total += safe_float_convert(v)
             return total
         
         def safe_sum_for_day(values, day_index):
-            """Sum value for specific day"""
             if day_index < len(values):
                 return safe_float_convert(values[day_index])
             return 0.0
         
-        # Standard calculations (unchanged)
         sku_overtime_per_person = safe_sum(sku.get('overtime', []))
         
-        # FIXED: Manpower calculation based on day filter
+        # Manpower calc depending on filter
         if day_filter == "Current Week":
-            # Show total manpower for the week
             sku_manpower = safe_sum(sku.get('daily_manpower', []))
         else:
-            # Show manpower for specific day only
             if days and day_filter in days:
                 day_index = days.index(day_filter)
                 sku_manpower = safe_sum_for_day(sku.get('daily_manpower', []), day_index)
             else:
                 sku_manpower = 0.0
         
+        station = sku.get('station', 'Unknown')
+        station_color = station_colors.get(station, station_colors['Unknown'])
+        
+        # --- Improved HTML pill with better escaping ---
+        station_pill = f"""<span style="background-color: {station_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">{station}</span>"""
+        
         table_data.append({
-            'Station': sku.get('station', 'Unknown'),
+            'Station': station_pill,
             'SKU': sku['sku'],
-            'Batches': safe_sum(sku.get('daily_batches', [])),
-            'Volume (kg)': safe_sum(sku.get('daily_volume', [])),
-            'Hours': safe_sum(sku.get('daily_hours', [])),
-            'Manpower': sku_manpower,  # FIXED: Now shows correct manpower based on day filter
-            'Overtime per Person': sku_overtime_per_person
+            'Batches': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
+            'Volume (kg)': f"{safe_sum(sku.get('daily_volume', [])):,.1f}",
+            'Hours': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
+            'Manpower': f"{sku_manpower:,.0f}",
+            'Overtime per Person': f"{sku_overtime_per_person:,.0f}"
         })
 
-    # Create DataFrame
+    # Build DataFrame
     df_display = pd.DataFrame(table_data)
     
-    # Style the dataframe
-    st.dataframe(
-        df_display,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Station": st.column_config.TextColumn("Station", width="medium"),
-            "SKU": st.column_config.TextColumn("SKU", width="large"),
-            "Batches": st.column_config.NumberColumn("Total Batches", format="%.0f"),
-            "Volume (kg)": st.column_config.NumberColumn("Total Volume (kg)", format="%.1f"),
-            "Hours": st.column_config.NumberColumn("Total Hours", format="%.1f"),
-            "Manpower": st.column_config.NumberColumn("Total Manpower", format="%.0f"),
-            "Overtime per Person": st.column_config.NumberColumn("Total Overtime per Person", format="%.1f")
-        }
+    # Add CSS styling first
+    st.markdown("""
+    <style>
+    .scrollable-table-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 20px 0;
+    }
+    .station-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        margin: 0;
+    }
+    .station-table th {
+        background: #1e2323;
+        color: #f4d602;
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #3b3f46;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .station-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: 500;
+    }
+    .station-table tr:hover {
+        background-color: rgba(244, 214, 2, 0.1);
+        transition: background-color 0.2s ease;
+    }
+    .station-table tr:last-child td {
+        border-bottom: none;
+    }
+    /* Set equal widths for numeric columns (Batches to Overtime per Person) */
+    .station-table th:nth-child(3),
+    .station-table th:nth-child(4),
+    .station-table th:nth-child(5),
+    .station-table th:nth-child(6),
+    .station-table th:nth-child(7),
+    .station-table td:nth-child(3),
+    .station-table td:nth-child(4),
+    .station-table td:nth-child(5),
+    .station-table td:nth-child(6),
+    .station-table td:nth-child(7) {
+        width: 10%;
+        min-width: 100px;
+    }
+    /* Station column width */
+    .station-table td:first-child,
+    .station-table th:first-child {
+        min-width: 120px;
+        width: 18%;
+    }
+    /* SKU column width */
+    .station-table td:nth-child(2),
+    .station-table th:nth-child(2) {
+        width: 30%;
+        min-width: 150px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Render as HTML table with pills in scrollable container
+    html_table = df_display.to_html(
+        escape=False, 
+        index=False, 
+        classes='station-table',
+        table_id='sku-table'
     )
-
+    
+    # Wrap table in scrollable container
+    scrollable_html = f"""
+    <div class="scrollable-table-container">
+        {html_table}
+    </div>
+    """
+    
+    st.markdown(scrollable_html, unsafe_allow_html=True)
+    
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
     def __init__(self, df):
@@ -942,7 +1028,7 @@ def main():
                     options=[
                         "Weekly Production Schedule", 
                         "Weekly Machine Utilization",
-                        "Consolidated Production Schedule",
+                        "Consolidated Prod Schedule",
                         "Consolidated Weekly Utilization"
                     ],
                     icons=["calendar-week", "layers", "clipboard-data", "bar-chart"],
@@ -1069,11 +1155,13 @@ def main():
                     filtered_skus, extractor, day_filter, days
                 )
                 
+                st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
+
                 # KPI Cards
                 st.markdown("### Summary")
-                
+
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
-                
+
                 with col1:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1081,7 +1169,7 @@ def main():
                         <div class="kpi-label">Total SKUs</div>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 with col2:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1089,7 +1177,7 @@ def main():
                         <div class="kpi-label">Total Batches</div>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 with col3:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1097,7 +1185,7 @@ def main():
                         <div class="kpi-label">Total Volume (kg)</div>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 with col4:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1121,13 +1209,13 @@ def main():
                         <div class="kpi-label">Overtime %</div>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 # FIXED: SKU Table with day filter and days parameters
                 render_sku_table(filtered_skus, day_filter, days)
-                
+
 
             elif page == "Weekly Machine Utilization":
-                # --- Header ---
+                    # --- Header ---
                 st.markdown("""
                 <div class="main-header">
                     <h1><b>Machine Utilization Dashboard</b></h1>
@@ -1136,7 +1224,7 @@ def main():
                 """, unsafe_allow_html=True)
 
                 # --- Load Data ---
-                df_machine = load_production_data()  
+                df_machine = load_production_data(sheet_index=1)  
                 extractor = MachineUtilizationExtractor(df_machine)
                 machines = extractor.get_machine_data()
 
@@ -1146,18 +1234,16 @@ def main():
                 with col1:
                     machine_options = ["All Machines"] + [m['machine'] for m in machines if m['machine'].lower() != "manual labor"]
                     machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
-                
+
                 with col2:
                     # Row 2 = weekdays
                     weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['run_hrs_start']:MACHINE_COLUMNS['run_hrs_end']+1].tolist()
-
-                    # Just use weekdays (no dates)
-                    day_labels = [str(wd) for wd in weekdays]
-
-                    # Dropdown options
+                    # Row 3 = dates
+                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['run_hrs_start']:MACHINE_COLUMNS['run_hrs_end']+1].tolist()
+                    # Combine weekday + date like "Mon (11 Aug)"
+                    day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
                     day_options = ["Current Week"] + day_labels
                     day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
-
 
                 # Filter out manual labor completely
                 machines = [m for m in machines if m['machine'].lower() != "manual labor"]
@@ -1180,6 +1266,7 @@ def main():
                     # If filtered by machine → show only that machine's qty
                     total_machines = machines[0].get("qty", 1)
 
+                # --- KPI Cards ---
                 st.markdown("### Summary")
 
                 colA, colB, colC, colD = st.columns(4)
@@ -1198,51 +1285,136 @@ def main():
                         </div>
                         """, unsafe_allow_html=True)
 
-                # --- Machine Utilization Table ---
-                machine_table = []
-                for machine in machines:
-                    daily_run = machine.get("daily_run_hrs", [])
-                    daily_available = machine.get("daily_available_hrs", [])
-                    daily_machine = machine.get("daily_machine_needed", [])
+                # --- Render Machine Utilization Table (Similar to SKU Table) ---
+                def render_machine_table(machines, day_filter="Current Week", day_options=None):
+                    """Render the machine utilization table with styling similar to SKU table"""
+                    if not machines:
+                        st.warning("No machines match the current filters.")
+                        return
+                    
+                    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
+                    st.markdown("### Machine Utilization Details")
+                    
 
-                    if day_filter == "Current Week":
-                        run_hours = safe_sum(daily_run)
-                        available_hours = safe_sum(daily_available)
-                        machine_needed = safe_sum(daily_machine)
-                    else:
-                        if day_filter in day_options:
-                            day_index = day_options.index(day_filter) - 1
-                            run_hours = safe_sum_for_day(daily_run, day_index)
-                            available_hours = safe_sum_for_day(daily_available, day_index)
-                            machine_needed = safe_sum_for_day(daily_machine, day_index)
+                    
+                    # Prepare table data
+                    table_data = []
+                    for machine in machines:
+                        daily_run = machine.get("daily_run_hrs", [])
+                        daily_available = machine.get("daily_available_hrs", [])
+                        daily_machine = machine.get("daily_machine_needed", [])
+
+                        if day_filter == "Current Week":
+                            run_hours = safe_sum(daily_run)
+                            available_hours = safe_sum(daily_available)
+                            machine_needed = safe_sum(daily_machine)
                         else:
-                            run_hours, available_hours, machine_needed = 0, 0, 0
+                            if day_filter in day_options:
+                                day_index = day_options.index(day_filter) - 1
+                                run_hours = safe_sum_for_day(daily_run, day_index)
+                                available_hours = safe_sum_for_day(daily_available, day_index)
+                                machine_needed = safe_sum_for_day(daily_machine, day_index)
+                            else:
+                                run_hours, available_hours, machine_needed = 0, 0, 0
 
-                    machine_table.append({
-                        "Machine": machine["machine"],
-                        "Run Capacity": machine.get("run_capacity", 0),
-                        "Qty": machine.get("qty", 1),
-                        "Run Hours": run_hours,
-                        "Available Hours": available_hours,
-                        "Machine Needed": machine_needed,
-                    })
+                        table_data.append({
+                            'Machine': machine["machine"],
+                            'Run Capacity': f"{machine.get('run_capacity', 0):,.0f}",
+                            'Qty': f"{machine.get('qty', 1):,.0f}",
+                            'Run Hours': f"{run_hours:,.1f}",
+                            'Available Hours': f"{available_hours:,.1f}",
+                            'Machine Needed': f"{machine_needed:,.0f}",
+                        })
 
-                df_machines = pd.DataFrame(machine_table)
-
-                st.markdown("### Machine Utilization Details")
-                st.dataframe(
-                    df_machines,
-                    use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "Machine": st.column_config.TextColumn("Machine", width="large"),
-                        "Run Capacity": st.column_config.NumberColumn("Run Capacity", format="%.0f"),
-                        "Qty": st.column_config.NumberColumn("Qty", format="%.0f"),
-                        "Run Hours": st.column_config.NumberColumn("Run Hours", format="%.1f"),
-                        "Available Hours": st.column_config.NumberColumn("Available Hours", format="%.1f"),
-                        "Machine Needed": st.column_config.NumberColumn("Machine Needed", format="%.0f"),
+                    # Build DataFrame
+                    df_display = pd.DataFrame(table_data)
+                    
+                    # Add CSS styling
+                    st.markdown("""
+                    <style>
+                    .scrollable-machine-container {
+                        max-height: 600px;
+                        overflow-y: auto;
+                        overflow-x: auto;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        margin: 20px 0;
                     }
-                )
+                    .machine-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 14px;
+                        background: white;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                        margin: 0;
+                    }
+                    .machine-table th {
+                        background: #1e2323;
+                        color: #f4d602;
+                        font-weight: bold;
+                        padding: 12px 8px;
+                        text-align: center;
+                        border-bottom: 2px solid #3b3f46;
+                        position: sticky;
+                        top: 0;
+                        z-index: 10;
+                    }
+                    .machine-table td {
+                        padding: 12px 8px;
+                        border-bottom: 1px solid #e0e0e0;
+                        vertical-align: middle;
+                        text-align: center;
+                        font-weight: 500;
+                    }
+                    .machine-table tr:hover {
+                        background-color: rgba(244, 214, 2, 0.1);
+                        transition: background-color 0.2s ease;
+                    }
+                    .machine-table tr:last-child td {
+                        border-bottom: none;
+                    }
+                    /* Set equal widths for numeric columns */
+                    .machine-table th:nth-child(2),
+                    .machine-table th:nth-child(3),
+                    .machine-table th:nth-child(4),
+                    .machine-table th:nth-child(5),
+                    .machine-table th:nth-child(6),
+                    .machine-table td:nth-child(2),
+                    .machine-table td:nth-child(3),
+                    .machine-table td:nth-child(4),
+                    .machine-table td:nth-child(5),
+                    .machine-table td:nth-child(6) {
+                        width: 16%;
+                        min-width: 100px;
+                    }
+                    /* Machine column width */
+                    .machine-table td:first-child,
+                    .machine-table th:first-child {
+                        width: 20%;
+                        min-width: 150px;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    # Render as HTML table with pills in scrollable container
+                    html_table = df_display.to_html(
+                        escape=False, 
+                        index=False, 
+                        classes='machine-table',
+                        table_id='machine-table'
+                    )
+                    
+                    # Wrap table in scrollable container
+                    scrollable_html = f"""
+                    <div class="scrollable-machine-container">
+                        {html_table}
+                    </div>
+                    """
+                    
+                    st.markdown(scrollable_html, unsafe_allow_html=True)
+
+                # --- Call the render function ---
+                render_machine_table(machines, day_filter, day_options)
 
 
 if __name__ == "__main__":
