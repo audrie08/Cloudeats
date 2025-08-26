@@ -865,9 +865,9 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
         table_data.append({
             'Station': station_pill,
             'SKU': sku['sku'],
-            'Batches': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
+            'No. of Batches': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
             'Volume (kg)': f"{safe_sum(sku.get('daily_volume', [])):,.1f}",
-            'Hours': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
+            'Hours (hr)': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
             'Manpower': f"{sku_manpower:,.0f}",
             'Overtime per Person': f"{sku_overtime_per_person:,.0f}"
         })
@@ -1166,9 +1166,9 @@ def main():
 
                 # KPI Cards
                 st.markdown("### Summary")
-
+                
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
-
+                
                 with col1:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1176,7 +1176,7 @@ def main():
                         <div class="kpi-label">Total SKUs</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                
                 with col2:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1184,36 +1184,36 @@ def main():
                         <div class="kpi-label">Total Batches</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                
                 with col3:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_volume:,.0f}</div>
-                        <div class="kpi-label">Total Volume (kg)</div>
+                        <div class="kpi-number">{total_volume:,.0f} kg</div>
+                        <div class="kpi-label">Total Volume</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                
                 with col4:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_hours:,.0f}</div>
+                        <div class="kpi-number">{total_hours:,.0f} hrs</div>
                         <div class="kpi-label">Total Hours</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                
                 with col5:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_total_manpower:,.0f}</div>
+                        <div class="kpi-number">{total_manpower:,.0f}</div>
                         <div class="kpi-label">Total Manpower</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+                
                 with col6:
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{overtime_percentage:.1f}%</div>
-                        <div class="kpi-label">Overtime %</div>
+                        <div class="kpi-label">Overtime</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1231,7 +1231,7 @@ def main():
                 """, unsafe_allow_html=True)
 
                 # --- Load Data ---
-                df_machine = load_production_data(sheet_index=1)  
+                df_machine = load_production_data(sheet_index=2)  
                 extractor = MachineUtilizationExtractor(df_machine)
                 machines = extractor.get_machine_data()
 
