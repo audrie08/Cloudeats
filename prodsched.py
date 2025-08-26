@@ -726,7 +726,7 @@ class ProductionDataExtractor:
         """Get overtime percentage from row 6 (index 5), columns BN to BS (65-70)"""
         try:
             overtime_percentages = []
-            row_idx = COLUMNS['overtime_percentage_row']
+            row_idx = COLUMNS['header_row']
             
             # Extract values from columns BN (65) to BS (70) - overtime percentage range
             for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
@@ -738,9 +738,6 @@ class ProductionDataExtractor:
                     overtime_percentages.append(value)
                 else:
                     overtime_percentages.append('')
-            
-            # Debug: Print the extracted values
-            # st.write(f"Debug - Extracted overtime percentages: {overtime_percentages}")
             
             return overtime_percentages
         except Exception as e:
