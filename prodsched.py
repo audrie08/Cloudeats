@@ -739,6 +739,9 @@ class ProductionDataExtractor:
                 else:
                     overtime_percentages.append('')
             
+            # Debug: Print the extracted values
+            # st.write(f"Debug - Extracted overtime percentages: {overtime_percentages}")
+            
             return overtime_percentages
         except Exception as e:
             # st.error(f"Error extracting overtime percentage: {str(e)}")
