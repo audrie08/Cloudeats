@@ -1287,7 +1287,7 @@ def main():
                 # --- KPI Cards ---
                 st.markdown("### Summary")
                 
-                colA, colB, colC, colD = st.columns(4)
+                colA, colB, colC, colD, colE = st.columns(5)
                 
                 # Use consistent naming with your totals
                 total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed = totals
