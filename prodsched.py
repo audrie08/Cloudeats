@@ -977,43 +977,50 @@ class MachineUtilizationExtractor:
         """Calculate totals for all machines, optionally for a specific day"""
         total_machines = 0
         total_needed_hrs = 0
-        total_remaining_hrs = 0
+        total_remaining_hrs = 0  # This will now only include positive values
         total_machine_needed = 0
-        capacity_utilization_values = []  # Collect individual percentages for averaging
+        capacity_utilization_values = []
         
         for machine in machines:
             # Sum quantities
             total_machines += machine.get('qty', 1)
             
             if day_index is None:
-                # Weekly totals
+                # Weekly totals - ensure remaining hours are non-negative
                 total_needed_hrs += safe_sum(machine.get('daily_needed_hrs', []))
-                total_remaining_hrs += safe_sum(machine.get('daily_remaining_hrs', []))
+                
+                # FIXED: Only sum positive remaining hours
+                remaining_hrs = machine.get('daily_remaining_hrs', [])
+                total_remaining_hrs += sum(max(0, hr) if hr is not None else 0 for hr in remaining_hrs)
+                
                 total_machine_needed += safe_sum_positive_only(machine.get('daily_machine_needed', []))
                 
-                # For capacity utilization, collect all valid daily percentages
+                # For capacity utilization
                 daily_capacities = machine.get('daily_capacity_utilization', [])
-                print(f"Machine {machine.get('machine')}: daily capacities = {daily_capacities}")
-                
-                # Only include non-zero values for averaging
                 valid_capacities = [val for val in daily_capacities if val is not None and val > 0]
                 capacity_utilization_values.extend(valid_capacities)
                 
             else:
-                # Specific day totals
+                # Specific day totals - ensure remaining hours are non-negative
                 total_needed_hrs += safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
-                total_remaining_hrs += safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
+                
+                # FIXED: Only use positive remaining hours for specific day
+                remaining_hrs = machine.get('daily_remaining_hrs', [])
+                if day_index < len(remaining_hrs):
+                    day_remaining = remaining_hrs[day_index]
+                    total_remaining_hrs += max(0, day_remaining) if day_remaining is not None else 0
+                else:
+                    total_remaining_hrs += 0
+                
                 total_machine_needed += safe_positive_for_day(machine.get('daily_machine_needed', []), day_index)
                 
-                # For specific day, get that day's capacity utilization
+                # For specific day capacity utilization
                 day_capacity = safe_value_for_day(machine.get('daily_capacity_utilization', []), day_index)
                 if day_capacity > 0:
                     capacity_utilization_values.append(day_capacity)
         
         # Calculate average capacity utilization
-        print(f"All capacity values for averaging: {capacity_utilization_values}")
         total_capacity_utilization = safe_average(capacity_utilization_values)
-        print(f"Final average capacity utilization: {total_capacity_utilization}")
         
         return (total_machines, total_needed_hrs, total_remaining_hrs, 
                 total_machine_needed, total_capacity_utilization)
@@ -1118,10 +1125,10 @@ def safe_sum(values):
     return sum(value or 0 for value in values)
 
 def safe_sum_positive_only(values):
-    """Safely sum only positive values, excluding negative numbers and None"""
+    """Safely sum only positive values, treating negative values as 0"""
     if not values:
         return 0
-    return sum(value for value in values if value is not None and value > 0)
+    return sum(max(0, value) if value is not None else 0 for value in values)
 
 def safe_average(values):
     """Safely calculate average of a list of values, handling None and empty lists"""
@@ -1150,13 +1157,13 @@ def safe_value_for_day(values, day_index):
 def safe_positive_for_day(values, day_index):
     """Safely get a positive value for a specific day, return 0 for negative values"""
     try:
-        value = values[day_index] or 0
-        return max(0, value)  # Return 0 if negative, otherwise return the value
+        value = values[day_index]
+        return max(0, value) if value is not None else 0  # Return 0 if negative or None
     except (IndexError, TypeError):
         return 0
 
 def render_machine_table(machines, day_filter="Current Week", day_options=None):
-    """Render the machine utilization table"""
+    """Render the machine utilization table with non-negative remaining hours"""
     if not machines:
         st.warning("No machines match the current filters.")
         return
@@ -1168,17 +1175,27 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     for machine in machines:
         if day_filter == "Current Week":
             needed_hrs = safe_sum(machine.get('daily_needed_hrs', []))
-            remaining_hrs = safe_sum(machine.get('daily_remaining_hrs', []))
-            machine_needed = safe_sum_positive_only(machine.get('daily_machine_needed', []))  # Only positive values
-            # Use average for capacity utilization (since it's already a percentage)
+            
+            # FIXED: Only sum positive remaining hours
+            remaining_hrs_list = machine.get('daily_remaining_hrs', [])
+            remaining_hrs = sum(max(0, hr) if hr is not None else 0 for hr in remaining_hrs_list)
+            
+            machine_needed = safe_sum_positive_only(machine.get('daily_machine_needed', []))
             capacity_utilization = safe_average(machine.get('daily_capacity_utilization', []))
         else:
             if day_options and day_filter in day_options:
-                day_index = day_options.index(day_filter) - 1
+                day_index = day_options.index(day_filter)
                 needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
-                remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
-                machine_needed = safe_positive_for_day(machine.get('daily_machine_needed', []), day_index)  # Only positive
-                # Use individual day value for capacity utilization
+                
+                # FIXED: Only use positive remaining hours for specific day
+                remaining_hrs_list = machine.get('daily_remaining_hrs', [])
+                if day_index < len(remaining_hrs_list):
+                    day_remaining = remaining_hrs_list[day_index]
+                    remaining_hrs = max(0, day_remaining) if day_remaining is not None else 0
+                else:
+                    remaining_hrs = 0
+                
+                machine_needed = safe_positive_for_day(machine.get('daily_machine_needed', []), day_index)
                 capacity_utilization = safe_value_for_day(machine.get('daily_capacity_utilization', []), day_index)
             else:
                 needed_hrs, remaining_hrs, machine_needed, capacity_utilization = 0, 0, 0, 0
@@ -1188,7 +1205,7 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
             'Rated Capacity': f"{machine.get('rated_capacity', 0):,.0f} kg/hr",
             'Qty': f"{machine.get('qty', 1):,.0f}",
             'Needed Hours': f"{needed_hrs:,.1f} hrs",
-            'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
+            'Remaining Hours': f"{max(0, remaining_hrs):,.1f} hrs",  # FIXED: Ensure non-negative display
             'Machines Needed': f"{machine_needed:,.0f}",
             'Capacity Utilization': f"{capacity_utilization:,.1f}%",
         })
