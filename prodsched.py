@@ -723,19 +723,23 @@ class ProductionDataExtractor:
             return None
         
     def get_overtime_percentage(self):
-        """Get overtime percentage from row 6 (index 5), columns BN to BS (65-70)"""
+        """Get overtime percentage from row 6 (index 5), columns BP to BV (60 to 66)"""
         try:
             overtime_percentages = []
-            row_idx = COLUMNS['header_row']
+            row_idx = COLUMNS['header_row']  # Row 6 (index 5)
             
-            # Extract values from columns BP (60) to BV (66)
-            for col in range(67,73):                
+            # Use the CORRECT column range from your COLUMNS mapping
+            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
                 if row_idx < len(self.df) and col < len(self.df.columns):
                     value = str(self.df.iloc[row_idx, col]).strip()
                     overtime_percentages.append(value)
                 else:
                     overtime_percentages.append('')
-        
+            
+            # DEBUG: UNCOMMENT THESE TO SEE WHAT'S HAPPENING
+            # st.write(f"DEBUG: Overtime percentages extracted: {overtime_percentages}")
+            # st.write(f"DEBUG: From row {row_idx}, columns {COLUMNS['overtime_percentage_start']} to {COLUMNS['overtime_percentage_end']}")
+            # st.write(f"DEBUG: Dataframe shape: {self.df.shape}")
             
             return overtime_percentages
         except Exception as e:
