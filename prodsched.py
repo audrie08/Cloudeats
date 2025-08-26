@@ -378,10 +378,10 @@ STATIONS = {
 }
 
 STATION_RANGES = {
-    'Hot Kitchen': [(8, 21), (38, 65)],  # Hot Sauce + Hot Savory
-    'Cold Sauce': [(74, 105)],
-    'Fabrication': [(115, 125), (130, 139)],  # Poultry + Meats
-    'Pastry': [(154, 172)]
+    'Hot Kitchen': [(8, 36), (38, 72)],  # Hot Sauce + Hot Savory
+    'Cold Sauce': [(74, 113)],
+    'Fabrication': [(115, 128), (130, 152)],  # Poultry + Meats
+    'Pastry': [(154, 176)]
 }
 
 # FIXED Column mappings with proper key names
