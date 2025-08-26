@@ -1359,7 +1359,8 @@ def main():
                         })
                 
                     # Display as DataFrame
-                    st.dataframe(df_display, use_container_width=True)
+                    df_display = pd.DataFrame(table_data)
+
                     
                     # Add CSS styling
                     st.markdown("""
