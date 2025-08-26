@@ -1334,13 +1334,13 @@ def main():
                     """, unsafe_allow_html=True)
 
 
-            def render_machine_table(machines, day_filter="Current Week", day_options=None):
-                """Render the machine utilization table"""
-                if not machines:
-                    st.warning("No machines match the current filters.")
-                    return
-                
-                st.markdown("### Machine Utilization Details")
+                def render_machine_table(machines, day_filter="Current Week", day_options=None):
+                    """Render the machine utilization table"""
+                    if not machines:
+                        st.warning("No machines match the current filters.")
+                        return
+                    
+                    st.markdown("### Machine Utilization Details")
                 
                 # Prepare table data
                 table_data = []
