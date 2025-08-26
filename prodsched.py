@@ -1204,7 +1204,7 @@ def main():
                 with col5:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_manpower:,.0f}</div>
+                        <div class="kpi-number">{total_total_manpower:,.0f}</div>
                         <div class="kpi-label">Total Manpower</div>
                     </div>
                     """, unsafe_allow_html=True)
