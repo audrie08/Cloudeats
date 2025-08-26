@@ -973,66 +973,108 @@ class MachineUtilizationExtractor:
     def __init__(self, df):
         self.df = df
 
-    def get_machine_data(self):
-        """Extract machine utilization data from 'Machine' sheet"""
-        machines = []
-        start_row = MACHINE_COLUMNS['machine_start_row']
-        end_row = MACHINE_COLUMNS['machine_end_row']
-
-        for row_idx in range(start_row, end_row + 1):
-            if row_idx < len(self.df):
-                row = self.df.iloc[row_idx]
-
-                def safe_val(col_idx):
-                    return safe_float_convert(row[col_idx]) if col_idx < len(row) else 0
-
-                def safe_str(col_idx):
-                    return str(row[col_idx]).strip() if col_idx < len(row) else ""
-
-                machine_name = safe_str(MACHINE_COLUMNS['machine'])
-                if not machine_name:  # Skip empty rows
-                    continue
-
-                machines.append({
-                    'machine': machine_name,
-                    'rated_capacity': safe_val(MACHINE_COLUMNS['rated_capacity']),
-                    'ideal_run_time': safe_val(MACHINE_COLUMNS['ideal_run_time']),
-                    'working_hours': safe_val(MACHINE_COLUMNS['working_hours']),
-                    'run_time': safe_val(MACHINE_COLUMNS['run_time']),
-                    'qty': safe_val(MACHINE_COLUMNS['qty']),
-                    'available_hrs': safe_val(MACHINE_COLUMNS['available_hrs']),
-                    'gwa': safe_val(MACHINE_COLUMNS['gwa']),
-                    'daily_needed_hrs': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['needed_hrs_start'], MACHINE_COLUMNS['needed_hrs_end'] + 1)
-                    ],
-                    'daily_remaining_hrs': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['remaining_hrs_start'], MACHINE_COLUMNS['remaining_hrs_end'] + 1)
-                    ],
-                    'daily_machine_needed': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['machine_needed_start'], MACHINE_COLUMNS['machine_needed_end'] + 1)
-                    ],
-                    'daily_capacity_utilization': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['capacity_utilization_start'], MACHINE_COLUMNS['capacity_utilization_end'] + 1)
-                    ]
-                })
-        return machines
-
     def calculate_totals(self, machines, day_index=None):
-        """Calculate totals for KPI cards, with optional day filter"""
-        total_machines = sum(m.get("qty", 1) for m in machines if m['machine'])
-        
-        if day_index is None:  # whole week
-            total_needed_hrs = sum(sum(m['daily_needed_hrs']) for m in machines)
-            total_remaining_hrs = sum(sum(m['daily_remaining_hrs']) for m in machines)
-            total_machine_needed = sum(sum(m['daily_machine_needed']) for m in machines)
-            total_capacity_utilization = sum(sum(m['daily_capacity_utilization']) for m in machines) / len(machines) if machines else 0  # Average utilization
-        else:  # filter by day
-            total_needed_hrs = sum(m['daily_needed_hrs'][day_index] for m in machines if len(m['daily_needed_hrs']) > day_index)
-            total_remaining_hrs = sum(m['daily_remaining_hrs'][day_index] for m in machines if len(m['daily_remaining_hrs']) > day_index)
-            total_machine_needed = sum(m['daily_machine_needed'][day_index] for m in machines if len(m['daily_machine_needed']) > day_index)
-            total_capacity_utilization = sum(m['daily_capacity_utilization'][day_index] for m in machines if len(m['daily_capacity_utilization']) > day_index) / len(machines) if machines else 0
-    
+        """Calculate totals for all machines, optionally for a specific day"""
+        total_machines = 0
+        total_needed_hrs = 0
+        total_remaining_hrs = 0
+        total_machine_needed = 0
+        capacity_utilization_values = []
+
+        for machine in machines:
+            total_machines += machine.get('qty', 1)
+            if day_index is None:
+                total_needed_hrs += safe_sum(machine['daily_needed_hrs'])
+                total_remaining_hrs += safe_sum(machine['daily_remaining_hrs'])
+                total_machine_needed += safe_sum(machine['daily_machine_needed'])
+                capacity_utilization_values.extend([v for v in machine['daily_capacity_utilization'] if v])
+            else:
+                total_needed_hrs += safe_sum_for_day(machine['daily_needed_hrs'], day_index)
+                total_remaining_hrs += safe_sum_for_day(machine['daily_remaining_hrs'], day_index)
+                total_machine_needed += safe_sum_for_day(machine['daily_machine_needed'], day_index)
+                cap = safe_value_for_day(machine['daily_capacity_utilization'], day_index)
+                if cap: capacity_utilization_values.append(cap)
+
+        total_capacity_utilization = safe_average(capacity_utilization_values)
         return total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization
+
+    def get_machine_data(self):
+        """Extract machine data with proper capacity utilization handling"""
+        machines = []
+        
+        for row_idx in range(MACHINE_COLUMNS['machine_start_row'], MACHINE_COLUMNS['machine_end_row'] + 1):
+            machine_name = self.df.iloc[row_idx, MACHINE_COLUMNS['machine']]
+            
+            if pd.isna(machine_name) or machine_name == "":
+                continue
+                
+            # Get daily capacity utilization data (columns AI to AO)
+            daily_capacity_utilization = []
+            for col_idx in range(MACHINE_COLUMNS['capacity_utilization_start'], 
+                               MACHINE_COLUMNS['capacity_utilization_end'] + 1):
+                try:
+                    value = self.df.iloc[row_idx, col_idx]
+                    if pd.isna(value):
+                        daily_capacity_utilization.append(0)
+                    else:
+                        # If the value is already a percentage (0-100), use as is
+                        # If it's a decimal (0-1), convert to percentage
+                        if isinstance(value, (int, float)):
+                            if 0 <= value <= 1:
+                                daily_capacity_utilization.append(value * 100)
+                            else:
+                                daily_capacity_utilization.append(float(value))
+                        else:
+                            daily_capacity_utilization.append(0)
+                except (IndexError, ValueError):
+                    daily_capacity_utilization.append(0)
+            
+            # Get other daily data
+            daily_needed_hrs = []
+            for col_idx in range(MACHINE_COLUMNS['needed_hrs_start'], MACHINE_COLUMNS['needed_hrs_end'] + 1):
+                try:
+                    value = self.df.iloc[row_idx, col_idx]
+                    daily_needed_hrs.append(float(value) if not pd.isna(value) else 0)
+                except (IndexError, ValueError):
+                    daily_needed_hrs.append(0)
+            
+            daily_remaining_hrs = []
+            for col_idx in range(MACHINE_COLUMNS['remaining_hrs_start'], MACHINE_COLUMNS['remaining_hrs_end'] + 1):
+                try:
+                    value = self.df.iloc[row_idx, col_idx]
+                    daily_remaining_hrs.append(float(value) if not pd.isna(value) else 0)
+                except (IndexError, ValueError):
+                    daily_remaining_hrs.append(0)
+            
+            daily_machine_needed = []
+            for col_idx in range(MACHINE_COLUMNS['machine_needed_start'], MACHINE_COLUMNS['machine_needed_end'] + 1):
+                try:
+                    value = self.df.iloc[row_idx, col_idx]
+                    daily_machine_needed.append(float(value) if not pd.isna(value) else 0)
+                except (IndexError, ValueError):
+                    daily_machine_needed.append(0)
+            
+            # Get other machine properties
+            try:
+                rated_capacity = float(self.df.iloc[row_idx, MACHINE_COLUMNS['rated_capacity']]) if not pd.isna(self.df.iloc[row_idx, MACHINE_COLUMNS['rated_capacity']]) else 0
+                qty = int(self.df.iloc[row_idx, MACHINE_COLUMNS['qty']]) if not pd.isna(self.df.iloc[row_idx, MACHINE_COLUMNS['qty']]) else 1
+            except (ValueError, TypeError):
+                rated_capacity = 0
+                qty = 1
+            
+            machine_data = {
+                'machine': str(machine_name),
+                'rated_capacity': rated_capacity,
+                'qty': qty,
+                'daily_needed_hrs': daily_needed_hrs,
+                'daily_remaining_hrs': daily_remaining_hrs,
+                'daily_machine_needed': daily_machine_needed,
+                'daily_capacity_utilization': daily_capacity_utilization  # Now properly handled
+            }
+            
+            machines.append(machine_data)
+        
+        return machines
 
 # Define helper functions first, before they are used
 def safe_sum(values):
@@ -1041,8 +1083,25 @@ def safe_sum(values):
         return 0
     return sum(value or 0 for value in values)
 
+def safe_average(values):
+    """Safely calculate average of a list of values, handling None and empty lists"""
+    if not values:
+        return 0
+    # Filter out None/zero values for percentage calculations
+    valid_values = [value for value in values if value is not None and value != 0]
+    if not valid_values:
+        return 0
+    return sum(valid_values) / len(valid_values)
+
 def safe_sum_for_day(values, day_index):
     """Safely get a value for a specific day, handling index errors"""
+    try:
+        return values[day_index] or 0
+    except (IndexError, TypeError):
+        return 0
+
+def safe_value_for_day(values, day_index):
+    """Safely get a value for a specific day without summing (for percentages)"""
     try:
         return values[day_index] or 0
     except (IndexError, TypeError):
@@ -1053,7 +1112,7 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     if not machines:
         st.warning("No machines match the current filters.")
         return
-                
+    
     st.markdown("### Machine Utilization Details")
     
     # Prepare table data
@@ -1063,14 +1122,16 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
             needed_hrs = safe_sum(machine.get('daily_needed_hrs', []))
             remaining_hrs = safe_sum(machine.get('daily_remaining_hrs', []))
             machine_needed = safe_sum(machine.get('daily_machine_needed', []))
-            capacity_utilization = safe_sum(machine.get('daily_capacity_utilization', [])) / 7  # Weekly average
+            # Use average for capacity utilization (since it's already a percentage)
+            capacity_utilization = safe_average(machine.get('daily_capacity_utilization', []))
         else:
             if day_options and day_filter in day_options:
                 day_index = day_options.index(day_filter) - 1
                 needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
                 remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
                 machine_needed = safe_sum_for_day(machine.get('daily_machine_needed', []), day_index)
-                capacity_utilization = safe_sum_for_day(machine.get('daily_capacity_utilization', []), day_index)
+                # Use individual day value for capacity utilization
+                capacity_utilization = safe_value_for_day(machine.get('daily_capacity_utilization', []), day_index)
             else:
                 needed_hrs, remaining_hrs, machine_needed, capacity_utilization = 0, 0, 0, 0
 
@@ -1081,7 +1142,7 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
             'Needed Hours': f"{needed_hrs:,.1f} hrs",
             'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
             'Machines Needed': f"{machine_needed:,.0f}",
-            'Capacity Utilization': f"{capacity_utilization:,.1f}%",  # Added % sign
+            'Capacity Utilization': f"{capacity_utilization:,.1f}%",
         })
     
     # Display as DataFrame
@@ -1137,24 +1198,26 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     .machine-table th:nth-child(4),
     .machine-table th:nth-child(5),
     .machine-table th:nth-child(6),
+    .machine-table th:nth-child(7),
     .machine-table td:nth-child(2),
     .machine-table td:nth-child(3),
     .machine-table td:nth-child(4),
     .machine-table td:nth-child(5),
-    .machine-table td:nth-child(6) {
-        width: 16%;
+    .machine-table td:nth-child(6),
+    .machine-table td:nth-child(7) {
+        width: 14%;
         min-width: 100px;
     }
     /* Machine column width */
     .machine-table td:first-child,
     .machine-table th:first-child {
-        width: 20%;
+        width: 16%;
         min-width: 150px;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    # Render as HTML table with pills in scrollable container
+    # Render as HTML table
     html_table = df_display.to_html(
         escape=False, 
         index=False, 
