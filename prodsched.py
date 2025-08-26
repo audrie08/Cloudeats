@@ -1236,26 +1236,26 @@ def main():
 
 
             elif page == "Weekly Machine Utilization":
-                    # --- Header ---
+                # --- Header ---
                 st.markdown("""
                 <div class="main-header">
                     <h1><b>Machine Utilization Dashboard</b></h1>
                     <p><b>Track machine usage vs capacity</b></p>
                 </div>
                 """, unsafe_allow_html=True)
-
+            
                 # --- Load Data ---
                 df_machine = load_production_data(sheet_index=2)  
                 extractor = MachineUtilizationExtractor(df_machine)
                 machines = extractor.get_machine_data()
-
+            
                 # --- Filters (day & machine) ---
                 col1, col2 = st.columns(2)
-
+            
                 with col1:
                     machine_options = ["All Machines"] + [m['machine'] for m in machines]
                     machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
-
+            
                 with col2:
                     # Row 2 = weekdays
                     weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
@@ -1265,11 +1265,11 @@ def main():
                     day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
                     day_options = ["Current Week"] + day_labels
                     day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
-
+            
                 # --- Apply filters ---
                 if machine_filter != "All Machines":
                     machines = [m for m in machines if m['machine'] == machine_filter]
-
+            
                 # --- Totals for KPI cards ---
                 if day_filter == "Current Week":
                     totals = extractor.calculate_totals(machines)
@@ -1279,19 +1279,19 @@ def main():
                 
                 # Now unpack 5 values instead of 4
                 total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
-
+            
                 # Adjust "Total Machines" display
                 if machine_filter != "All Machines" and machines:
                     # If filtered by machine → show only that machine's qty
                     total_machines = machines[0].get("qty", 1)
-
+            
                 # --- KPI Cards ---
                 st.markdown("### Summary")
                 
                 colA, colB, colC, colD, colE = st.columns(5)
                 
                 # Use consistent naming with your totals
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed,  total_capacity_utilization = totals
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
                 
                 with colA:
                     st.markdown(f"""
@@ -1324,7 +1324,7 @@ def main():
                         <div class="kpi-label">Additional Machines Needed (no.)</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+            
                 with colE:
                     st.markdown(f"""
                     <div class="kpi-card">
@@ -1332,15 +1332,31 @@ def main():
                         <div class="kpi-label">Capacity Utilization %</div>
                     </div>
                     """, unsafe_allow_html=True)
-
-
-                def render_machine_table(machines, day_filter="Current Week", day_options=None):
-                    """Render the machine utilization table"""
-                    if not machines:
-                        st.warning("No machines match the current filters.")
-                        return
-                    
-                    st.markdown("### Machine Utilization Details")
+            
+                # --- Call the render function ---
+                render_machine_table(machines, day_filter, day_options)
+            
+            # Define helper functions if they don't exist elsewhere
+            def safe_sum(values):
+                """Safely sum a list of values, handling None and empty lists"""
+                if not values:
+                    return 0
+                return sum(value or 0 for value in values)
+            
+            def safe_sum_for_day(values, day_index):
+                """Safely get a value for a specific day, handling index errors"""
+                try:
+                    return values[day_index] or 0
+                except (IndexError, TypeError):
+                    return 0
+            
+            def render_machine_table(machines, day_filter="Current Week", day_options=None):
+                """Render the machine utilization table"""
+                if not machines:
+                    st.warning("No machines match the current filters.")
+                    return
+                
+                st.markdown("### Machine Utilization Details")
                 
                 # Prepare table data
                 table_data = []
@@ -1351,7 +1367,7 @@ def main():
                         machine_needed = safe_sum(machine.get('daily_machine_needed', []))
                         capacity_utilization = safe_sum(machine.get('daily_capacity_utilization', [])) / 7  # Weekly average
                     else:
-                        if day_filter in day_options:
+                        if day_options and day_filter in day_options:
                             day_index = day_options.index(day_filter) - 1
                             needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
                             remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
@@ -1372,95 +1388,91 @@ def main():
                 
                 # Display as DataFrame
                 df_display = pd.DataFrame(table_data)
-
-                    
-                    # Add CSS styling
-                    st.markdown("""
-                    <style>
-                    .scrollable-machine-container {
-                        max-height: 600px;
-                        overflow-y: auto;
-                        overflow-x: auto;
-                        border-radius: 10px;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                        margin: 20px 0;
-                    }
-                    .machine-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        font-size: 14px;
-                        background: white;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-                        margin: 0;
-                    }
-                    .machine-table th {
-                        background: #1e2323;
-                        color: #f4d602;
-                        font-weight: bold;
-                        padding: 12px 8px;
-                        text-align: center;
-                        border-bottom: 2px solid #3b3f46;
-                        position: sticky;
-                        top: 0;
-                        z-index: 10;
-                    }
-                    .machine-table td {
-                        padding: 12px 8px;
-                        border-bottom: 1px solid #e0e0e0;
-                        vertical-align: middle;
-                        text-align: center;
-                        font-weight: 500;
-                    }
-                    .machine-table tr:hover {
-                        background-color: rgba(244, 214, 2, 0.1);
-                        transition: background-color 0.2s ease;
-                    }
-                    .machine-table tr:last-child td {
-                        border-bottom: none;
-                    }
-                    /* Set equal widths for numeric columns */
-                    .machine-table th:nth-child(2),
-                    .machine-table th:nth-child(3),
-                    .machine-table th:nth-child(4),
-                    .machine-table th:nth-child(5),
-                    .machine-table th:nth-child(6),
-                    .machine-table td:nth-child(2),
-                    .machine-table td:nth-child(3),
-                    .machine-table td:nth-child(4),
-                    .machine-table td:nth-child(5),
-                    .machine-table td:nth-child(6) {
-                        width: 16%;
-                        min-width: 100px;
-                    }
-                    /* Machine column width */
-                    .machine-table td:first-child,
-                    .machine-table th:first-child {
-                        width: 20%;
-                        min-width: 150px;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    # Render as HTML table with pills in scrollable container
-                    html_table = df_display.to_html(
-                        escape=False, 
-                        index=False, 
-                        classes='machine-table',
-                        table_id='machine-table'
-                    )
-                    
-                    # Wrap table in scrollable container
-                    scrollable_html = f"""
-                    <div class="scrollable-machine-container">
-                        {html_table}
-                    </div>
-                    """
-                    
-                    st.markdown(scrollable_html, unsafe_allow_html=True)
-
-                # --- Call the render function ---
-                render_machine_table(machines, day_filter, day_options)
-
-
+            
+                # Add CSS styling
+                st.markdown("""
+                <style>
+                .scrollable-machine-container {
+                    max-height: 600px;
+                    overflow-y: auto;
+                    overflow-x: auto;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    margin: 20px 0;
+                }
+                .machine-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 14px;
+                    background: white;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                    margin: 0;
+                }
+                .machine-table th {
+                    background: #1e2323;
+                    color: #f4d602;
+                    font-weight: bold;
+                    padding: 12px 8px;
+                    text-align: center;
+                    border-bottom: 2px solid #3b3f46;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                }
+                .machine-table td {
+                    padding: 12px 8px;
+                    border-bottom: 1px solid #e0e0e0;
+                    vertical-align: middle;
+                    text-align: center;
+                    font-weight: 500;
+                }
+                .machine-table tr:hover {
+                    background-color: rgba(244, 214, 2, 0.1);
+                    transition: background-color 0.2s ease;
+                }
+                .machine-table tr:last-child td {
+                    border-bottom: none;
+                }
+                /* Set equal widths for numeric columns */
+                .machine-table th:nth-child(2),
+                .machine-table th:nth-child(3),
+                .machine-table th:nth-child(4),
+                .machine-table th:nth-child(5),
+                .machine-table th:nth-child(6),
+                .machine-table td:nth-child(2),
+                .machine-table td:nth-child(3),
+                .machine-table td:nth-child(4),
+                .machine-table td:nth-child(5),
+                .machine-table td:nth-child(6) {
+                    width: 16%;
+                    min-width: 100px;
+                }
+                /* Machine column width */
+                .machine-table td:first-child,
+                .machine-table th:first-child {
+                    width: 20%;
+                    min-width: 150px;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                # Render as HTML table with pills in scrollable container
+                html_table = df_display.to_html(
+                    escape=False, 
+                    index=False, 
+                    classes='machine-table',
+                    table_id='machine-table'
+                )
+                
+                # Wrap table in scrollable container
+                scrollable_html = f"""
+                <div class="scrollable-machine-container">
+                    {html_table}
+                </div>
+                """
+                
+                st.markdown(scrollable_html, unsafe_allow_html=True)
+            
+            
 if __name__ == "__main__":
     main()
