@@ -736,11 +736,6 @@ class ProductionDataExtractor:
                 else:
                     overtime_percentages.append('')
             
-            # DEBUG: UNCOMMENT THESE TO SEE WHAT'S HAPPENING
-            st.write(f"DEBUG: Overtime percentages extracted: {overtime_percentages}")
-            st.write(f"DEBUG: From row {row_idx}, columns {COLUMNS['overtime_percentage_start']} to {COLUMNS['overtime_percentage_end']}")
-            st.write(f"DEBUG: Dataframe shape: {self.df.shape}")
-            
             return overtime_percentages
         except Exception as e:
             st.error(f"Error extracting overtime percentage: {str(e)}")
@@ -792,9 +787,6 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
     if extractor:
         overtime_percentages = extractor.get_overtime_percentage()
         
-        # Debug: See what we're working with
-        st.write(f"🔍 DEBUG: Raw overtime percentages: {overtime_percentages}")
-        
         if day_filter == "Current Week":
             # Average of all valid percentages for the week (excluding empty/zero values)
             valid_percentages = []
@@ -804,8 +796,6 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
                 converted_value = safe_float_convert(clean_p)
                 if converted_value > 0:
                     valid_percentages.append(converted_value)
-            
-            st.write(f"🔍 DEBUG: Valid percentages after cleaning: {valid_percentages}")
             
             if valid_percentages:
                 overtime_percentage = sum(valid_percentages) / len(valid_percentages)
@@ -818,8 +808,6 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
                     raw_value = overtime_percentages[day_index]
                     clean_value = str(raw_value).replace('%', '').strip()
                     overtime_percentage = safe_float_convert(clean_value)
-        
-        st.write(f"🔍 DEBUG: Final overtime percentage: {overtime_percentage}%")
     
     return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
 
