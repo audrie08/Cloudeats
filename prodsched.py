@@ -973,7 +973,7 @@ class MachineUtilizationExtractor:
     def __init__(self, df):
         self.df = df
 
-    def calculate_totals_fixed_v2(self, machines, day_index=None):
+    def calculate_totals(self, machines, day_index=None):
         """Calculate totals for all machines, optionally for a specific day"""
         total_machines = 0
         total_needed_hrs = 0
