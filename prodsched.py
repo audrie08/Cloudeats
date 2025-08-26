@@ -729,16 +729,13 @@ class ProductionDataExtractor:
             row_idx = COLUMNS['header_row']
             
             # Extract values from columns BP (60) to BV (66)
-            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):                
+            for col in range(67,73):                
                 if row_idx < len(self.df) and col < len(self.df.columns):
                     value = str(self.df.iloc[row_idx, col]).strip()
                     overtime_percentages.append(value)
                 else:
                     overtime_percentages.append('')
-            
-            # Debug output
-            # st.write(f"Overtime percentages extracted: {overtime_percentages}")
-            # st.write(f"From row {row_idx + 1}, columns 60 to 66 (BP to BV)")
+        
             
             return overtime_percentages
         except Exception as e:
