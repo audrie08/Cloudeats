@@ -791,9 +791,22 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
     overtime_percentage = 0.0
     if extractor:
         overtime_percentages = extractor.get_overtime_percentage()
+        
+        # Debug: See what we're working with
+        st.write(f"🔍 DEBUG: Raw overtime percentages: {overtime_percentages}")
+        
         if day_filter == "Current Week":
-            # Average of all valid percentages for the week
-            valid_percentages = [safe_float_convert(p) for p in overtime_percentages if safe_float_convert(p) > 0]
+            # Average of all valid percentages for the week (excluding empty/zero values)
+            valid_percentages = []
+            for p in overtime_percentages:
+                # Clean the percentage value first
+                clean_p = str(p).replace('%', '').strip()
+                converted_value = safe_float_convert(clean_p)
+                if converted_value > 0:
+                    valid_percentages.append(converted_value)
+            
+            st.write(f"🔍 DEBUG: Valid percentages after cleaning: {valid_percentages}")
+            
             if valid_percentages:
                 overtime_percentage = sum(valid_percentages) / len(valid_percentages)
         else:
@@ -801,7 +814,12 @@ def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None)
             if days and day_filter in days:
                 day_index = days.index(day_filter)
                 if day_index < len(overtime_percentages):
-                    overtime_percentage = safe_float_convert(overtime_percentages[day_index])
+                    # Clean the percentage value before conversion
+                    raw_value = overtime_percentages[day_index]
+                    clean_value = str(raw_value).replace('%', '').strip()
+                    overtime_percentage = safe_float_convert(clean_value)
+        
+        st.write(f"🔍 DEBUG: Final overtime percentage: {overtime_percentage}%")
     
     return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
 
