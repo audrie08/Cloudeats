@@ -300,7 +300,7 @@ st.markdown(f"""
     }}
 
     .kpi-label {{
-        font-size: 0.5em;
+        font-size: 0.9em;
         opacity: 1;
     }}
 
@@ -1359,7 +1359,6 @@ def main():
                         })
                 
                     # Display as DataFrame
-                    df_display = pd.DataFrame(table_data)
                     st.dataframe(df_display, use_container_width=True)
                     
                     # Add CSS styling
