@@ -1370,8 +1370,8 @@ def main():
                         'Capacity Utilization': f"{capacity_utilization:,.1f}%",  # Added % sign
                     })
                 
-                    # Display as DataFrame
-                    df_display = pd.DataFrame(table_data)
+                # Display as DataFrame
+                df_display = pd.DataFrame(table_data)
 
                     
                     # Add CSS styling
