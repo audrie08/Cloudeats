@@ -1235,108 +1235,7 @@ def main():
                 render_sku_table(filtered_skus, day_filter, days)
 
 
-            elif page == "Weekly Machine Utilization":
-                # --- Header ---
-                st.markdown("""
-                <div class="main-header">
-                    <h1><b>Machine Utilization Dashboard</b></h1>
-                    <p><b>Track machine usage vs capacity</b></p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-                # --- Load Data ---
-                df_machine = load_production_data(sheet_index=2)  
-                extractor = MachineUtilizationExtractor(df_machine)
-                machines = extractor.get_machine_data()
-            
-                # --- Filters (day & machine) ---
-                col1, col2 = st.columns(2)
-            
-                with col1:
-                    machine_options = ["All Machines"] + [m['machine'] for m in machines]
-                    machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
-            
-                with col2:
-                    # Row 2 = weekdays
-                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
-                    # Row 3 = dates
-                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
-                    # Combine weekday + date like "Mon (11 Aug)"
-                    day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
-                    day_options = ["Current Week"] + day_labels
-                    day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
-            
-                # --- Apply filters ---
-                if machine_filter != "All Machines":
-                    machines = [m for m in machines if m['machine'] == machine_filter]
-            
-                # --- Totals for KPI cards ---
-                if day_filter == "Current Week":
-                    totals = extractor.calculate_totals(machines)
-                else:
-                    day_index = day_options.index(day_filter) - 1
-                    totals = extractor.calculate_totals(machines, day_index=day_index)
-                
-                # Now unpack 5 values instead of 4
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
-            
-                # Adjust "Total Machines" display
-                if machine_filter != "All Machines" and machines:
-                    # If filtered by machine → show only that machine's qty
-                    total_machines = machines[0].get("qty", 1)
-            
-                # --- KPI Cards ---
-                st.markdown("### Summary")
-                
-                colA, colB, colC, colD, colE = st.columns(5)
-                
-                # Use consistent naming with your totals
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
-                
-                with colA:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_machines:,.0f}</div>
-                        <div class="kpi-label">Total Machines</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colB:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_needed_hrs:,.0f}</div>
-                        <div class="kpi-label">Needed Run Hours (hrs)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colC:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
-                        <div class="kpi-label">Remaining Available Hours (hrs)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colD:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_machine_needed:,.0f}</div>
-                        <div class="kpi-label">Additional Machines Needed (no.)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-                with colE:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
-                        <div class="kpi-label">Capacity Utilization %</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-                # --- Call the render function ---
-                render_machine_table(machines, day_filter, day_options)
-            
-            # Define helper functions if they don't exist elsewhere
+            # Define helper functions first, before they are used
             def safe_sum(values):
                 """Safely sum a list of values, handling None and empty lists"""
                 if not values:
@@ -1473,6 +1372,108 @@ def main():
                 
                 st.markdown(scrollable_html, unsafe_allow_html=True)
             
+            # Now your main code can use these functions
+            elif page == "Weekly Machine Utilization":
+                # --- Header ---
+                st.markdown("""
+                <div class="main-header">
+                    <h1><b>Machine Utilization Dashboard</b></h1>
+                    <p><b>Track machine usage vs capacity</b></p>
+                </div>
+                """, unsafe_allow_html=True)
             
-if __name__ == "__main__":
-    main()
+                # --- Load Data ---
+                df_machine = load_production_data(sheet_index=2)  
+                extractor = MachineUtilizationExtractor(df_machine)
+                machines = extractor.get_machine_data()
+            
+                # --- Filters (day & machine) ---
+                col1, col2 = st.columns(2)
+            
+                with col1:
+                    machine_options = ["All Machines"] + [m['machine'] for m in machines]
+                    machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
+            
+                with col2:
+                    # Row 2 = weekdays
+                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
+                    # Row 3 = dates
+                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
+                    # Combine weekday + date like "Mon (11 Aug)"
+                    day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
+                    day_options = ["Current Week"] + day_labels
+                    day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
+            
+                # --- Apply filters ---
+                if machine_filter != "All Machines":
+                    machines = [m for m in machines if m['machine'] == machine_filter]
+            
+                # --- Totals for KPI cards ---
+                if day_filter == "Current Week":
+                    totals = extractor.calculate_totals(machines)
+                else:
+                    day_index = day_options.index(day_filter) - 1
+                    totals = extractor.calculate_totals(machines, day_index=day_index)
+                
+                # Now unpack 5 values instead of 4
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
+            
+                # Adjust "Total Machines" display
+                if machine_filter != "All Machines" and machines:
+                    # If filtered by machine → show only that machine's qty
+                    total_machines = machines[0].get("qty", 1)
+            
+                # --- KPI Cards ---
+                st.markdown("### Summary")
+                
+                colA, colB, colC, colD, colE = st.columns(5)
+                
+                # Use consistent naming with your totals
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
+                
+                with colA:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_machines:,.0f}</div>
+                        <div class="kpi-label">Total Machines</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colB:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_needed_hrs:,.0f}</div>
+                        <div class="kpi-label">Needed Run Hours (hrs)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colC:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
+                        <div class="kpi-label">Remaining Available Hours (hrs)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colD:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_machine_needed:,.0f}</div>
+                        <div class="kpi-label">Additional Machines Needed (no.)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+                with colE:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
+                        <div class="kpi-label">Capacity Utilization %</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+                # --- Call the render function ---
+                render_machine_table(machines, day_filter, day_options)
+            
+            
+            if __name__ == "__main__":
+                main()
