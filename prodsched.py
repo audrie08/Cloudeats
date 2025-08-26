@@ -300,7 +300,7 @@ st.markdown(f"""
     }}
 
     .kpi-label {{
-        font-size: 1.1em;
+        font-size: 0.5em;
         opacity: 1;
     }}
 
@@ -412,18 +412,21 @@ COLUMNS = {
 # Machine Utilization Column mappings
 MACHINE_COLUMNS = {
     'machine': 1,                # Column B (machines in rows 7-22)
-    'run_capacity': 2,           # Column C (kg/hr)
+    'rated_capacity': 2,           # Column C (kg/hr)
     'ideal_run_time': 3,         # Column D (ideal machine run time rate)
     'working_hours': 4,          # Column E 
     'run_time': 5,              # Column F
     'qty': 6,                   # Column G
     'available_hrs': 7,         # Column H
-    'run_hrs_start': 10,        # Column K (run hrs data)
-    'run_hrs_end': 16,          # Column Q
-    'available_hrs_start': 18,  # Column S (available hours data)
-    'available_hrs_end': 24,    # Column Y
+    'gwa': 8,
+    'needed_hrs_start': 10,        # Column K (run hrs data)
+    'needed_hrs_end': 16,          # Column Q
+    'remaining_hrs_start': 18,  # Column S (available hours data)
+    'remaining_hrs_end': 24,    # Column Y
     'machine_needed_start': 26, # Column AA (machine needed data)
     'machine_needed_end': 32,   # Column AG
+    'capacity_utilization_start': 34,
+    'capacity_utilization_end': 40,
     'machine_start_row': 6,     # Row 7 (0-based index 6)
     'machine_end_row': 21,      # Row 22 (0-based index 21)
     'header_row': 1             # Row 2 (0-based index 1)
@@ -973,7 +976,6 @@ class MachineUtilizationExtractor:
     def get_machine_data(self):
         """Extract machine utilization data from 'Machine' sheet"""
         machines = []
-        header_row = MACHINE_COLUMNS['header_row']
         start_row = MACHINE_COLUMNS['machine_start_row']
         end_row = MACHINE_COLUMNS['machine_end_row']
 
@@ -984,41 +986,51 @@ class MachineUtilizationExtractor:
                 def safe_val(col_idx):
                     return safe_float_convert(row[col_idx]) if col_idx < len(row) else 0
 
+                def safe_str(col_idx):
+                    return str(row[col_idx]).strip() if col_idx < len(row) else ""
+
+                machine_name = safe_str(MACHINE_COLUMNS['machine'])
+                if not machine_name:  # Skip empty rows
+                    continue
+
                 machines.append({
-                    'machine': str(row[MACHINE_COLUMNS['machine']]).strip(),
-                    'run_capacity': safe_val(MACHINE_COLUMNS['run_capacity']),
+                    'machine': machine_name,
+                    'rated_capacity': safe_val(MACHINE_COLUMNS['rated_capacity']),
                     'ideal_run_time': safe_val(MACHINE_COLUMNS['ideal_run_time']),
                     'working_hours': safe_val(MACHINE_COLUMNS['working_hours']),
                     'run_time': safe_val(MACHINE_COLUMNS['run_time']),
                     'qty': safe_val(MACHINE_COLUMNS['qty']),
                     'available_hrs': safe_val(MACHINE_COLUMNS['available_hrs']),
-                    'daily_run_hrs': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['run_hrs_start'], MACHINE_COLUMNS['run_hrs_end'] + 1)
+                    'gwa': safe_val(MACHINE_COLUMNS['gwa']),
+                    'daily_needed_hrs': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['needed_hrs_start'], MACHINE_COLUMNS['needed_hrs_end'] + 1)
                     ],
-                    'daily_available_hrs': [
-                        safe_val(col) for col in range(MACHINE_COLUMNS['available_hrs_start'], MACHINE_COLUMNS['available_hrs_end'] + 1)
+                    'daily_remaining_hrs': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['remaining_hrs_start'], MACHINE_COLUMNS['remaining_hrs_end'] + 1)
                     ],
                     'daily_machine_needed': [
                         safe_val(col) for col in range(MACHINE_COLUMNS['machine_needed_start'], MACHINE_COLUMNS['machine_needed_end'] + 1)
+                    ],
+                    'daily_capacity_utilization': [
+                        safe_val(col) for col in range(MACHINE_COLUMNS['capacity_utilization_start'], MACHINE_COLUMNS['capacity_utilization_end'] + 1)
                     ]
                 })
         return machines
 
     def calculate_totals(self, machines, day_index=None):
         """Calculate totals for KPI cards, with optional day filter"""
-        # Instead of unique count, sum the machine qty
         total_machines = sum(m.get("qty", 1) for m in machines if m['machine'])
         
         if day_index is None:  # whole week
-            total_run_hrs = sum(sum(m['daily_run_hrs']) for m in machines)
-            total_available_hrs = sum(sum(m['daily_available_hrs']) for m in machines)
+            total_needed_hrs = sum(sum(m['daily_needed_hrs']) for m in machines)
+            total_remaining_hrs = sum(sum(m['daily_remaining_hrs']) for m in machines)
             total_machine_needed = sum(sum(m['daily_machine_needed']) for m in machines)
         else:  # filter by day
-            total_run_hrs = sum(m['daily_run_hrs'][day_index] for m in machines if len(m['daily_run_hrs']) > day_index)
-            total_available_hrs = sum(m['daily_available_hrs'][day_index] for m in machines if len(m['daily_available_hrs']) > day_index)
+            total_needed_hrs = sum(m['daily_needed_hrs'][day_index] for m in machines if len(m['daily_needed_hrs']) > day_index)
+            total_remaining_hrs = sum(m['daily_remaining_hrs'][day_index] for m in machines if len(m['daily_remaining_hrs']) > day_index)
             total_machine_needed = sum(m['daily_machine_needed'][day_index] for m in machines if len(m['daily_machine_needed']) > day_index)
 
-        return total_machines, total_run_hrs, total_available_hrs, total_machine_needed
+        return total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed
 
 def main():
     # --- Sidebar Menu Header ---
@@ -1239,14 +1251,14 @@ def main():
                 col1, col2 = st.columns(2)
 
                 with col1:
-                    machine_options = ["All Machines"] + [m['machine'] for m in machines if m['machine'].lower() != "manual labor"]
+                    machine_options = ["All Machines"] + [m['machine'] for m in machines]
                     machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
 
                 with col2:
                     # Row 2 = weekdays
-                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['run_hrs_start']:MACHINE_COLUMNS['run_hrs_end']+1].tolist()
+                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
                     # Row 3 = dates
-                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['run_hrs_start']:MACHINE_COLUMNS['run_hrs_end']+1].tolist()
+                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
                     # Combine weekday + date like "Mon (11 Aug)"
                     day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
                     day_options = ["Current Week"] + day_labels
@@ -1275,66 +1287,80 @@ def main():
 
                 # --- KPI Cards ---
                 st.markdown("### Summary")
-
+                
                 colA, colB, colC, colD = st.columns(4)
-                kpi_data = [
-                    ("Total Machines", total_machines),
-                    ("Total Run Hours", total_run_hrs),
-                    ("Total Available Hours", total_available_hrs),
-                    ("Total Machine Needed", total_machine_needed)
-                ]
-                for col, (label, value) in zip([colA, colB, colC, colD], kpi_data):
-                    with col:
-                        st.markdown(f"""
-                        <div class="kpi-card">
-                            <div class="kpi-number">{value:,.0f}</div>
-                            <div class="kpi-label">{label}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                
+                # Use consistent naming with your totals
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed = totals
+                
+                with colA:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_machines:,.0f}</div>
+                        <div class="kpi-label">Total Machines</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colB:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_needed_hrs:,.0f} hrs</div>
+                        <div class="kpi-label">Needed Hours</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colC:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_remaining_hrs:,.0f} hrs</div>
+                        <div class="kpi-label">Remaining Hours</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with colD:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-number">{total_machine_needed:,.0f}</div>
+                        <div class="kpi-label">Machines Needed</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                # --- Render Machine Utilization Table (Similar to SKU Table) ---
                 def render_machine_table(machines, day_filter="Current Week", day_options=None):
-                    """Render the machine utilization table with styling similar to SKU table"""
+                    """Render the machine utilization table"""
                     if not machines:
                         st.warning("No machines match the current filters.")
                         return
                     
-                    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
                     st.markdown("### Machine Utilization Details")
-                    
-
                     
                     # Prepare table data
                     table_data = []
                     for machine in machines:
-                        daily_run = machine.get("daily_run_hrs", [])
-                        daily_available = machine.get("daily_available_hrs", [])
-                        daily_machine = machine.get("daily_machine_needed", [])
-
                         if day_filter == "Current Week":
-                            run_hours = safe_sum(daily_run)
-                            available_hours = safe_sum(daily_available)
-                            machine_needed = safe_sum(daily_machine)
+                            needed_hrs = safe_sum(machine.get('daily_needed_hrs', []))
+                            remaining_hrs = safe_sum(machine.get('daily_remaining_hrs', []))
+                            machine_needed = safe_sum(machine.get('daily_machine_needed', []))
                         else:
                             if day_filter in day_options:
                                 day_index = day_options.index(day_filter) - 1
-                                run_hours = safe_sum_for_day(daily_run, day_index)
-                                available_hours = safe_sum_for_day(daily_available, day_index)
-                                machine_needed = safe_sum_for_day(daily_machine, day_index)
+                                needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
+                                remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
+                                machine_needed = safe_sum_for_day(machine.get('daily_machine_needed', []), day_index)
                             else:
-                                run_hours, available_hours, machine_needed = 0, 0, 0
-
+                                needed_hrs, remaining_hrs, machine_needed = 0, 0, 0
+                
                         table_data.append({
                             'Machine': machine["machine"],
-                            'Run Capacity': f"{machine.get('run_capacity', 0):,.0f}",
+                            'Rated Capacity': f"{machine.get('rated_capacity', 0):,.0f} kg/hr",
                             'Qty': f"{machine.get('qty', 1):,.0f}",
-                            'Run Hours': f"{run_hours:,.1f}",
-                            'Available Hours': f"{available_hours:,.1f}",
-                            'Machine Needed': f"{machine_needed:,.0f}",
+                            'Needed Hours': f"{needed_hrs:,.1f} hrs",
+                            'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
+                            'Machines Needed': f"{machine_needed:,.0f}",
                         })
-
-                    # Build DataFrame
+                
+                    # Display as DataFrame
                     df_display = pd.DataFrame(table_data)
+                    st.dataframe(df_display, use_container_width=True)
                     
                     # Add CSS styling
                     st.markdown("""
