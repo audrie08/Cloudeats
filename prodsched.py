@@ -483,7 +483,7 @@ def safe_sum_for_day(values, index):
 
 # --- DATA LOADER FUNCTION ---
 @st.cache_data(ttl=60)
-def load_production_data(sheet_index=0):
+def load_production_data(sheet_index=1):
     """Load production data from Google Sheets"""
     credentials = load_credentials()
     if not credentials:
