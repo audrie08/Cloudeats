@@ -1291,7 +1291,7 @@ def main():
                 colA, colB, colC, colD, colE = st.columns(5)
                 
                 # Use consistent naming with your totals
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed = totals
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed,  total_capacity_utilization = totals
                 
                 with colA:
                     st.markdown(f"""
@@ -1328,7 +1328,7 @@ def main():
                 with colE:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_machine_needed:,.0f}%</div>
+                        <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
                         <div class="kpi-label">Capacity Utilization %</div>
                     </div>
                     """, unsafe_allow_html=True)
