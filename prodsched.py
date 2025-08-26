@@ -399,12 +399,12 @@ COLUMNS = {
     'volume_end': 25,            # Column X (24Aug volume)
     'hours_start': 27,           # Column Z (18Aug hours)
     'hours_end': 33,             # Column AF (24Aug hours)
-    'manpower_start': 36,        # Column AP (18Aug manpower)
-    'manpower_end': 42,          # Column AV (24Aug manpower)
-    'overtime_start': 44,        # Column AX (18Aug individual OT)
-    'overtime_end': 50,          # Column BD (24Aug individual OT)
-    'overtime_percentage_start': 60, # Column BN (18Aug overall %)
-    'overtime_percentage_end': 66,   # Column BS (24Aug overall %)
+    'manpower_start': 43,        # Column AP (18Aug manpower)
+    'manpower_end': 49,          # Column AV (24Aug manpower)
+    'overtime_start': 51,        # Column AX (18Aug individual OT)
+    'overtime_end': 57,          # Column BD (24Aug individual OT)
+    'overtime_percentage_start': 67, # Column BN (18Aug overall %)
+    'overtime_percentage_end': 73,   # Column BS (24Aug overall %)
     'data_start_row': 6,         # Row 7 (0-based index 6) - where actual SKU data starts
     'header_row': 5              # Row 6 (0-based index 5) - where date headers are
 }
