@@ -737,9 +737,9 @@ class ProductionDataExtractor:
                     overtime_percentages.append('')
             
             # DEBUG: UNCOMMENT THESE TO SEE WHAT'S HAPPENING
-            # st.write(f"DEBUG: Overtime percentages extracted: {overtime_percentages}")
-            # st.write(f"DEBUG: From row {row_idx}, columns {COLUMNS['overtime_percentage_start']} to {COLUMNS['overtime_percentage_end']}")
-            # st.write(f"DEBUG: Dataframe shape: {self.df.shape}")
+            st.write(f"DEBUG: Overtime percentages extracted: {overtime_percentages}")
+            st.write(f"DEBUG: From row {row_idx}, columns {COLUMNS['overtime_percentage_start']} to {COLUMNS['overtime_percentage_end']}")
+            st.write(f"DEBUG: Dataframe shape: {self.df.shape}")
             
             return overtime_percentages
         except Exception as e:
