@@ -871,8 +871,8 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
             'Batches (no.)': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
             'Volume (kg)': f"{safe_sum(sku.get('daily_volume', [])):,.1f}",
             'Hours (hr)': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
-            'Manpower': f"{sku_manpower:,.0f}",
-            'Overtime per Person': f"{sku_overtime_per_person:,.0f}"
+            'Manpower (count)': f"{sku_manpower:,.0f}",
+            'Overtime per Person (hrs)': f"{sku_overtime_per_person:,.0f}"
         })
 
     # Build DataFrame
@@ -1202,12 +1202,12 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
 
         table_data.append({
             'Machine': machine["machine"],
-            'Rated Capacity': f"{machine.get('rated_capacity', 0):,.0f} kg/hr",
-            'Qty': f"{machine.get('qty', 1):,.0f}",
-            'Needed Hours': f"{needed_hrs:,.1f} hrs",
-            'Remaining Hours': f"{max(0, remaining_hrs):,.1f} hrs",  # FIXED: Ensure non-negative display
-            'Machines Needed': f"{machine_needed:,.0f}",
-            'Capacity Utilization': f"{capacity_utilization:,.1f}%",
+            'Rated Capacity (kg/hr)': f"{machine.get('rated_capacity', 0):,.0f}",
+            'Qty (no.)': f"{machine.get('qty', 1):,.0f}",
+            'Needed Run Hours (hrs)': f"{needed_hrs:,.1f}",
+            'Remaining Available Hours (hrs)': f"{max(0, remaining_hrs):,.1f}",
+            'Additional Machines Needed (no.)': f"{machine_needed:,.0f}",
+            'Capacity Utilization %': f"{capacity_utilization:,.1f}%",
         })
     
     # Display as DataFrame
