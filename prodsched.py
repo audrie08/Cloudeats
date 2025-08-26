@@ -428,7 +428,7 @@ MACHINE_COLUMNS = {
     'capacity_utilization_start': 34,
     'capacity_utilization_end': 40,
     'machine_start_row': 6,     # Row 7 (0-based index 6)
-    'machine_end_row': 24,      # Row 22 (0-based index 21)
+    'machine_end_row': 23,      # Row 22 (0-based index 21)
     'header_row': 1             # Row 2 (0-based index 1)
 }
 
@@ -1025,14 +1025,14 @@ class MachineUtilizationExtractor:
             total_needed_hrs = sum(sum(m['daily_needed_hrs']) for m in machines)
             total_remaining_hrs = sum(sum(m['daily_remaining_hrs']) for m in machines)
             total_machine_needed = sum(sum(m['daily_machine_needed']) for m in machines)
-            total_capacity_utilization = sum(sum(m['daily_capacity_utilization']) for m in machines)
+            total_capacity_utilization = sum(sum(m['daily_capacity_utilization']) for m in machines) / len(machines) if machines else 0  # Average utilization
         else:  # filter by day
             total_needed_hrs = sum(m['daily_needed_hrs'][day_index] for m in machines if len(m['daily_needed_hrs']) > day_index)
             total_remaining_hrs = sum(m['daily_remaining_hrs'][day_index] for m in machines if len(m['daily_remaining_hrs']) > day_index)
             total_machine_needed = sum(m['daily_machine_needed'][day_index] for m in machines if len(m['daily_machine_needed']) > day_index)
-            total_capacity_utilization = sum(m['daily_capacity_utilization'][day_index] for m in machines if len(m['daily_capacity_utilization']) > day_index)
-
-        return total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed
+            total_capacity_utilization = sum(m['daily_capacity_utilization'][day_index] for m in machines if len(m['daily_capacity_utilization']) > day_index) / len(machines) if machines else 0
+    
+        return total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization
 
 def main():
     # --- Sidebar Menu Header ---
@@ -1276,8 +1276,9 @@ def main():
                 else:
                     day_index = day_options.index(day_filter) - 1
                     totals = extractor.calculate_totals(machines, day_index=day_index)
-
-                total_machines, total_run_hrs, total_available_hrs, total_machine_needed = totals
+                
+                # Now unpack 5 values instead of 4
+                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
 
                 # Adjust "Total Machines" display
                 if machine_filter != "All Machines" and machines:
@@ -1327,47 +1328,47 @@ def main():
                 with colE:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_machine_needed:,.0f}</div>
+                        <div class="kpi-number">{total_machine_needed:,.0f}%</div>
                         <div class="kpi-label">Capacity Utilization %</div>
                     </div>
                     """, unsafe_allow_html=True)
 
 
-                def render_machine_table(machines, day_filter="Current Week", day_options=None):
-                    """Render the machine utilization table"""
-                    if not machines:
-                        st.warning("No machines match the current filters.")
-                        return
-                    
-                    st.markdown("### Machine Utilization Details")
-                    
-                    # Prepare table data
-                    table_data = []
-                    for machine in machines:
-                        if day_filter == "Current Week":
-                            needed_hrs = safe_sum(machine.get('daily_needed_hrs', []))
-                            remaining_hrs = safe_sum(machine.get('daily_remaining_hrs', []))
-                            machine_needed = safe_sum(machine.get('daily_machine_needed', []))
-                            capacity_utilization = safe_sum(machine.get('daily_capacity_utilization', []))
-                        else:
-                            if day_filter in day_options:
-                                day_index = day_options.index(day_filter) - 1
-                                needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
-                                remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
-                                machine_needed = safe_sum_for_day(machine.get('daily_machine_needed', []), day_index)
-                                capacity_utilization = safe_sum(machine.get('daily_capacity_utilization', []), day_index)
-                            else:
-                                needed_hrs, remaining_hrs, machine_needed, capacity_utilization = 0, 0, 0
+            def render_machine_table(machines, day_filter="Current Week", day_options=None):
+                """Render the machine utilization table"""
+                if not machines:
+                    st.warning("No machines match the current filters.")
+                    return
                 
-                        table_data.append({
-                            'Machine': machine["machine"],
-                            'Rated Capacity': f"{machine.get('rated_capacity', 0):,.0f} kg/hr",
-                            'Qty': f"{machine.get('qty', 1):,.0f}",
-                            'Needed Hours': f"{needed_hrs:,.1f} hrs",
-                            'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
-                            'Machines Needed': f"{machine_needed:,.0f}",
-                            'Capacity Utilization': f"{capacity_utilization:,.0f}",
-                        })
+                st.markdown("### Machine Utilization Details")
+                
+                # Prepare table data
+                table_data = []
+                for machine in machines:
+                    if day_filter == "Current Week":
+                        needed_hrs = safe_sum(machine.get('daily_needed_hrs', []))
+                        remaining_hrs = safe_sum(machine.get('daily_remaining_hrs', []))
+                        machine_needed = safe_sum(machine.get('daily_machine_needed', []))
+                        capacity_utilization = safe_sum(machine.get('daily_capacity_utilization', [])) / 7  # Weekly average
+                    else:
+                        if day_filter in day_options:
+                            day_index = day_options.index(day_filter) - 1
+                            needed_hrs = safe_sum_for_day(machine.get('daily_needed_hrs', []), day_index)
+                            remaining_hrs = safe_sum_for_day(machine.get('daily_remaining_hrs', []), day_index)
+                            machine_needed = safe_sum_for_day(machine.get('daily_machine_needed', []), day_index)
+                            capacity_utilization = safe_sum_for_day(machine.get('daily_capacity_utilization', []), day_index)
+                        else:
+                            needed_hrs, remaining_hrs, machine_needed, capacity_utilization = 0, 0, 0, 0
+            
+                    table_data.append({
+                        'Machine': machine["machine"],
+                        'Rated Capacity': f"{machine.get('rated_capacity', 0):,.0f} kg/hr",
+                        'Qty': f"{machine.get('qty', 1):,.0f}",
+                        'Needed Hours': f"{needed_hrs:,.1f} hrs",
+                        'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
+                        'Machines Needed': f"{machine_needed:,.0f}",
+                        'Capacity Utilization': f"{capacity_utilization:,.1f}%",  # Added % sign
+                    })
                 
                     # Display as DataFrame
                     df_display = pd.DataFrame(table_data)
