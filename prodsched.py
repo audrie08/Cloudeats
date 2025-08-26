@@ -1303,7 +1303,7 @@ def main():
                 with colB:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_needed_hrs:,.0f} hrs</div>
+                        <div class="kpi-number">{total_needed_hrs:,.0f}</div>
                         <div class="kpi-label">Needed Run Hours (hrs)</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -1311,7 +1311,7 @@ def main():
                 with colC:
                     st.markdown(f"""
                     <div class="kpi-card">
-                        <div class="kpi-number">{total_remaining_hrs:,.0f} hrs</div>
+                        <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
                         <div class="kpi-label">Remaining Available Hours (hrs)</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -1366,6 +1366,7 @@ def main():
                             'Needed Hours': f"{needed_hrs:,.1f} hrs",
                             'Remaining Hours': f"{remaining_hrs:,.1f} hrs",
                             'Machines Needed': f"{machine_needed:,.0f}",
+                            'Capacity Utilization': f"{capacity_utilization:,.0f}",
                         })
                 
                     # Display as DataFrame
