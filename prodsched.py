@@ -728,23 +728,21 @@ class ProductionDataExtractor:
             overtime_percentages = []
             row_idx = COLUMNS['header_row']
             
-            # Extract values from columns BN (65) to BS (70) - overtime percentage range
-            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
-                if col < len(self.df.columns) and row_idx < len(self.df):
+            # Extract values from columns BP (60) to BV (66)
+            for col in range(60, 67):  # 60 to 66 inclusive
+                if row_idx < len(self.df) and col < len(self.df.columns):
                     value = str(self.df.iloc[row_idx, col]).strip()
-                    # Clean up percentage values - remove % sign if present
-                    if value.endswith('%'):
-                        value = value[:-1]
                     overtime_percentages.append(value)
                 else:
                     overtime_percentages.append('')
             
-            # Debug: Print the extracted values
-            # st.write(f"Debug - Extracted overtime percentages: {overtime_percentages}")
+            # Debug output
+            # st.write(f"Overtime percentages extracted: {overtime_percentages}")
+            # st.write(f"From row {row_idx + 1}, columns 60 to 66 (BP to BV)")
             
             return overtime_percentages
         except Exception as e:
-            # st.error(f"Error extracting overtime percentage: {str(e)}")
+            st.error(f"Error extracting overtime percentage: {str(e)}")
             return []
     
     def get_unique_skus(self):
