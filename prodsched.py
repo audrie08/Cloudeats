@@ -1773,7 +1773,7 @@ def main():
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Weekly Production Schedule"
     
-    # Main navigation with enhanced modern styling
+    # Main navigation with smaller, centered buttons
     main_page_selection = option_menu(
         menu_title=None,
         options=["Main Page", "Dashboard Details"],
@@ -1782,35 +1782,39 @@ def main():
         orientation="horizontal",
         key="main_navigation",
         styles={
-                "icon": {
-                    "color": "#ffe712",
-                    "font-size": "16px",
-                    "margin-right": "8px"
-                },
-                "nav-link": {
-                    "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                    "font-size": "14px",
-                    "font-weight": "500",
-                    "text-align": "center",
-                    "color": "#543559",
-                    "margin": "0.40rem",
-                    "padding": "1rem 1.40rem",
-                    "border-radius": "14px",
-                    "transition": "all 0.3s ease",
-                    "border": "1px solid transparent",
-                    "background": "rgba(248, 249, 250, 0.5)",
-                    "white-space": "nowrap"
-                },
-                "nav-link-selected": {
-                    "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
-                    "color": "#ffffff",
-                    "font-weight": "600",
-                    "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
-                    "border": "2px solid rgba(255,255,255,0.1)",
-                    "transform": "translateY(-1px)"
-                }
+            "container": {
+                "max-width": "100%",
+                "text-align": "center"
+            },
+            "icon": {
+                "color": "#ffe712",
+                "font-size": "14px",
+                "margin-right": "6px"
+            },
+            "nav-link": {
+                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                "font-size": "12px",
+                "font-weight": "500",
+                "text-align": "center",
+                "color": "#543559",
+                "margin": "0.2rem",
+                "padding": "0.5rem 1rem",
+                "border-radius": "12px",
+                "transition": "all 0.3s ease",
+                "border": "1px solid transparent",
+                "background": "rgba(248, 249, 250, 0.5)",
+                "white-space": "nowrap"
+            },
+            "nav-link-selected": {
+                "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
+                "color": "#ffffff",
+                "font-weight": "600",
+                "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                "border": "2px solid rgba(255,255,255,0.1)",
+                "transform": "translateY(-1px)"
             }
-        )
+        }
+    )
     
     # Store the main page selection in session state
     st.session_state.main_tab = main_page_selection
@@ -1826,20 +1830,24 @@ def main():
             orientation="horizontal",
             key="sub_navigation",
             styles={
+                "container": {
+                    "max-width": "100%",
+                    "text-align": "center"
+                },
                 "icon": {
                     "color": "#ffe712",
-                    "font-size": "16px",
-                    "margin-right": "8px"
+                    "font-size": "14px",
+                    "margin-right": "6px"
                 },
                 "nav-link": {
                     "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                    "font-size": "14px",
+                    "font-size": "12px",
                     "font-weight": "500",
                     "text-align": "center",
                     "color": "#543559",
-                    "margin": "0.40rem",
-                    "padding": "1rem 1.40rem",
-                    "border-radius": "14px",
+                    "margin": "0.2rem",
+                    "padding": "0.5rem 1rem",
+                    "border-radius": "12px",
                     "transition": "all 0.3s ease",
                     "border": "1px solid transparent",
                     "background": "rgba(248, 249, 250, 0.5)",
@@ -1855,6 +1863,7 @@ def main():
                 }
             }
         )
+
         
         # Store the sub page selection in session state
         st.session_state.sub_tab = sub_page_selection
