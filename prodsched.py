@@ -1371,133 +1371,116 @@ def logo_to_base64(img):
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
 
-
-def create_navigation():
-    """Create modern navigation bar with branding and tabs"""
+def create_productionpro_navigation():
+    """Create ProductionPro navigation bar matching your design"""
     
-    # Try to load logo, fallback if not found
-    try:
-        logo = Image.open("cloudeats.png")
-        logo_base64 = logo_to_base64(logo)
-        logo_html = f'''
-            <img src="data:image/png;base64,{logo_base64}" 
-                 class="nav-logo" alt="ProductionPro Logo" />
-        '''
-    except FileNotFoundError:
-        # Fallback with text-based logo
-        logo_html = '''
-            <div class="nav-logo-fallback">
-                <span class="logo-text">ProductionPro</span>
-            </div>
-        '''
-    
-    # Navigation HTML with modern styling
-    nav_html = f'''
-    <div class="modern-nav-container">
+    # Navigation HTML with ProductionPro styling
+    nav_html = '''
+    <div class="productionpro-nav-container">
         <div class="nav-content">
             <div class="nav-brand">
-                {logo_html}
+                <span class="logo-text">ProductionPro</span>
             </div>
             <div class="nav-tabs">
-                <button class="nav-tab active" data-page="main">Main Page</button>
-                <button class="nav-tab" data-page="weekly">Weekly Prod Sched</button>
-                <button class="nav-tab" data-page="machine">Machine Utilization</button>
-                <button class="nav-tab" data-page="ytd">YTD Production Schedule</button>
+                <div class="nav-tab active">Main Page</div>
+                <div class="nav-tab">Weekly Prod Sched</div>
+                <div class="nav-tab">Machine Utilization</div>
+                <div class="nav-tab">YTD Production Schedule</div>
             </div>
         </div>
     </div>
     
     <style>
-    .modern-nav-container {{
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border-bottom: 1px solid #e9ecef;
+    .productionpro-nav-container {
+        background: #ffffff;
+        border-bottom: 2px solid #e0e0e0;
         padding: 0;
         margin: -1rem -1rem 0 -1rem;
         position: sticky;
         top: 0;
         z-index: 1000;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }}
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
     
-    .nav-content {{
+    .nav-content {
         max-width: 1400px;
         margin: 0 auto;
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 0.5rem 2rem;
-    }}
+    }
     
-    .nav-brand {{
+    .nav-brand {
         display: flex;
         align-items: center;
-    }}
+    }
     
-    .nav-logo {{
-        height: 40px;
-        width: auto;
-        transition: transform 0.2s ease;
-    }}
-    
-    .nav-logo:hover {{
-        transform: scale(1.05);
-    }}
-    
-    .nav-logo-fallback {{
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }}
-    
-    .logo-text {{
-        font-size: 20px;
-        font-weight: 600;
+    .logo-text {
+        font-size: 24px;
+        font-weight: bold;
         color: #2c3e50;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }}
+        font-family: Arial, sans-serif;
+    }
     
-    .nav-tabs {{
+    .nav-tabs {
         display: flex;
         gap: 0;
         align-items: center;
         background: #f8f9fa;
-        border-radius: 8px;
-        padding: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }}
-    
-    .nav-tab {{
-        padding: 0.75rem 1.5rem;
-        border: none;
         border-radius: 6px;
+        padding: 2px;
+    }
+    
+    .nav-tab {
+        padding: 0.75rem 1.5rem;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        outline: none;
-        position: relative;
-        overflow: hidden;
-        background: transparent;
+        transition: all 0.2s ease;
+        font-family: Arial, sans-serif;
         color: #6c757d;
-    }}
+        border-radius: 4px;
+    }
     
-    .nav-tab.active {{
+    .nav-tab.active {
         background: #ffffff;
         color: #000000;
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }}
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
     
-    .nav-tab:hover {{
+    .nav-tab:hover {
         background: rgba(255, 255, 255, 0.7);
         color: #495057;
-    }}
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .nav-content {
+            padding: 0.5rem 1rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .nav-tabs {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 12px;
+        }
+    }
     </style>
     '''
     
     st.markdown(nav_html, unsafe_allow_html=True)
+
 
 def create_horizontal_tab_navigation():
     """Alternative horizontal tab navigation similar to your second image"""
