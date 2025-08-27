@@ -22,7 +22,7 @@ warnings.filterwarnings('ignore')
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Commissary Production Scheduler",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
