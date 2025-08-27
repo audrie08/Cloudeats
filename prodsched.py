@@ -1782,46 +1782,44 @@ def main():
         orientation="horizontal",
         key="main_navigation",
         styles={
-            "container": {
-                "padding": "0rem",
-                "background": "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
-                "border-radius": "15px",
-                "margin": "0 auto 2rem auto",
-                "max-width": "500px",
-                "box-shadow": "0 8px 32px rgba(0,0,0,0.1)",
-                "border": "1px solid rgba(255,255,255,0.2)",
-                "backdrop-filter": "blur(10px)"
-            },
-            "icon": {
-                "color": "#495057",
-                "font-size": "18px",
-                "margin-right": "10px"
-            },
-            "nav-link": {
-                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                "font-size": "15px",
-                "font-weight": "600",
-                "text-align": "center",
-                "color": "#1d1e1f",
-                "margin": "0.5rem",
-                "padding": "1rem 2rem",
-                "border-radius": "12px",
-                "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "border": "1px solid transparent",
-                "background": "rgba(255, 255, 255, 0.7)",
-                "position": "relative",
-                "overflow": "hidden"
-            },
-            "nav-link-selected": {
-                "background": "linear-gradient(135deg, #1d1e1f 0%, #2f1d38 100%)",
-                "color": "#ffffff",
-                "font-weight": "700",
-                "box-shadow": "0 8px 25px rgba(102, 126, 234, 0.4)",
-                "border": "1px solid rgba(255,255,255,0.2)",
-                "transform": "translateY(-3px) scale(1.02)"
+                "container": {
+                    "padding": "0.9rem",
+                    "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                    "border-radius": "15px",
+                    "margin": "0 auto 2.4rem auto",
+                    "max-width": "700px",
+                    "box-shadow": "0 4px 25px rgba(0,0,0,0.08)",
+                    "border": "2px solid rgba(0,0,0,0.05)"
+                },
+                "icon": {
+                    "color": "#ffe712",
+                    "font-size": "16px",
+                    "margin-right": "8px"
+                },
+                "nav-link": {
+                    "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                    "font-size": "14px",
+                    "font-weight": "500",
+                    "text-align": "center",
+                    "color": "#543559",
+                    "margin": "0.40rem",
+                    "padding": "1rem 1.40rem",
+                    "border-radius": "14px",
+                    "transition": "all 0.3s ease",
+                    "border": "1px solid transparent",
+                    "background": "rgba(248, 249, 250, 0.5)",
+                    "white-space": "nowrap"
+                },
+                "nav-link-selected": {
+                    "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
+                    "color": "#ffffff",
+                    "font-weight": "600",
+                    "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                    "border": "2px solid rgba(255,255,255,0.1)",
+                    "transform": "translateY(-1px)"
+                }
             }
-        }
-    )
+        )
     
     # Store the main page selection in session state
     st.session_state.main_tab = main_page_selection
@@ -1841,8 +1839,8 @@ def main():
                     "padding": "0.9rem",
                     "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
                     "border-radius": "15px",
-                    "margin": "0 auto 2.9rem auto",
-                    "max-width": "1100px",
+                    "margin": "0 auto 2.4rem auto",
+                    "max-width": "900px",
                     "box-shadow": "0 4px 25px rgba(0,0,0,0.08)",
                     "border": "2px solid rgba(0,0,0,0.05)"
                 },
