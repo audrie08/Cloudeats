@@ -1371,111 +1371,29 @@ def logo_to_base64(img):
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
 
+
 def create_navigation():
+    """Create a clean navigation header with just the brand - NO HTML issues"""
     
-    nav_html = '''
-    <div class="bitestogo-nav-container">
-        <div class="nav-content">
-            <div class="nav-brand">
-                <span class="logo-text">Bites To Go</span>
-            </div>
-            <div class="nav-tabs">
-                <div class="nav-tab active">Main Page</div>
-                <div class="nav-tab">Dashboard Details</div>
-            </div>
-        </div>
-    </div>
-    
-    <style>
-    .bitestogo-nav-container {
-        background: #ffffff;
-        border-bottom: 2px solid #e0e0e0;
-        padding: 0;
+    # Use st.markdown with a completely self-contained HTML block
+    st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+        border-bottom: 1px solid #e0e0e0;
         margin: -1rem -1rem 0 -1rem;
         position: sticky;
         top: 0;
         z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .nav-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 2rem;
-    }
-    
-    .nav-brand {
-        display: flex;
-        align-items: center;
-    }
-    
-    .logo-text {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2c3e50;
-        font-family: Arial, sans-serif;
-    }
-    
-    .nav-tabs {
-        display: flex;
-        gap: 0;
-        align-items: center;
-        background: #f8f9fa;
-        border-radius: 6px;
-        padding: 2px;
-    }
-    
-    .nav-tab {
-        padding: 0.75rem 1.5rem;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-family: Arial, sans-serif;
-        color: #6c757d;
-        border-radius: 4px;
-    }
-    
-    .nav-tab.active {
-        background: #ffffff;
-        color: #000000;
-        font-weight: 600;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .nav-tab:hover {
-        background: rgba(255, 255, 255, 0.7);
-        color: #495057;
-    }
-    
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-        .nav-content {
-            padding: 0.5rem 1rem;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .nav-tabs {
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .nav-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 1rem;
-            font-size: 12px;
-        }
-    }
-    </style>
-    '''
-    
-    st.markdown(nav_html, unsafe_allow_html=True)
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 1rem 2rem;
+    ">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:20px; font-weight:bold; color:#000000;">
+                Bites To Go
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def main_page():
     """Main Page Content - Your existing dashboard"""
@@ -1748,74 +1666,129 @@ def ytd_production():
 def main():
     """Main application function"""
     
-    # Create navigation bar
+    # Create clean navigation header
     create_navigation()
     
-    # Navigation menu using option_menu (modern horizontal navigation)
-    with st.container():
-        # Center the navigation menu
-        col1, col2, col3 = st.columns([1, 2, 1])
+    # Initialize session state for navigation
+    if 'main_tab' not in st.session_state:
+        st.session_state.main_tab = "Main Page"
+    if 'sub_tab' not in st.session_state:
+        st.session_state.sub_tab = "Weekly Production Schedule"
+    
+    # Add spacing
+    st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
+    
+    # Main navigation
+    main_page_selection = option_menu(
+        menu_title=None,
+        options=["Main Page", "Dashboard Details"],
+        icons=["house-fill", "clipboard-data-fill"],
+        default_index=0 if st.session_state.main_tab == "Main Page" else 1,
+        orientation="horizontal",
+        key="main_navigation",
+        styles={
+            "container": {
+                "padding": "0rem",
+                "background-color": "transparent",
+                "border-radius": "12px",
+                "margin": "0 auto",
+                "max-width": "600px",
+                "box-shadow": "none"
+            },
+            "icon": {
+                "color": "#f4d602",
+                "font-size": "16px",
+                "margin-right": "8px"
+            },
+            "nav-link": {
+                "font-family": "'Segoe UI', sans-serif",
+                "font-size": "14px",
+                "font-weight": "500",
+                "text-align": "center",
+                "color": "#2c3e50",
+                "margin": "0 0.25rem",
+                "padding": "0.875rem 1.5rem",
+                "border-radius": "10px",
+                "transition": "all 0.3s ease",
+                "border": "1px solid rgba(44, 62, 80, 0.1)",
+                "background": "rgba(255, 255, 255, 0.8)",
+                "backdrop-filter": "blur(8px)"
+            },
+            "nav-link-selected": {
+                "background": "linear-gradient(135deg, #f4d602, #f7e842)",
+                "color": "#000000",
+                "font-weight": "600",
+                "box-shadow": "0 4px 12px rgba(244, 214, 2, 0.4)",
+                "border": "1px solid rgba(244, 214, 2, 0.6)",
+                "transform": "translateY(-2px)"
+            }
+        }
+    )
+    
+    # Store the main page selection in session state
+    st.session_state.main_tab = main_page_selection
+    
+    # Show sub-navigation only if Dashboard Details is selected
+    if main_page_selection == "Dashboard Details":
+        st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
         
-        with col2:
-            page = option_menu(
-                menu_title=None,
-                options=["Main Page", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
-                icons=["house-fill", "calendar-week-fill", "gear-fill", "graph-up"],
-                default_index=0,
-                orientation="horizontal",
-                key="main_navigation",
-                styles={
-                    "container": {
-                        "padding": "0rem",
-                        "background-color": "transparent",
-                        "border-radius": "12px",
-                        "margin": "-1.5rem 0 2rem 0",
-                        "box-shadow": "none"
-                    },
-                    "icon": {
-                        "color": "#f4d602",
-                        "font-size": "16px",
-                        "margin-right": "8px"
-                    },
-                    "nav-link": {
-                        f"font-family": f"{'TT Norms' if font_available else 'Segoe UI'}, sans-serif",
-                        "font-size": "14px",
-                        "font-weight": "500",
-                        "text-align": "center",
-                        "color": "#2c3e50",
-                        "margin": "0 0.25rem",
-                        "padding": "0.875rem 1.5rem",
-                        "border-radius": "10px",
-                        "transition": "all 0.3s ease",
-                        "border": "1px solid rgba(44, 62, 80, 0.1)",
-                        "background": "rgba(255, 255, 255, 0.8)",
-                        "backdrop-filter": "blur(8px)"
-                    },
-                    "nav-link-selected": {
-                        "background": "linear-gradient(135deg, #f4d602, #f7e842)",
-                        "color": "#000000",
-                        "font-weight": "600",
-                        "box-shadow": "0 4px 12px rgba(244, 214, 2, 0.4)",
-                        "border": "1px solid rgba(244, 214, 2, 0.6)",
-                        "transform": "translateY(-2px)"
-                    }
+        sub_page_selection = option_menu(
+            menu_title=None,
+            options=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
+            icons=["calendar-week-fill", "gear-fill", "graph-up"],
+            default_index=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
+            orientation="horizontal",
+            key="sub_navigation",
+            styles={
+                "container": {
+                    "padding": "0rem",
+                    "background-color": "transparent",
+                    "border-radius": "8px",
+                    "margin": "0 auto 2rem auto",
+                    "max-width": "800px",
+                    "box-shadow": "none"
+                },
+                "icon": {
+                    "color": "#6c757d",
+                    "font-size": "14px",
+                    "margin-right": "6px"
+                },
+                "nav-link": {
+                    "font-family": "'Segoe UI', sans-serif",
+                    "font-size": "13px",
+                    "font-weight": "500",
+                    "text-align": "center",
+                    "color": "#6c757d",
+                    "margin": "0 0.15rem",
+                    "padding": "0.75rem 1rem",
+                    "border-radius": "8px",
+                    "transition": "all 0.3s ease",
+                    "border": "1px solid rgba(108, 117, 125, 0.1)",
+                    "background": "rgba(248, 249, 250, 0.8)"
+                },
+                "nav-link-selected": {
+                    "background": "linear-gradient(135deg, #6c757d, #adb5bd)",
+                    "color": "#ffffff",
+                    "font-weight": "600",
+                    "box-shadow": "0 2px 8px rgba(108, 117, 125, 0.3)",
+                    "border": "1px solid rgba(108, 117, 125, 0.3)"
                 }
-            )
+            }
+        )
+        
+        # Store the sub page selection in session state
+        st.session_state.sub_tab = sub_page_selection
     
-    # Page content based on selection
-    if page == "Main Page":
+    # Display the appropriate content based on navigation
+    if st.session_state.main_tab == "Main Page":
         main_page()
-
-    elif page == "Weekly Production Schedule":
-        weekly_prod_schedule()
-    
-    elif page == "Machine Utilization":
-        machine_utilization()
-    
-    elif page == "YTD Production Schedule":
-        ytd_production()
-   
-            
+    else:
+        if st.session_state.sub_tab == "Weekly Production Schedule":
+            weekly_prod_schedule()
+        elif st.session_state.sub_tab == "Machine Utilization":
+            machine_utilization()
+        elif st.session_state.sub_tab == "YTD Production Schedule":
+            ytd_production()      
             
 if __name__ == "__main__":
     main()
