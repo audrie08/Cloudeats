@@ -1436,7 +1436,6 @@ def create_navigation():
                 <div class="brand-logo">
                     <img src="data:image/png;base64,{logo_base64}" alt="CloudEats Logo">
                 </div>
-                <div class="brand-text">CloudEats</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
