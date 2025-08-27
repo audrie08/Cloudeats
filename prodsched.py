@@ -1386,7 +1386,7 @@ def create_navigation():
         st.markdown(f"""
         <style>
         .modern-nav-container {{
-            background: linear-gradient(135deg, #000000 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #000000 0%, #525252 100%);
             padding: 0.75rem 2rem;
             margin: -1rem -1rem 2rem -1rem;
             position: sticky;
