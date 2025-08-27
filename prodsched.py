@@ -1372,14 +1372,30 @@ def logo_to_base64(img):
     return base64.b64encode(buffer.getvalue()).decode()
 
 def create_navigation():
-    """Create ProductionPro navigation bar matching your design"""
+    """Create navigation bar with CloudEats logo"""
     
-    # Navigation HTML with ProductionPro styling
-    nav_html = '''
-    <div class="productionpro-nav-container">
+    # Try to load CloudEats logo
+    try:
+        logo = Image.open("cloudeats.png")
+        logo_base64 = logo_to_base64(logo)
+        logo_html = f'''
+            <img src="data:image/png;base64,{logo_base64}" 
+                 class="nav-logo" alt="CloudEats Logo" />
+        '''
+    except FileNotFoundError:
+        # Fallback with text-based logo
+        logo_html = '''
+            <div class="nav-logo-fallback">
+                <span class="logo-text">CloudEats</span>
+            </div>
+        '''
+    
+    # Navigation HTML with CloudEats styling
+    nav_html = f'''
+    <div class="cloudeats-nav-container">
         <div class="nav-content">
             <div class="nav-brand">
-                <span class="logo-text">ProductionPro</span>
+                {logo_html}
             </div>
             <div class="nav-tabs">
                 <div class="nav-tab active">Main Page</div>
@@ -1391,7 +1407,7 @@ def create_navigation():
     </div>
     
     <style>
-    .productionpro-nav-container {
+    .cloudeats-nav-container {{
         background: #ffffff;
         border-bottom: 2px solid #e0e0e0;
         padding: 0;
@@ -1400,39 +1416,49 @@ def create_navigation():
         top: 0;
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
+    }}
     
-    .nav-content {
+    .nav-content {{
         max-width: 1400px;
         margin: 0 auto;
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 0.5rem 2rem;
-    }
+    }}
     
-    .nav-brand {
+    .nav-brand {{
         display: flex;
         align-items: center;
-    }
+    }}
     
-    .logo-text {
+    .nav-logo {{
+        height: 40px;
+        width: auto;
+    }}
+    
+    .nav-logo-fallback {{
+        display: flex;
+        align-items: center;
+    }}
+    
+    .logo-text {{
         font-size: 24px;
         font-weight: bold;
         color: #2c3e50;
         font-family: Arial, sans-serif;
-    }
+    }}
     
-    .nav-tabs {
+    .nav-tabs {{
         display: flex;
         gap: 0;
         align-items: center;
         background: #f8f9fa;
         border-radius: 6px;
         padding: 2px;
-    }
+    }}
     
-    .nav-tab {
+    .nav-tab {{
         padding: 0.75rem 1.5rem;
         font-size: 14px;
         font-weight: 500;
@@ -1441,46 +1467,45 @@ def create_navigation():
         font-family: Arial, sans-serif;
         color: #6c757d;
         border-radius: 4px;
-    }
+    }}
     
-    .nav-tab.active {
+    .nav-tab.active {{
         background: #ffffff;
         color: #000000;
         font-weight: 600;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
+    }}
     
-    .nav-tab:hover {
+    .nav-tab:hover {{
         background: rgba(255, 255, 255, 0.7);
         color: #495057;
-    }
+    }}
     
     /* Mobile responsive */
-    @media (max-width: 768px) {
-        .nav-content {
+    @media (max-width: 768px) {{
+        .nav-content {{
             padding: 0.5rem 1rem;
             flex-direction: column;
             gap: 1rem;
-        }
+        }}
         
-        .nav-tabs {
+        .nav-tabs {{
             width: 100%;
             justify-content: center;
             flex-wrap: wrap;
-        }
+        }}
         
-        .nav-tab {
+        .nav-tab {{
             flex: 1;
             text-align: center;
             padding: 0.5rem 1rem;
             font-size: 12px;
-        }
-    }
+        }}
+    }}
     </style>
     '''
     
     st.markdown(nav_html, unsafe_allow_html=True)
-
 
 def create_horizontal_tab_navigation():
     """Alternative horizontal tab navigation similar to your second image"""
