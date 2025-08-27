@@ -56,8 +56,8 @@ def load_credentials():
         st.error(f"Error loading credentials: {str(e)}")
         return None
 
-# --- Convert Logo to Base64 ---
 def logo_to_base64(img):
+    """Convert PIL image to base64 string"""
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
@@ -1394,12 +1394,6 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
     
-def logo_to_base64(img):
-    """Convert PIL image to base64 string"""
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode()
-
 def create_navigation():
     """Create modern navigation bar with branding and tabs"""
     
