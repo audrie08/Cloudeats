@@ -1374,24 +1374,67 @@ def logo_to_base64(img):
 
 
 def create_navigation():
-    """Create a clean navigation header with just the brand - NO HTML issues"""
+    """Create a modern, professional navigation header"""
     
-    # Use st.markdown with a completely self-contained HTML block
+    # Modern navigation with improved styling
     st.markdown("""
-    <div style="
-        background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-        border-bottom: 1px solid #e0e0e0;
-        margin: -1rem -1rem 0 -1rem;
+    <style>
+    .modern-nav-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 0.75rem 2rem;
+        margin: -1rem -1rem 2rem -1rem;
         position: sticky;
         top: 0;
         z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 1rem 2rem;
-    ">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:20px; font-weight:bold; color:#000000;">
-                Bites To Go
-            </span>
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-bottom: 3px solid rgba(255,255,255,0.1);
+    }
+    
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 0;
+    }
+    
+    .brand-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #ffd700, #ffed4a);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        box-shadow: 0 2px 8px rgba(255,215,0,0.3);
+    }
+    
+    .brand-text {
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    .brand-subtitle {
+        font-size: 13px;
+        color: rgba(255,255,255,0.8);
+        font-weight: 400;
+        margin-top: -2px;
+    }
+    </style>
+    
+    <div class="modern-nav-container">
+        <div class="nav-brand">
+            <div class="brand-icon">🍽️</div>
+            <div>
+                <div class="brand-text">Bites To Go</div>
+                <div class="brand-subtitle">Production Management System</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1667,7 +1710,7 @@ def ytd_production():
 def main():
     """Main application function"""
     
-    # Create clean navigation header
+    # Create modern navigation header
     create_navigation()
     
     # Initialize session state for navigation
@@ -1676,10 +1719,7 @@ def main():
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Weekly Production Schedule"
     
-    # Add spacing
-    st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
-    
-    # Main navigation
+    # Main navigation with enhanced modern styling
     main_page_selection = option_menu(
         menu_title=None,
         options=["Main Page", "Dashboard Details"],
@@ -1690,38 +1730,41 @@ def main():
         styles={
             "container": {
                 "padding": "0rem",
-                "background-color": "transparent",
-                "border-radius": "12px",
-                "margin": "0 auto",
-                "max-width": "600px",
-                "box-shadow": "none"
+                "background": "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                "border-radius": "15px",
+                "margin": "0 auto 2rem auto",
+                "max-width": "500px",
+                "box-shadow": "0 8px 32px rgba(0,0,0,0.1)",
+                "border": "1px solid rgba(255,255,255,0.2)",
+                "backdrop-filter": "blur(10px)"
             },
             "icon": {
-                "color": "#f4d602",
-                "font-size": "16px",
-                "margin-right": "8px"
+                "color": "#495057",
+                "font-size": "18px",
+                "margin-right": "10px"
             },
             "nav-link": {
-                "font-family": "'Segoe UI', sans-serif",
-                "font-size": "14px",
-                "font-weight": "500",
+                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                "font-size": "15px",
+                "font-weight": "600",
                 "text-align": "center",
-                "color": "#2c3e50",
-                "margin": "0 0.25rem",
-                "padding": "0.875rem 1.5rem",
-                "border-radius": "10px",
-                "transition": "all 0.3s ease",
-                "border": "1px solid rgba(44, 62, 80, 0.1)",
-                "background": "rgba(255, 255, 255, 0.8)",
-                "backdrop-filter": "blur(8px)"
+                "color": "#495057",
+                "margin": "0.5rem",
+                "padding": "1rem 2rem",
+                "border-radius": "12px",
+                "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "border": "1px solid transparent",
+                "background": "rgba(255, 255, 255, 0.7)",
+                "position": "relative",
+                "overflow": "hidden"
             },
             "nav-link-selected": {
-                "background": "linear-gradient(135deg, #f4d602, #f7e842)",
-                "color": "#000000",
-                "font-weight": "600",
-                "box-shadow": "0 4px 12px rgba(244, 214, 2, 0.4)",
-                "border": "1px solid rgba(244, 214, 2, 0.6)",
-                "transform": "translateY(-2px)"
+                "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "color": "#ffffff",
+                "font-weight": "700",
+                "box-shadow": "0 8px 25px rgba(102, 126, 234, 0.4)",
+                "border": "1px solid rgba(255,255,255,0.2)",
+                "transform": "translateY(-3px) scale(1.02)"
             }
         }
     )
@@ -1731,7 +1774,6 @@ def main():
     
     # Show sub-navigation only if Dashboard Details is selected
     if main_page_selection == "Dashboard Details":
-        st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
         
         sub_page_selection = option_menu(
             menu_title=None,
@@ -1742,37 +1784,40 @@ def main():
             key="sub_navigation",
             styles={
                 "container": {
-                    "padding": "0rem",
-                    "background-color": "transparent",
-                    "border-radius": "8px",
-                    "margin": "0 auto 2rem auto",
-                    "max-width": "800px",
-                    "box-shadow": "none"
+                    "padding": "0.5rem",
+                    "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+                    "border-radius": "12px",
+                    "margin": "0 auto 2.5rem auto",
+                    "max-width": "900px",
+                    "box-shadow": "0 4px 20px rgba(0,0,0,0.08)",
+                    "border": "1px solid rgba(0,0,0,0.05)"
                 },
                 "icon": {
                     "color": "#6c757d",
-                    "font-size": "14px",
-                    "margin-right": "6px"
+                    "font-size": "16px",
+                    "margin-right": "8px"
                 },
                 "nav-link": {
-                    "font-family": "'Segoe UI', sans-serif",
-                    "font-size": "13px",
+                    "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                    "font-size": "14px",
                     "font-weight": "500",
                     "text-align": "center",
                     "color": "#6c757d",
-                    "margin": "0 0.15rem",
-                    "padding": "0.75rem 1rem",
-                    "border-radius": "8px",
+                    "margin": "0.25rem",
+                    "padding": "0.875rem 1.25rem",
+                    "border-radius": "10px",
                     "transition": "all 0.3s ease",
-                    "border": "1px solid rgba(108, 117, 125, 0.1)",
-                    "background": "rgba(248, 249, 250, 0.8)"
+                    "border": "1px solid transparent",
+                    "background": "rgba(248, 249, 250, 0.5)",
+                    "white-space": "nowrap"
                 },
                 "nav-link-selected": {
-                    "background": "linear-gradient(135deg, #6c757d, #adb5bd)",
+                    "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
                     "color": "#ffffff",
                     "font-weight": "600",
-                    "box-shadow": "0 2px 8px rgba(108, 117, 125, 0.3)",
-                    "border": "1px solid rgba(108, 117, 125, 0.3)"
+                    "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                    "border": "1px solid rgba(255,255,255,0.1)",
+                    "transform": "translateY(-1px)"
                 }
             }
         )
