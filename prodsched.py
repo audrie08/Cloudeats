@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
@@ -1784,7 +1784,7 @@ def main():
         styles={
             "container": {
                 "padding": "0rem",
-                "background": "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                "background": "linear-gradient(135deg, #000000 0%, #2f1d38 100%)",
                 "border-radius": "15px",
                 "margin": "0 auto 2rem auto",
                 "max-width": "500px",
