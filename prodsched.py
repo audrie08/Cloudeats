@@ -1418,13 +1418,6 @@ def main_page():
     """, unsafe_allow_html=True)
 
 def weekly_prod_schedule():
-    """Weekly Production Schedule Page"""
-    st.markdown("""
-    <div class="dashboard-card">
-        <h3>📅 Weekly Production Schedule</h3>
-        <p>Comprehensive weekly production planning and scheduling interface.</p>
-    </div>
-    """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="main-header">
@@ -1567,13 +1560,6 @@ def weekly_prod_schedule():
     render_sku_table(filtered_skus, day_filter, days)
 
 def machine_utilization():
-    """Machine Utilization Page"""
-    st.markdown("""
-    <div class="dashboard-card">
-        <h3>⚙️ Machine Utilization Analysis</h3>
-        <p>Monitor machine performance, efficiency metrics, and utilization rates.</p>
-    </div>
-    """, unsafe_allow_html=True)
 
     # --- Header ---
     st.markdown("""
