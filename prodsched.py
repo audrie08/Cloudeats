@@ -1400,8 +1400,8 @@ def logo_to_base64(img):
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
 
-def create_modern_navigation():
-    """Create modern navigation bar with CloudEats branding"""
+def create_navigation():
+    """Create modern navigation bar with branding and tabs"""
     
     # Try to load logo, fallback if not found
     try:
@@ -1409,14 +1409,13 @@ def create_modern_navigation():
         logo_base64 = logo_to_base64(logo)
         logo_html = f'''
             <img src="data:image/png;base64,{logo_base64}" 
-                 class="nav-logo" alt="CloudEats Logo" />
+                 class="nav-logo" alt="ProductionPro Logo" />
         '''
     except FileNotFoundError:
         # Fallback with text-based logo
         logo_html = '''
             <div class="nav-logo-fallback">
-                <div class="logo-icon">🍽️</div>
-                <span class="logo-text">CloudEats</span>
+                <span class="logo-text">ProductionPro</span>
             </div>
         '''
     
@@ -1479,11 +1478,6 @@ def create_modern_navigation():
         gap: 8px;
     }}
     
-    .logo-icon {{
-        font-size: 24px;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-    }}
-    
     .logo-text {{
         font-size: 20px;
         font-weight: 600;
@@ -1527,28 +1521,6 @@ def create_modern_navigation():
     .nav-tab:hover {{
         background: rgba(255, 255, 255, 0.7);
         color: #495057;
-    }}
-    
-    /* Mobile responsive */
-    @media (max-width: 768px) {{
-        .nav-content {{
-            padding: 0.5rem 1rem;
-            flex-direction: column;
-            gap: 1rem;
-        }}
-        
-        .nav-tabs {{
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap;
-        }}
-        
-        .nav-tab {{
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 1rem;
-            font-size: 12px;
-        }}
     }}
     </style>
     '''
