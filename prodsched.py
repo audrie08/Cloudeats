@@ -300,7 +300,7 @@ st.markdown(f"""
     }}
 
     .kpi-label {{
-        font-size: 1em;
+        font-size: 0.8em;
         font-weight: 620;
         margin-bottom: 0.9rem;
         opacity: 1;
