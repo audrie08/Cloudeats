@@ -56,35 +56,6 @@ def load_credentials():
         st.error(f"Error loading credentials: {str(e)}")
         return None
 
-def logo_to_base64(img):
-    """Convert PIL image to base64 string"""
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode()
-
-# --- Load and Encode Logo ---
-try:
-    logo = Image.open("cloudeats.png")
-    logo_base64 = logo_to_base64(logo)
-    
-    # --- Sidebar Logo without Rounded Corners ---
-    st.sidebar.markdown(
-        f"""
-        <img src="data:image/png;base64,{logo_base64}" 
-             style="width: 320px; height: auto; border-radius: 0px; display: block; margin: 0 auto;" />
-        """,
-        unsafe_allow_html=True
-    )
-except FileNotFoundError:
-    st.sidebar.markdown(
-        """
-        <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 10px; margin-bottom: 20px;">
-            <h3 style="color: #2c3e50; margin: 0;">CloudEats</h3>
-            <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Production Scheduler</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
 # --- CUSTOM CSS ---
 # Read and encode font (if available)
@@ -1393,7 +1364,14 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     """
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
-    
+
+def logo_to_base64(img):
+    """Convert PIL image to base64 string"""
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode()
+
+
 def create_navigation():
     """Create modern navigation bar with branding and tabs"""
     
@@ -1708,111 +1686,6 @@ def create_horizontal_tab_navigation():
     '''
     
     st.markdown(tab_nav_html, unsafe_allow_html=True)
-
-# Integration functions for your existing app
-def create_navigation():
-    """Updated navigation function that integrates with your existing app"""
-    
-    # Use the horizontal tab navigation that matches your second image
-    try:
-        logo = Image.open("cloudeats.png")
-        logo_base64 = logo_to_base64(logo)
-        brand_html = f'''
-            <img src="data:image/png;base64,{logo_base64}" 
-                 class="brand-logo" alt="CloudEats" />
-        '''
-    except FileNotFoundError:
-        brand_html = '''
-            <div class="brand-fallback">
-                <span class="brand-icon">🍽️</span>
-                <span class="brand-name">cloudeats</span>
-            </div>
-        '''
-    
-    # Updated navigation that matches your app structure
-    nav_html = f'''
-    <div class="integrated-nav-container">
-        <div class="integrated-nav-content">
-            <div class="nav-brand-section">
-                {brand_html}
-            </div>
-        </div>
-    </div>
-    
-    <style>
-    .integrated-nav-container {{
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border-bottom: 1px solid #e9ecef;
-        margin: -1rem -1rem 0 -1rem;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }}
-    
-    .integrated-nav-content {{
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem 2rem;
-    }}
-    
-    .nav-brand-section {{
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-    }}
-    
-    .brand-logo {{
-        height: 36px;
-        width: auto;
-        transition: transform 0.2s ease;
-    }}
-    
-    .brand-logo:hover {{
-        transform: scale(1.05);
-    }}
-    
-    .brand-fallback {{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }}
-    
-    .brand-icon {{
-        font-size: 24px;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-    }}
-    
-    .brand-name {{
-        font-size: 20px;
-        font-weight: 600;
-        color: #2c3e50;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }}
-    
-    /* Override your existing nav container styles */
-    .nav-container {{
-        display: none !important;
-    }}
-    
-    /* Mobile responsive */
-    @media (max-width: 768px) {{
-        .integrated-nav-content {{
-            padding: 1rem;
-        }}
-        
-        .brand-name {{
-            font-size: 18px;
-        }}
-        
-        .brand-logo {{
-            height: 32px;
-        }}
-    }}
-    </style>
-    '''
-    
-    st.markdown(nav_html, unsafe_allow_html=True)
 
 def main_page():
     """Main Page Content - Your existing dashboard"""
