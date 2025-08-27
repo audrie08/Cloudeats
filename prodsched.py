@@ -1767,42 +1767,11 @@ def main():
     # Create modern navigation header
     create_navigation()
     
-    # Add sticky navigation CSS
-    st.markdown("""
-    <style>
-    /* Make the navigation buttons sticky */
-    .sticky-nav-wrapper {
-        position: sticky;
-        top: 85px; /* Adjust based on your header height */
-        z-index: 999;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 10px 0;
-        margin-bottom: 20px;
-        border-bottom: 1px solid rgba(0,0,0,0.1);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* Ensure the main navigation header stays on top */
-    .modern-nav-container {
-        z-index: 1000 !important;
-    }
-    
-    /* Optional: Add some padding to prevent content from hiding behind sticky elements */
-    .main-content {
-        padding-top: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     # Initialize session state for navigation
     if 'main_tab' not in st.session_state:
         st.session_state.main_tab = "Main Page"
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Weekly Production Schedule"
-    
-    # Wrap navigation buttons in sticky container
-    st.markdown('<div class="sticky-nav-wrapper">', unsafe_allow_html=True)
     
     # Main navigation with smaller, centered buttons
     main_page_selection = option_menu(
@@ -1815,9 +1784,7 @@ def main():
         styles={
             "container": {
                 "max-width": "350px",
-                "text-align": "center",
-                "margin": "0 auto",
-                "background": "transparent"
+                "text-align": "center"
             },
             "icon": {
                 "color": "#ffe712",
@@ -1865,9 +1832,7 @@ def main():
             styles={
                 "container": {
                     "max-width": "600px",
-                    "text-align": "center",
-                    "margin": "10px auto 0 auto",
-                    "background": "transparent"
+                    "text-align": "center"
                 },
                 "icon": {
                     "color": "#ffe712",
@@ -1898,15 +1863,6 @@ def main():
                 }
             }
         )
-        
-        # Store the sub page selection in session state
-        st.session_state.sub_tab = sub_page_selection
-    
-    # Close sticky wrapper
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Main content wrapper
-    st.markdown('<div class="main-content">', unsafe_allow_html=True)
     
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "Main Page":
@@ -1917,10 +1873,7 @@ def main():
         elif st.session_state.sub_tab == "Machine Utilization":
             machine_utilization()
         elif st.session_state.sub_tab == "YTD Production Schedule":
-            ytd_production()
-            
-    # Close main content wrapper
-    st.markdown('</div>', unsafe_allow_html=True)
+            ytd_production()      
             
 if __name__ == "__main__":
     main()
