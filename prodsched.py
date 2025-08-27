@@ -1394,114 +1394,471 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
     
-# --- Convert Logo to Base64 ---
 def logo_to_base64(img):
+    """Convert PIL image to base64 string"""
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
 
-def create_navigation():
-    """Create the modern navigation bar with CloudEats logo"""
+def create_modern_navigation():
+    """Create modern navigation bar with CloudEats branding"""
     
-    # --- Load and Encode Logo ---
+    # Try to load logo, fallback if not found
     try:
         logo = Image.open("cloudeats.png")
         logo_base64 = logo_to_base64(logo)
-        
-        nav_html = f"""
-        <div class="nav-container">
-            <div class="main-nav">
-                <div class="nav-brand-with-logo">
-                    <img src="data:image/png;base64,{logo_base64}" 
-                         style="height: 40px; width: auto; margin-right: 12px; vertical-align: middle;" />
-                    <span class="brand-text"></span>
-                </div>
-                <div class="nav-menu-container">
-                    <!-- Navigation menu will be inserted here -->
-                </div>
-            </div>
-        </div>
-        <style>
-        .nav-container {{
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            padding: 1rem 2rem;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
-        }}
-        .main-nav {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }}
-        .nav-brand-with-logo {{
-            display: flex;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }}
-        .brand-text {{
-            background: linear-gradient(135deg, #f4d602, #f7e842);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }}
-        </style>
-        """
-        
+        logo_html = f'''
+            <img src="data:image/png;base64,{logo_base64}" 
+                 class="nav-logo" alt="CloudEats Logo" />
+        '''
     except FileNotFoundError:
-        # Fallback without logo
-        nav_html = """
-        <div class="nav-container">
-            <div class="main-nav">
-                <div class="nav-brand-fallback">
-                    <div class="cloudeats-badge">CloudEats</div>
-                    <span class="brand-text"></span>
+        # Fallback with text-based logo
+        logo_html = '''
+            <div class="nav-logo-fallback">
+                <div class="logo-icon">🍽️</div>
+                <span class="logo-text">cloudeats</span>
+            </div>
+        '''
+    
+    # Navigation HTML with modern styling
+    nav_html = f'''
+    <div class="modern-nav-container">
+        <div class="nav-content">
+            <div class="nav-brand">
+                {logo_html}
+            </div>
+            <div class="nav-actions">
+                <button class="nav-btn active" data-page="main">Main Page</button>
+                <button class="nav-btn secondary" data-page="details">Dashboard Details</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    .modern-nav-container {{
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 1px solid #e9ecef;
+        padding: 0;
+        margin: -1rem -1rem 0 -1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }}
+    
+    .nav-content {{
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+    }}
+    
+    .nav-brand {{
+        display: flex;
+        align-items: center;
+    }}
+    
+    .nav-logo {{
+        height: 40px;
+        width: auto;
+        transition: transform 0.2s ease;
+    }}
+    
+    .nav-logo:hover {{
+        transform: scale(1.05);
+    }}
+    
+    .nav-logo-fallback {{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }}
+    
+    .logo-icon {{
+        font-size: 24px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }}
+    
+    .logo-text {{
+        font-size: 20px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }}
+    
+    .nav-actions {{
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }}
+    
+    .nav-btn {{
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        outline: none;
+        position: relative;
+        overflow: hidden;
+    }}
+    
+    .nav-btn.active {{
+        background: #f4d602;
+        color: #000000;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(244, 214, 2, 0.3);
+        transform: translateY(-1px);
+    }}
+    
+    .nav-btn.active::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+        pointer-events: none;
+    }}
+    
+    .nav-btn.secondary {{
+        background: transparent;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+    }}
+    
+    .nav-btn.secondary:hover {{
+        background: #f8f9fa;
+        color: #495057;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }}
+    
+    .nav-btn:active {{
+        transform: translateY(0);
+    }}
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {{
+        .nav-content {{
+            padding: 1rem;
+            flex-direction: column;
+            gap: 1rem;
+        }}
+        
+        .nav-actions {{
+            width: 100%;
+            justify-content: center;
+        }}
+        
+        .nav-btn {{
+            flex: 1;
+            text-align: center;
+        }}
+    }}
+    </style>
+    '''
+    
+    st.markdown(nav_html, unsafe_allow_html=True)
+
+def create_horizontal_tab_navigation():
+    """Alternative horizontal tab navigation similar to your second image"""
+    
+    # Try to load logo for brand section
+    try:
+        logo = Image.open("cloudeats.png")
+        logo_base64 = logo_to_base64(logo)
+        brand_html = f'''
+            <img src="data:image/png;base64,{logo_base64}" 
+                 class="brand-logo" alt="CloudEats" />
+        '''
+    except FileNotFoundError:
+        brand_html = '''
+            <div class="brand-fallback">
+                <span class="brand-icon">🍽️</span>
+                <span class="brand-name">cloudeats</span>
+            </div>
+        '''
+    
+    tab_nav_html = f'''
+    <div class="tab-nav-container">
+        <div class="tab-nav-content">
+            <div class="tab-brand-section">
+                {brand_html}
+            </div>
+            <div class="tab-navigation">
+                <div class="tab-item active" data-tab="main">
+                    <span class="tab-icon">🏠</span>
+                    <span class="tab-text">Main Page</span>
                 </div>
-                <div class="nav-menu-container">
-                    <!-- Navigation menu will be inserted here -->
+                <div class="tab-item" data-tab="weekly">
+                    <span class="tab-icon">📅</span>
+                    <span class="tab-text">Weekly Production Schedule</span>
+                </div>
+                <div class="tab-item" data-tab="machine">
+                    <span class="tab-icon">⚙️</span>
+                    <span class="tab-text">Machine Utilization</span>
+                </div>
+                <div class="tab-item" data-tab="ytd">
+                    <span class="tab-icon">📈</span>
+                    <span class="tab-text">YTD Production Schedule</span>
                 </div>
             </div>
         </div>
-        <style>
-        .nav-container {
-            background: linear-gradient(135deg, #ffffff, #f8f9fa);
-            padding: 1rem 2rem;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
-        }
-        .main-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .nav-brand-fallback {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .cloudeats-badge {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        .brand-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f4d602, #f7e842);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        </style>
-        """
+    </div>
+    
+    <style>
+    .tab-nav-container {{
+        background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+        border-bottom: 1px solid #e0e0e0;
+        margin: -1rem -1rem 0 -1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }}
+    
+    .tab-nav-content {{
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
+    }}
+    
+    .tab-brand-section {{
+        padding: 1rem 2rem;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fafafa;
+    }}
+    
+    .brand-logo {{
+        height: 32px;
+        width: auto;
+    }}
+    
+    .brand-fallback {{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }}
+    
+    .brand-icon {{
+        font-size: 24px;
+    }}
+    
+    .brand-name {{
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }}
+    
+    .tab-navigation {{
+        display: flex;
+        padding: 0 2rem;
+        gap: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }}
+    
+    .tab-navigation::-webkit-scrollbar {{
+        display: none;
+    }}
+    
+    .tab-item {{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 3px solid transparent;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        white-space: nowrap;
+        position: relative;
+        min-width: fit-content;
+    }}
+    
+    .tab-item:hover {{
+        background: rgba(244, 214, 2, 0.1);
+        color: #333;
+    }}
+    
+    .tab-item.active {{
+        background: #f4d602;
+        color: #000;
+        font-weight: 600;
+        border-bottom-color: #e6c200;
+        box-shadow: 0 2px 8px rgba(244, 214, 2, 0.3);
+    }}
+    
+    .tab-item.active::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #f4d602, #f7e842);
+    }}
+    
+    .tab-icon {{
+        font-size: 16px;
+        filter: none;
+    }}
+    
+    .tab-text {{
+        font-size: 14px;
+    }}
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {{
+        .tab-brand-section {{
+            padding: 0.75rem 1rem;
+        }}
+        
+        .tab-navigation {{
+            padding: 0 1rem;
+        }}
+        
+        .tab-item {{
+            padding: 0.875rem 1rem;
+            font-size: 13px;
+            min-width: auto;
+        }}
+        
+        .tab-text {{
+            display: none;
+        }}
+        
+        .tab-icon {{
+            font-size: 18px;
+        }}
+    }}
+    
+    @media (max-width: 480px) {{
+        .tab-item {{
+            padding: 1rem 0.75rem;
+        }}
+    }}
+    </style>
+    '''
+    
+    st.markdown(tab_nav_html, unsafe_allow_html=True)
+
+# Integration functions for your existing app
+def create_navigation():
+    """Updated navigation function that integrates with your existing app"""
+    
+    # Use the horizontal tab navigation that matches your second image
+    try:
+        logo = Image.open("cloudeats.png")
+        logo_base64 = logo_to_base64(logo)
+        brand_html = f'''
+            <img src="data:image/png;base64,{logo_base64}" 
+                 class="brand-logo" alt="CloudEats" />
+        '''
+    except FileNotFoundError:
+        brand_html = '''
+            <div class="brand-fallback">
+                <span class="brand-icon">🍽️</span>
+                <span class="brand-name">cloudeats</span>
+            </div>
+        '''
+    
+    # Updated navigation that matches your app structure
+    nav_html = f'''
+    <div class="integrated-nav-container">
+        <div class="integrated-nav-content">
+            <div class="nav-brand-section">
+                {brand_html}
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    .integrated-nav-container {{
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 1px solid #e9ecef;
+        margin: -1rem -1rem 0 -1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }}
+    
+    .integrated-nav-content {{
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 2rem;
+    }}
+    
+    .nav-brand-section {{
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }}
+    
+    .brand-logo {{
+        height: 36px;
+        width: auto;
+        transition: transform 0.2s ease;
+    }}
+    
+    .brand-logo:hover {{
+        transform: scale(1.05);
+    }}
+    
+    .brand-fallback {{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }}
+    
+    .brand-icon {{
+        font-size: 24px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }}
+    
+    .brand-name {{
+        font-size: 20px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }}
+    
+    /* Override your existing nav container styles */
+    .nav-container {{
+        display: none !important;
+    }}
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {{
+        .integrated-nav-content {{
+            padding: 1rem;
+        }}
+        
+        .brand-name {{
+            font-size: 18px;
+        }}
+        
+        .brand-logo {{
+            height: 32px;
+        }}
+    }}
+    </style>
+    '''
     
     st.markdown(nav_html, unsafe_allow_html=True)
 
