@@ -1394,18 +1394,115 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
     
+# --- Convert Logo to Base64 ---
+def logo_to_base64(img):
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode()
+
 def create_navigation():
-    """Create the modern navigation bar"""
-    nav_html = """
-    <div class="nav-container">
-        <div class="main-nav">
-            <div class="nav-brand">ProductionPro</div>
-            <div class="nav-menu-container">
-                <!-- Navigation menu will be inserted here -->
+    """Create the modern navigation bar with CloudEats logo"""
+    
+    # --- Load and Encode Logo ---
+    try:
+        logo = Image.open("cloudeats.png")
+        logo_base64 = logo_to_base64(logo)
+        
+        nav_html = f"""
+        <div class="nav-container">
+            <div class="main-nav">
+                <div class="nav-brand-with-logo">
+                    <img src="data:image/png;base64,{logo_base64}" 
+                         style="height: 40px; width: auto; margin-right: 12px; vertical-align: middle;" />
+                    <span class="brand-text"></span>
+                </div>
+                <div class="nav-menu-container">
+                    <!-- Navigation menu will be inserted here -->
+                </div>
             </div>
         </div>
-    </div>
-    """
+        <style>
+        .nav-container {{
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }}
+        .main-nav {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }}
+        .nav-brand-with-logo {{
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }}
+        .brand-text {{
+            background: linear-gradient(135deg, #f4d602, #f7e842);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }}
+        </style>
+        """
+        
+    except FileNotFoundError:
+        # Fallback without logo
+        nav_html = """
+        <div class="nav-container">
+            <div class="main-nav">
+                <div class="nav-brand-fallback">
+                    <div class="cloudeats-badge">CloudEats</div>
+                    <span class="brand-text"></span>
+                </div>
+                <div class="nav-menu-container">
+                    <!-- Navigation menu will be inserted here -->
+                </div>
+            </div>
+        </div>
+        <style>
+        .nav-container {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .main-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .nav-brand-fallback {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .cloudeats-badge {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .brand-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f4d602, #f7e842);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        </style>
+        """
+    
     st.markdown(nav_html, unsafe_allow_html=True)
 
 def main_page():
