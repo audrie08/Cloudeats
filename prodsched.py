@@ -1399,30 +1399,25 @@ def create_navigation():
         .nav-brand {{
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 18px;
             margin-bottom: 0;
         }}
         
         .brand-logo {{
-            width: 45px;
-            height: 45px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.1);
-            padding: 3px;
-            backdrop-filter: blur(10px);
+            width: 70px;   /* Increased size */
+            height: auto;  /* Keep aspect ratio */
         }}
         
         .brand-logo img {{
             width: 100%;
-            height: 100%;
+            height: auto;
             object-fit: contain;
-            border-radius: 6px;
+            display: block;
         }}
         
         .brand-text {{
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.5px;
@@ -1436,6 +1431,7 @@ def create_navigation():
                 <div class="brand-logo">
                     <img src="data:image/png;base64,{logo_base64}" alt="CloudEats Logo">
                 </div>
+                <div class="brand-text">CloudEats</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1458,19 +1454,19 @@ def create_navigation():
         .nav-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 18px;
             margin-bottom: 0;
         }
         
         .brand-icon {
-            width: 45px;
-            height: 45px;
+            width: 55px;
+            height: 55px;
             background: linear-gradient(135deg, #ffd700, #ffed4a);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #333;
             box-shadow: 0 4px 15px rgba(255,215,0,0.3);
@@ -1478,7 +1474,7 @@ def create_navigation():
         
         .brand-text {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.5px;
