@@ -295,7 +295,7 @@ st.markdown(f"""
         font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
         font-size: 2.2em;
         font-weight: 700;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.9rem;
         transition: all 0.3s ease;
     }}
 
