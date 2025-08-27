@@ -1416,7 +1416,7 @@ def create_modern_navigation():
         logo_html = '''
             <div class="nav-logo-fallback">
                 <div class="logo-icon">🍽️</div>
-                <span class="logo-text">cloudeats</span>
+                <span class="logo-text">CloudEats</span>
             </div>
         '''
     
@@ -1427,9 +1427,11 @@ def create_modern_navigation():
             <div class="nav-brand">
                 {logo_html}
             </div>
-            <div class="nav-actions">
-                <button class="nav-btn active" data-page="main">Main Page</button>
-                <button class="nav-btn secondary" data-page="details">Dashboard Details</button>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-page="main">Main Page</button>
+                <button class="nav-tab" data-page="weekly">Weekly Prod Sched</button>
+                <button class="nav-tab" data-page="machine">Machine Utilization</button>
+                <button class="nav-tab" data-page="ytd">YTD Production Schedule</button>
             </div>
         </div>
     </div>
@@ -1448,12 +1450,12 @@ def create_modern_navigation():
     }}
     
     .nav-content {{
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 2rem;
+        padding: 0.5rem 2rem;
     }}
     
     .nav-brand {{
@@ -1489,16 +1491,20 @@ def create_modern_navigation():
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }}
     
-    .nav-actions {{
+    .nav-tabs {{
         display: flex;
-        gap: 0.5rem;
+        gap: 0;
         align-items: center;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }}
     
-    .nav-btn {{
+    .nav-tab {{
         padding: 0.75rem 1.5rem;
         border: none;
-        border-radius: 8px;
+        border-radius: 6px;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
@@ -1507,61 +1513,41 @@ def create_modern_navigation():
         outline: none;
         position: relative;
         overflow: hidden;
-    }}
-    
-    .nav-btn.active {{
-        background: #f4d602;
-        color: #000000;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(244, 214, 2, 0.3);
-        transform: translateY(-1px);
-    }}
-    
-    .nav-btn.active::before {{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, rgba(255,255,255,0.2) 0%, transparent 100%);
-        pointer-events: none;
-    }}
-    
-    .nav-btn.secondary {{
         background: transparent;
         color: #6c757d;
-        border: 1px solid #dee2e6;
     }}
     
-    .nav-btn.secondary:hover {{
-        background: #f8f9fa;
+    .nav-tab.active {{
+        background: #ffffff;
+        color: #000000;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }}
+    
+    .nav-tab:hover {{
+        background: rgba(255, 255, 255, 0.7);
         color: #495057;
-        border-color: #adb5bd;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }}
-    
-    .nav-btn:active {{
-        transform: translateY(0);
     }}
     
     /* Mobile responsive */
     @media (max-width: 768px) {{
         .nav-content {{
-            padding: 1rem;
+            padding: 0.5rem 1rem;
             flex-direction: column;
             gap: 1rem;
         }}
         
-        .nav-actions {{
+        .nav-tabs {{
             width: 100%;
             justify-content: center;
+            flex-wrap: wrap;
         }}
         
-        .nav-btn {{
+        .nav-tab {{
             flex: 1;
             text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 12px;
         }}
     }}
     </style>
