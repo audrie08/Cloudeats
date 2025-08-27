@@ -1783,7 +1783,7 @@ def main():
         key="main_navigation",
         styles={
             "container": {
-                "max-width": "650px",
+                "max-width": "550px",
                 "text-align": "center"
             },
             "icon": {
