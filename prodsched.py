@@ -1374,70 +1374,129 @@ def logo_to_base64(img):
 
 
 def create_navigation():
-    """Create a modern, professional navigation header"""
+    """Create a modern, professional navigation header with logo"""
     
-    # Modern navigation with improved styling
-    st.markdown("""
-    <style>
-    .modern-nav-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 0.75rem 2rem;
-        margin: -1rem -1rem 2rem -1rem;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        border-bottom: 3px solid rgba(255,255,255,0.1);
-    }
-    
-    .nav-brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 0;
-    }
-    
-    .brand-icon {
-        width: 36px;
-        height: 36px;
-        background: linear-gradient(135deg, #ffd700, #ffed4a);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
-        box-shadow: 0 2px 8px rgba(255,215,0,0.3);
-    }
-    
-    .brand-text {
-        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 24px;
-        font-weight: 700;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    
-    .brand-subtitle {
-        font-size: 13px;
-        color: rgba(255,255,255,0.8);
-        font-weight: 400;
-        margin-top: -2px;
-    }
-    </style>
-    
-    <div class="modern-nav-container">
-        <div class="nav-brand">
-            <div class="brand-icon">🍽️</div>
-            <div>
-                <div class="brand-text">Bites To Go</div>
-                <div class="brand-subtitle">Production Management System</div>
+    try:
+        # Load and convert logo to base64
+        from PIL import Image
+        logo_img = Image.open("cloudeats.png")
+        logo_base64 = logo_to_base64(logo_img)
+        
+        # Modern navigation with logo
+        st.markdown(f"""
+        <style>
+        .modern-nav-container {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.75rem 2rem;
+            margin: -1rem -1rem 2rem -1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-bottom: 3px solid rgba(255,255,255,0.1);
+        }}
+        
+        .nav-brand {{
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 0;
+        }}
+        
+        .brand-logo {{
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            padding: 3px;
+            backdrop-filter: blur(10px);
+        }}
+        
+        .brand-logo img {{
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }}
+        
+        .brand-text {{
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            line-height: 1.2;
+        }}
+        </style>
+        
+        <div class="modern-nav-container">
+            <div class="nav-brand">
+                <div class="brand-logo">
+                    <img src="data:image/png;base64,{logo_base64}" alt="CloudEats Logo">
+                </div>
+                <div class="brand-text">CloudEats</div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+    except FileNotFoundError:
+        # Fallback if logo file is not found
+        st.markdown("""
+        <style>
+        .modern-nav-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.75rem 2rem;
+            margin: -1rem -1rem 2rem -1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-bottom: 3px solid rgba(255,255,255,0.1);
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0;
+        }
+        
+        .brand-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #ffd700, #ffed4a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+        
+        .brand-text {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        </style>
+        
+        <div class="modern-nav-container">
+            <div class="nav-brand">
+                <div class="brand-icon">🍽️</div>
+                <div class="brand-text">CloudEats</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
+
 
 def main_page():
     """Main Page Content - Your existing dashboard"""
