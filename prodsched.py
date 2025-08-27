@@ -1387,142 +1387,91 @@ def create_navigation():
     </div>
     
     <style>
-    .tab-nav-container {{
-        background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-        border-bottom: 1px solid #e0e0e0;
+    .bitestogo-nav-container {
+        background: #ffffff;
+        border-bottom: 2px solid #e0e0e0;
+        padding: 0;
         margin: -1rem -1rem 0 -1rem;
         position: sticky;
         top: 0;
         z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }}
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
     
-    .tab-nav-content {{
+    .nav-content {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 0;
-    }}
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 2rem;
+    }
     
-    .tab-brand-section {{
-        padding: 1rem 2rem;
-        border-bottom: 1px solid #f0f0f0;
-        background: #fafafa;
-    }}
-    
-    .brand-logo {{
-        height: 32px;
-        width: auto;
-    }}
-    
-    .brand-fallback {{
+    .nav-brand {
         display: flex;
         align-items: center;
-        gap: 8px;
-    }}
+    }
     
-    .brand-icon {{
+    .logo-text {
         font-size: 24px;
-    }}
+        font-weight: bold;
+        color: #2c3e50;
+        font-family: Arial, sans-serif;
+    }
     
-    .brand-name {{
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }}
-    
-    .tab-navigation {{
+    .nav-tabs {
         display: flex;
-        padding: 0 2rem;
         gap: 0;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }}
-    
-    .tab-navigation::-webkit-scrollbar {{
-        display: none;
-    }}
-    
-    .tab-item {{
-        display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 1rem 1.5rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border-bottom: 3px solid transparent;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 2px;
+    }
+    
+    .nav-tab {
+        padding: 0.75rem 1.5rem;
         font-size: 14px;
         font-weight: 500;
-        color: #666;
-        white-space: nowrap;
-        position: relative;
-        min-width: fit-content;
-    }}
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: Arial, sans-serif;
+        color: #6c757d;
+        border-radius: 4px;
+    }
     
-    .tab-item:hover {{
-        background: rgba(244, 214, 2, 0.1);
-        color: #333;
-    }}
-    
-    .tab-item.active {{
-        background: #f4d602;
-        color: #000;
+    .nav-tab.active {
+        background: #ffffff;
+        color: #000000;
         font-weight: 600;
-        border-bottom-color: #e6c200;
-        box-shadow: 0 2px 8px rgba(244, 214, 2, 0.3);
-    }}
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
     
-    .tab-item.active::before {{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #f4d602, #f7e842);
-    }}
-    
-    .tab-icon {{
-        font-size: 16px;
-        filter: none;
-    }}
-    
-    .tab-text {{
-        font-size: 14px;
-    }}
+    .nav-tab:hover {
+        background: rgba(255, 255, 255, 0.7);
+        color: #495057;
+    }
     
     /* Mobile responsive */
-    @media (max-width: 768px) {{
-        .tab-brand-section {{
-            padding: 0.75rem 1rem;
-        }}
+    @media (max-width: 768px) {
+        .nav-content {
+            padding: 0.5rem 1rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
         
-        .tab-navigation {{
-            padding: 0 1rem;
-        }}
+        .nav-tabs {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
         
-        .tab-item {{
-            padding: 0.875rem 1rem;
-            font-size: 13px;
-            min-width: auto;
-        }}
-        
-        .tab-text {{
-            display: none;
-        }}
-        
-        .tab-icon {{
-            font-size: 18px;
-        }}
-    }}
-    
-    @media (max-width: 480px) {{
-        .tab-item {{
-            padding: 1rem 0.75rem;
-        }}
-    }}
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 12px;
+        }
+    }
     </style>
     '''
     
