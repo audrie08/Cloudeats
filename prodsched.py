@@ -1782,15 +1782,6 @@ def main():
         orientation="horizontal",
         key="main_navigation",
         styles={
-                "container": {
-                    "padding": "0.9rem",
-                    "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                    "border-radius": "15px",
-                    "margin": "0 auto 2.4rem auto",
-                    "max-width": "700px",
-                    "box-shadow": "0 4px 25px rgba(0,0,0,0.08)",
-                    "border": "2px solid rgba(0,0,0,0.05)"
-                },
                 "icon": {
                     "color": "#ffe712",
                     "font-size": "16px",
@@ -1835,15 +1826,6 @@ def main():
             orientation="horizontal",
             key="sub_navigation",
             styles={
-                "container": {
-                    "padding": "0.9rem",
-                    "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                    "border-radius": "15px",
-                    "margin": "0 auto 2.4rem auto",
-                    "max-width": "900px",
-                    "box-shadow": "0 4px 25px rgba(0,0,0,0.08)",
-                    "border": "2px solid rgba(0,0,0,0.05)"
-                },
                 "icon": {
                     "color": "#ffe712",
                     "font-size": "16px",
