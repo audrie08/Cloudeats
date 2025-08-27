@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 st.set_page_config(
     page_title="Commissary Production Scheduler",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # --- CREDENTIALS HANDLING ---
@@ -96,7 +96,7 @@ except FileNotFoundError:
     font_base64 = ""
     font_available = False
 
-# Enhanced CSS including filter styles
+# Enhanced CSS including filter styles and modern navigation
 font_face_css = f"""
     @font-face {{
         font-family: 'TT Norms';
@@ -110,12 +110,61 @@ st.markdown(f"""
 <style>
     {font_face_css}
 
+    /* Hide default Streamlit elements for cleaner look */
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    header {{visibility: hidden;}}
+    
+    /* Adjust main container */
+    .block-container {{
+        padding-top: 0rem;
+        padding-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }}
+
     /* Background */
     body, .main, .block-container {{
         background-color: #ffffff;
     }}
 
-    /* Main Header */
+    /* === MODERN NAVIGATION BAR === */
+    .nav-container {{
+        background: linear-gradient(135deg, #fffef6 0%, #fefdf0 100%);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-bottom: 3px solid #f4d602;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 0 2rem;
+    }}
+    
+    .main-nav {{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        max-width: 1200px;
+        margin: 0 auto;
+    }}
+    
+    .nav-brand {{
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        text-decoration: none;
+        letter-spacing: -0.5px;
+        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
+    }}
+    
+    .nav-menu-container {{
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }}
+
+    /* === MAIN HEADER === */
     .main-header {{
         background: #f7d42c;
         padding: 1rem 1rem;
@@ -140,7 +189,7 @@ st.markdown(f"""
         margin: 0.5rem 0 0 0;
     }}
 
-    /* Modern Filter Container with Glassmorphism */
+    /* === MODERN FILTER CONTAINER === */
     .filter-container {{
         background: #000000;
         backdrop-filter: blur(12px);
@@ -154,7 +203,6 @@ st.markdown(f"""
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }}
 
-    /* Animated Background Gradient */
     .filter-container::before {{
         content: '';
         position: absolute;
@@ -177,7 +225,7 @@ st.markdown(f"""
         transform: translateY(-4px);
     }}
 
-    /* Enhanced Filter Header */
+    /* === ENHANCED FILTER HEADER === */
     .filter-header {{
         text-align: center;
         margin-bottom: 2rem;
@@ -204,7 +252,7 @@ st.markdown(f"""
         opacity: 0.8;
     }}
 
-    /* Enhanced Selectbox Styling */
+    /* === ENHANCED SELECTBOX STYLING === */
     .stSelectbox > label {{
         font-weight: 700 !important;
         color: #000000 !important;
@@ -236,7 +284,7 @@ st.markdown(f"""
             0 8px 24px rgba(237, 174, 73, 0.15) !important;
     }}
 
-    /* KPI Cards */
+    /* === KPI CARDS === */
     .kpi-card {{
         background: #ff8765;
         color: #f0ebe4;
@@ -313,7 +361,7 @@ st.markdown(f"""
         margin-bottom: 0.1rem;
     }}
 
-    /* SKU Table */
+    /* === SKU TABLE === */
     .sku-table {{
         background: #fffef6;
         border-radius: 10px;
@@ -340,7 +388,7 @@ st.markdown(f"""
         border-bottom: none;
     }}
 
-    /* Sidebar */
+    /* === SIDEBAR (for fallback/secondary pages) === */
     [data-testid="stSidebar"] > div:first-child {{
         display: flex;
         flex-direction: column;
@@ -354,13 +402,47 @@ st.markdown(f"""
         min-width: 280px !important;
     }}
 
-    /* Sidebar headers with custom font */
     [data-testid="stSidebar"] h3 {{
         font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
     }}
 
-    /* Responsive Design */
+    /* === DASHBOARD CARDS === */
+    .dashboard-card {{
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(244, 214, 2, 0.2);
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }}
+    
+    .dashboard-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    }}
+    
+    .dashboard-card h3 {{
+        color: #2c3e50;
+        font-family: {'TT Norms' if font_available else 'Arial'}, sans-serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #f4d602;
+        padding-bottom: 0.5rem;
+    }}
+
+    /* === RESPONSIVE DESIGN === */
     @media (max-width: 768px) {{
+        .nav-container {{
+            padding: 0 1rem;
+        }}
+        
+        .main-nav {{
+            flex-direction: column;
+            gap: 1rem;
+        }}
+        
         .main-header h1 {{
             font-size: 2em;
         }}
@@ -372,10 +454,14 @@ st.markdown(f"""
         .kpi-card {{
             min-height: 140px;
         }}
+        
+        .dashboard-card {{
+            padding: 1.5rem;
+        }}
     }}
-    
 </style>
 """, unsafe_allow_html=True)
+
 
 # --- STATION MAPPING ---
 STATIONS = {
@@ -1308,319 +1394,372 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
     
-def main():
-    # --- Sidebar Menu Header ---
-            st.sidebar.markdown("""
-            <div style="color: #2c3e50; font-size: 14px; font-weight: 650; margin: 1rem 0 0.5rem 0; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
-                Production Dashboard
+def create_navigation():
+    """Create the modern navigation bar"""
+    nav_html = """
+    <div class="nav-container">
+        <div class="main-nav">
+            <div class="nav-brand">ProductionPro</div>
+            <div class="nav-menu-container">
+                <!-- Navigation menu will be inserted here -->
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+    </div>
+    """
+    st.markdown(nav_html, unsafe_allow_html=True)
+
+def main_page():
+    """Main Page Content - Your existing dashboard"""
+    # Main Header (your existing style)
+    st.markdown(f"""
+    <div class="main-header">
+        <h1>Main Dashboard</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+def weekly_prod_schedule():
+    """Weekly Production Schedule Page"""
+    st.markdown("""
+    <div class="dashboard-card">
+        <h3>📅 Weekly Production Schedule</h3>
+        <p>Comprehensive weekly production planning and scheduling interface.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>Commissary Production Scheduler</b></h1>
+        <p><b>Weekly Production Schedule Management</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load data
+    with st.spinner("Loading production schedule..."):
+        df = load_production_data()
+    
+    if df is None:
+        st.stop()
+    
+    # Initialize extractor
+    extractor = ProductionDataExtractor(df)
+    
+    # Get week info, week number, and days
+    start_date, end_date = extractor.get_week_info()
+    week_number = extractor.get_week_number()
+    days = extractor.get_days_of_week()
+
+    # Filters with dynamic SKU dropdown and sheet selection
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        # Week number display (read-only)
+        st.selectbox(
+            "Week Number",
+            options=[week_number],
+            index=0,
+            key="week_display",
+            disabled=True,
+            help="Current week number from the selected spreadsheet"
+        )
+
+    with col2:
+        station_filter = st.selectbox(
+            "Filter per Station",
+            options=list(STATIONS.keys()),
+            index=0,
+            key="station_filter"
+        )
+
+    with col3:
+        # Get SKUs filtered by selected station
+        if station_filter == "All Stations":
+            unique_skus = extractor.get_unique_skus()
+        else:
+            unique_skus = extractor.get_unique_skus_by_station(station_filter)
+        
+        sku_options = ["All SKUs"] + unique_skus
+        sku_filter = st.selectbox(
+            "Filter per SKU",
+            options=sku_options,
+            index=0,
+            key="sku_filter"
+        )
+
+    with col4:
+        day_options = ["Current Week"] + days
+        day_filter = st.selectbox(
+            "Filter per Day",
+            options=day_options,
+            index=0,
+            key="day_filter"
+        )
+
+    # Get filtered SKUs
+    filtered_skus = extractor.get_all_skus(station_filter, sku_filter, day_filter)
+    
+    # FIXED: Calculate totals with day filter and days parameters
+    total_batches, total_volume, total_hours, total_total_manpower, overtime_percentage = calculate_totals(
+        filtered_skus, extractor, day_filter, days
+    )
+    
+    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
+
+    # 
+    st.markdown("### Summary")
+    
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{len(filtered_skus)}</div>
+            <div class="kpi-title">Total SKUs</div>
+            <div class="kpi-unit">(no.)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_batches:,.0f}</div>
+            <div class="kpi-title">Total Batches</div>
+            <div class="kpi-unit">(no.)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_volume:,.0f}</div>
+            <div class="kpi-title">Total Volume</div>
+            <div class="kpi-unit">(kg)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_hours:,.0f}</div>
+            <div class="kpi-title">Total Hours</div>
+            <div class="kpi-unit">(hrs)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col5:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_total_manpower:,.0f}</div>
+            <div class="kpi-title">Total Manpower</div>
+            <div class="kpi-unit">(count)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col6:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{overtime_percentage:.1f}%</div>
+            <div class="kpi-title">Overtime</div>
+            <div class="kpi-unit">%</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # FIXED: SKU Table with day filter and days parameters
+    render_sku_table(filtered_skus, day_filter, days)
+
+def machine_utilization():
+    """Machine Utilization Page"""
+    st.markdown("""
+    <div class="dashboard-card">
+        <h3>⚙️ Machine Utilization Analysis</h3>
+        <p>Monitor machine performance, efficiency metrics, and utilization rates.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- Header ---
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>Machine Utilization Dashboard</b></h1>
+        <p><b>Track machine usage vs capacity</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- Load Data ---
+    df_machine = load_production_data(sheet_index=2)  
+    extractor = MachineUtilizationExtractor(df_machine)
+    machines = extractor.get_machine_data()
+
+    # --- Filters (day & machine) ---
+    col1, col2 = st.columns(2)
+
+    with col1:
+        machine_options = ["All Machines"] + [m['machine'] for m in machines]
+        machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
+
+    with col2:
+        # Row 2 = weekdays
+        weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
+        # Row 3 = dates
+        dates = extractor.df.iloc[3, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
+        # Combine weekday + date like "Mon (11 Aug)"
+        day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
+        day_options = ["Current Week"] + day_labels
+        day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
+
+    # --- Apply filters ---
+    if machine_filter != "All Machines":
+        machines = [m for m in machines if m['machine'] == machine_filter]
+
+    # --- Totals for KPI cards ---
+    if day_filter == "Current Week":
+        totals = extractor.calculate_totals(machines)
+    else:
+        day_index = day_options.index(day_filter) - 1
+        totals = extractor.calculate_totals(machines, day_index=day_index)
+    
+    # Now unpack 5 values instead of 4
+    total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
+
+    # Adjust "Total Machines" display
+    if machine_filter != "All Machines" and machines:
+        # If filtered by machine → show only that machine's qty
+        total_machines = machines[0].get("qty", 1)
+
+    # --- KPI Cards ---
+    st.markdown("### Summary")
+    
+    colA, colB, colC, colD, colE = st.columns([0.9, 1, 1.2, 1.2, 1])
+    
+    # Use consistent naming with your totals
+    total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
+    
+    with colA:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_machines:,.0f}</div>
+            <div class="kpi-title">Total Machines</div>
+            <div class="kpi-unit">(no.)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with colB:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_needed_hrs:,.0f}</div>
+            <div class="kpi-title">Needed Run Hours</div>
+            <div class="kpi-unit">(hrs)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with colC:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
+            <div class="kpi-title">Remaining Available Hours</div>
+            <div class="kpi-unit">(hrs)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with colD:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_machine_needed:,.0f}</div>
+            <div class="kpi-title">Additional Machines Needed</div>
+            <div class="kpi-unit">(no.)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with colE:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
+            <div class="kpi-title">Capacity Utilization</div>
+            <div class="kpi-unit">(%)</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # --- Call the render function ---
+    render_machine_table(machines, day_filter, day_options)
+
+
+def ytd_production():
+    """YTD Production Schedule Page"""
+    st.markdown("""
+    <div class="dashboard-card">
+        <h3>📈 YTD Production Analysis</h3>
+        <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
+    </div>
+    """, unsafe_allow_html=True)
             
-            # --- Sidebar Navigation with option_menu ---
-            with st.sidebar:
-                page = option_menu(
-                    menu_title=None,
-                    options=[
-                        "Weekly Production Schedule", 
-                        "Weekly Machine Utilization",
-                        "Consolidated Prod Schedule",
-                        "Consolidated Weekly Utilization"
-                    ],
-                    icons=["calendar-week", "layers", "clipboard-data", "bar-chart"],
-                    default_index=0,
-                    key="production_menu",
-                    styles={
-                        "container": {
-                            "padding": "0rem",
-                            "background-color": "#fffef6",  # dark gray sidebar
-                            "border-radius": "8px",
-                            "margin": "0",
-                            "width": "280px",
-                            "min-width": "280px",
-                            "overflow": "hidden",
-                        },
-                        "icon": {
-                            "color": "#f4d602",  # yellow icons
-                            "font-size": "14px",
-                            "margin-right": "8px",
-                            "position": "relative",
-                            "left": "-1px"
-                        },
-                        "nav-link": {
-                            "font-family": "Segoe UI, sans-serif",
-                            "font-size": "13px",
-                            "font-weight": "450",
-                            "text-align": "left",
-                            "color": "#262622",  # light text
-                            "margin": "4px 0",
-                            "padding": "12px 12px",
-                            "border-radius": "6px",
-                            "white-space": "nowrap",
-                            "overflow": "hidden",
-                            "text-overflow": "ellipsis",
-                            "transition": "all 0.3s ease",
-                            "--hover-color": "rgba(244, 214, 2, 0.2)"  # soft yellow hover
-                        },
-                        "nav-link-selected": {
-                            "font-family": "Segoe UI, sans-serif",
-                            "background-color": "#f4d602",  # yellow highlight
-                            "color": "#000000",  # black text when active
-                            "font-weight": "600",
-                        }
+def main():
+    """Main application function"""
+    
+    # Create navigation bar
+    create_navigation()
+    
+    # Navigation menu using option_menu (modern horizontal navigation)
+    with st.container():
+        # Center the navigation menu
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
+            page = option_menu(
+                menu_title=None,
+                options=["Main Page", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
+                icons=["house-fill", "calendar-week-fill", "gear-fill", "graph-up"],
+                default_index=0,
+                orientation="horizontal",
+                key="main_navigation",
+                styles={
+                    "container": {
+                        "padding": "0rem",
+                        "background-color": "transparent",
+                        "border-radius": "12px",
+                        "margin": "-1.5rem 0 2rem 0",
+                        "box-shadow": "none"
+                    },
+                    "icon": {
+                        "color": "#f4d602",
+                        "font-size": "16px",
+                        "margin-right": "8px"
+                    },
+                    "nav-link": {
+                        f"font-family": f"{'TT Norms' if font_available else 'Segoe UI'}, sans-serif",
+                        "font-size": "14px",
+                        "font-weight": "500",
+                        "text-align": "center",
+                        "color": "#2c3e50",
+                        "margin": "0 0.25rem",
+                        "padding": "0.875rem 1.5rem",
+                        "border-radius": "10px",
+                        "transition": "all 0.3s ease",
+                        "border": "1px solid rgba(44, 62, 80, 0.1)",
+                        "background": "rgba(255, 255, 255, 0.8)",
+                        "backdrop-filter": "blur(8px)"
+                    },
+                    "nav-link-selected": {
+                        "background": "linear-gradient(135deg, #f4d602, #f7e842)",
+                        "color": "#000000",
+                        "font-weight": "600",
+                        "box-shadow": "0 4px 12px rgba(244, 214, 2, 0.4)",
+                        "border": "1px solid rgba(244, 214, 2, 0.6)",
+                        "transform": "translateY(-2px)"
                     }
-                )
-                
-            
-            # Main Header
-            if page == "Weekly Production Schedule":
+                }
+            )
+    
+    # Page content based on selection
+    if page == "Main Page":
+        main_page()
 
-                st.markdown("""
-                <div class="main-header">
-                    <h1><b>Commissary Production Scheduler</b></h1>
-                    <p><b>Weekly Production Schedule Management</b></p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Load data
-                with st.spinner("Loading production schedule..."):
-                    df = load_production_data()
-                
-                if df is None:
-                    st.stop()
-                
-                # Initialize extractor
-                extractor = ProductionDataExtractor(df)
-                
-                # Get week info, week number, and days
-                start_date, end_date = extractor.get_week_info()
-                week_number = extractor.get_week_number()
-                days = extractor.get_days_of_week()
-
-                # Filters with dynamic SKU dropdown and sheet selection
-                col1, col2, col3, col4 = st.columns(4)
-
-                with col1:
-                    # Week number display (read-only)
-                    st.selectbox(
-                        "Week Number",
-                        options=[week_number],
-                        index=0,
-                        key="week_display",
-                        disabled=True,
-                        help="Current week number from the selected spreadsheet"
-                    )
-
-                with col2:
-                    station_filter = st.selectbox(
-                        "Filter per Station",
-                        options=list(STATIONS.keys()),
-                        index=0,
-                        key="station_filter"
-                    )
-
-                with col3:
-                    # Get SKUs filtered by selected station
-                    if station_filter == "All Stations":
-                        unique_skus = extractor.get_unique_skus()
-                    else:
-                        unique_skus = extractor.get_unique_skus_by_station(station_filter)
-                    
-                    sku_options = ["All SKUs"] + unique_skus
-                    sku_filter = st.selectbox(
-                        "Filter per SKU",
-                        options=sku_options,
-                        index=0,
-                        key="sku_filter"
-                    )
-
-                with col4:
-                    day_options = ["Current Week"] + days
-                    day_filter = st.selectbox(
-                        "Filter per Day",
-                        options=day_options,
-                        index=0,
-                        key="day_filter"
-                    )
-
-                # Get filtered SKUs
-                filtered_skus = extractor.get_all_skus(station_filter, sku_filter, day_filter)
-                
-                # FIXED: Calculate totals with day filter and days parameters
-                total_batches, total_volume, total_hours, total_total_manpower, overtime_percentage = calculate_totals(
-                    filtered_skus, extractor, day_filter, days
-                )
-                
-                st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
-
-                # 
-                st.markdown("### Summary")
-                
-                col1, col2, col3, col4, col5, col6 = st.columns(6)
-                
-                with col1:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{len(filtered_skus)}</div>
-                        <div class="kpi-title">Total SKUs</div>
-                        <div class="kpi-unit">(no.)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_batches:,.0f}</div>
-                        <div class="kpi-title">Total Batches</div>
-                        <div class="kpi-unit">(no.)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_volume:,.0f}</div>
-                        <div class="kpi-title">Total Volume</div>
-                        <div class="kpi-unit">(kg)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col4:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_hours:,.0f}</div>
-                        <div class="kpi-title">Total Hours</div>
-                        <div class="kpi-unit">(hrs)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col5:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_total_manpower:,.0f}</div>
-                        <div class="kpi-title">Total Manpower</div>
-                        <div class="kpi-unit">(count)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col6:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{overtime_percentage:.1f}%</div>
-                        <div class="kpi-title">Overtime</div>
-                        <div class="kpi-unit">%</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                # FIXED: SKU Table with day filter and days parameters
-                render_sku_table(filtered_skus, day_filter, days)
-
-            
-            # Now your main code can use these functions
-            elif page == "Weekly Machine Utilization":
-                # --- Header ---
-                st.markdown("""
-                <div class="main-header">
-                    <h1><b>Machine Utilization Dashboard</b></h1>
-                    <p><b>Track machine usage vs capacity</b></p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-                # --- Load Data ---
-                df_machine = load_production_data(sheet_index=2)  
-                extractor = MachineUtilizationExtractor(df_machine)
-                machines = extractor.get_machine_data()
-            
-                # --- Filters (day & machine) ---
-                col1, col2 = st.columns(2)
-            
-                with col1:
-                    machine_options = ["All Machines"] + [m['machine'] for m in machines]
-                    machine_filter = st.selectbox("Filter per Machine", options=machine_options, index=0)
-            
-                with col2:
-                    # Row 2 = weekdays
-                    weekdays = extractor.df.iloc[2, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
-                    # Row 3 = dates
-                    dates = extractor.df.iloc[3, MACHINE_COLUMNS['needed_hrs_start']:MACHINE_COLUMNS['needed_hrs_end']+1].tolist()
-                    # Combine weekday + date like "Mon (11 Aug)"
-                    day_labels = [f"{wd} ({dt})" for wd, dt in zip(weekdays, dates)]
-                    day_options = ["Current Week"] + day_labels
-                    day_filter = st.selectbox("Filter per Day", options=day_options, index=0)
-            
-                # --- Apply filters ---
-                if machine_filter != "All Machines":
-                    machines = [m for m in machines if m['machine'] == machine_filter]
-            
-                # --- Totals for KPI cards ---
-                if day_filter == "Current Week":
-                    totals = extractor.calculate_totals(machines)
-                else:
-                    day_index = day_options.index(day_filter) - 1
-                    totals = extractor.calculate_totals(machines, day_index=day_index)
-                
-                # Now unpack 5 values instead of 4
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
-            
-                # Adjust "Total Machines" display
-                if machine_filter != "All Machines" and machines:
-                    # If filtered by machine → show only that machine's qty
-                    total_machines = machines[0].get("qty", 1)
-            
-                # --- KPI Cards ---
-                st.markdown("### Summary")
-                
-                colA, colB, colC, colD, colE = st.columns([0.9, 1, 1.2, 1.2, 1])
-                
-                # Use consistent naming with your totals
-                total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
-                
-                with colA:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_machines:,.0f}</div>
-                        <div class="kpi-title">Total Machines</div>
-                        <div class="kpi-unit">(no.)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colB:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_needed_hrs:,.0f}</div>
-                        <div class="kpi-title">Needed Run Hours</div>
-                        <div class="kpi-unit">(hrs)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colC:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
-                        <div class="kpi-title">Remaining Available Hours</div>
-                        <div class="kpi-unit">(hrs)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colD:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_machine_needed:,.0f}</div>
-                        <div class="kpi-title">Additional Machines Needed</div>
-                        <div class="kpi-unit">(no.)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with colE:
-                    st.markdown(f"""
-                    <div class="kpi-card">
-                        <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
-                        <div class="kpi-title">Capacity Utilization</div>
-                        <div class="kpi-unit">(%)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            
-                # --- Call the render function ---
-                render_machine_table(machines, day_filter, day_options)
+    elif page == "Weekly Production Schedule":
+        weekly_prod_schedule()
+    
+    elif page == "Machine Utilization":
+        machine_utilization()
+    
+    elif page == "YTD Production Schedule":
+        ytd_production()
+   
             
             
 if __name__ == "__main__":
