@@ -1784,7 +1784,8 @@ def main():
         styles={
             "container": {
                 "max-width": "350px",
-                "text-align": "center"
+                "text-align": "center",
+                "border-radius": "15px"
             },
             "icon": {
                 "color": "#ffe712",
@@ -1832,7 +1833,8 @@ def main():
             styles={
                 "container": {
                     "max-width": "600px",
-                    "text-align": "center"
+                    "text-align": "center",
+                    "border-radius": "15px"
                 },
                 "icon": {
                     "color": "#ffe712",
