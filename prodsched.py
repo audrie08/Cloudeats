@@ -301,14 +301,14 @@ st.markdown(f"""
 
     .kpi-label {{
         font-size: 1em;
-        font-weight: 500;
-        margin-bottom: 0.3rem;
+        font-weight: 620;
+        margin-bottom: 0.9rem;
         opacity: 1;
     }}
 
     .kpi-unit {{
         font-size: 0.9em;
-        font-weight: 400;
+        font-weight: 450;
         opacity: 1;
         margin-bottom: 0.1rem;
     }}
