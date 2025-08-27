@@ -1785,7 +1785,8 @@ def main():
             "container": {
                 "max-width": "350px",
                 "text-align": "center",
-                "border-radius": "20px"
+                "border-radius": "20px", 
+                "color": "#ffffff",
             },
             "icon": {
                 "color": "#ffe712",
@@ -1834,7 +1835,9 @@ def main():
                 "container": {
                     "max-width": "600px",
                     "text-align": "center",
-                    "border-radius": "20px"
+                    "border-radius": "20px",
+                    "color": "#ffffff"
+
                 },
                 "icon": {
                     "color": "#ffe712",
