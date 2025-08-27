@@ -1868,6 +1868,9 @@ def main():
                 }
             }
         )
+
+        # Store the sub page selection in session state
+        st.session_state.sub_tab = sub_page_selection
     
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "Main Page":
