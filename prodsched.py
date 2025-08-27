@@ -1788,18 +1788,18 @@ def main():
             },
             "icon": {
                 "color": "#ffe712",
-                "font-size": "14px",
-                "margin-right": "6px"
+                "font-size": "12px",
+                "margin-right": "4px"
             },
             "nav-link": {
                 "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                "font-size": "12px",
+                "font-size": "11px",
                 "font-weight": "500",
                 "text-align": "center",
                 "color": "#543559",
-                "margin": "0.2rem",
-                "padding": "0.5rem 1rem",
-                "border-radius": "12px",
+                "margin": "0.1rem",
+                "padding": "0.4rem 0.6rem",
+                "border-radius": "8px",
                 "transition": "all 0.3s ease",
                 "border": "1px solid transparent",
                 "background": "rgba(248, 249, 250, 0.5)",
@@ -1836,18 +1836,18 @@ def main():
                 },
                 "icon": {
                     "color": "#ffe712",
-                    "font-size": "14px",
-                    "margin-right": "6px"
+                    "font-size": "12px",
+                    "margin-right": "4px"
                 },
                 "nav-link": {
                     "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                    "font-size": "12px",
+                    "font-size": "11px",
                     "font-weight": "500",
                     "text-align": "center",
                     "color": "#543559",
-                    "margin": "0.2rem",
-                    "padding": "0.5rem 1rem",
-                    "border-radius": "12px",
+                    "margin": "0.1rem",
+                    "padding": "0.4rem 0.6rem",
+                    "border-radius": "8px",
                     "transition": "all 0.3s ease",
                     "border": "1px solid transparent",
                     "background": "rgba(248, 249, 250, 0.5)",
@@ -1863,10 +1863,6 @@ def main():
                 }
             }
         )
-
-        
-        # Store the sub page selection in session state
-        st.session_state.sub_tab = sub_page_selection
     
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "Main Page":
