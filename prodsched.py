@@ -1783,7 +1783,7 @@ def main():
         key="main_navigation",
         styles={
             "container": {
-                "max-width": "400px",
+                "max-width": "350px",
                 "text-align": "center"
             },
             "icon": {
@@ -1831,7 +1831,7 @@ def main():
             key="sub_navigation",
             styles={
                 "container": {
-                    "max-width": "650px",
+                    "max-width": "600px",
                     "text-align": "center"
                 },
                 "icon": {
