@@ -1371,7 +1371,7 @@ def logo_to_base64(img):
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode()
 
-def create_productionpro_navigation():
+def create_navigation():
     """Create ProductionPro navigation bar matching your design"""
     
     # Navigation HTML with ProductionPro styling
