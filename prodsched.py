@@ -310,6 +310,7 @@ st.markdown(f"""
         font-size: 0.9em;
         font-weight: 400;
         opacity: 1;
+        margin-bottom: 0.1rem;
     }}
 
     /* SKU Table */
