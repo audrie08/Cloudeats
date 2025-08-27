@@ -88,7 +88,7 @@ st.markdown(f"""
     
     /* Adjust main container */
     .block-container {{
-        max-width: 1600px;
+        max-width: 1400px;
         padding-left: 1rem;
         padding-right: 1rem;
         padding-top: 0rem;
