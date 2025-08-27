@@ -1784,7 +1784,7 @@ def main():
         styles={
             "container": {
                 "padding": "0rem",
-                "background": "linear-gradient(135deg, #000000 0%, #2f1d38 100%)",
+                "background": "linear-gradient(135deg, #ffffff 0%, #2f1d38 100%)",
                 "border-radius": "15px",
                 "margin": "0 auto 2rem auto",
                 "max-width": "500px",
@@ -1802,7 +1802,7 @@ def main():
                 "font-size": "15px",
                 "font-weight": "600",
                 "text-align": "center",
-                "color": "#495057",
+                "color": "#1d1e1f",
                 "margin": "0.5rem",
                 "padding": "1rem 2rem",
                 "border-radius": "12px",
@@ -1813,7 +1813,7 @@ def main():
                 "overflow": "hidden"
             },
             "nav-link-selected": {
-                "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "background": "linear-gradient(135deg, #1d1e1f 0%, #2f1d38 100%)",
                 "color": "#ffffff",
                 "font-weight": "700",
                 "box-shadow": "0 8px 25px rgba(102, 126, 234, 0.4)",
