@@ -1429,9 +1429,9 @@ def create_navigation():
         <div class="modern-nav-container">
             <div class="nav-brand">
                 <div class="brand-logo">
-                    <img src="data:image/png;base64,{logo_base64}" alt="CloudEats Logo">
+                    <img src="data:image/png;base64,{logo_base64}" alt="Bites To Go Logo">
                 </div>
-                <div class="brand-text">CloudEats</div>
+                <div class="brand-text">Bites To Go</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1485,7 +1485,7 @@ def create_navigation():
         <div class="modern-nav-container">
             <div class="nav-brand">
                 <div class="brand-icon">🍽️</div>
-                <div class="brand-text">CloudEats</div>
+                <div class="brand-text">Bites To Go</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
