@@ -1838,16 +1838,16 @@ def main():
             key="sub_navigation",
             styles={
                 "container": {
-                    "padding": "0.5rem",
+                    "padding": "0.9rem",
                     "background": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-                    "border-radius": "12px",
-                    "margin": "0 auto 2.5rem auto",
-                    "max-width": "900px",
-                    "box-shadow": "0 4px 20px rgba(0,0,0,0.08)",
-                    "border": "1px solid rgba(0,0,0,0.05)"
+                    "border-radius": "15px",
+                    "margin": "0 auto 2.9rem auto",
+                    "max-width": "1100px",
+                    "box-shadow": "0 4px 25px rgba(0,0,0,0.08)",
+                    "border": "2px solid rgba(0,0,0,0.05)"
                 },
                 "icon": {
-                    "color": "#6c757d",
+                    "color": "#ffe712",
                     "font-size": "16px",
                     "margin-right": "8px"
                 },
@@ -1856,10 +1856,10 @@ def main():
                     "font-size": "14px",
                     "font-weight": "500",
                     "text-align": "center",
-                    "color": "#6c757d",
-                    "margin": "0.25rem",
-                    "padding": "0.875rem 1.25rem",
-                    "border-radius": "10px",
+                    "color": "#543559",
+                    "margin": "0.40rem",
+                    "padding": "1rem 1.40rem",
+                    "border-radius": "14px",
                     "transition": "all 0.3s ease",
                     "border": "1px solid transparent",
                     "background": "rgba(248, 249, 250, 0.5)",
@@ -1870,7 +1870,7 @@ def main():
                     "color": "#ffffff",
                     "font-weight": "600",
                     "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
-                    "border": "1px solid rgba(255,255,255,0.1)",
+                    "border": "2px solid rgba(255,255,255,0.1)",
                     "transform": "translateY(-1px)"
                 }
             }
