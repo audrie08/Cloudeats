@@ -1381,146 +1381,7 @@ def create_navigation():
             </div>
             <div class="nav-tabs">
                 <div class="nav-tab active">Main Page</div>
-                <div class="nav-tab">Weekly Prod Sched</div>
-                <div class="nav-tab">Machine Utilization</div>
-                <div class="nav-tab">YTD Production Schedule</div>
-            </div>
-        </div>
-    </div>
-    
-    <style>
-    .bitestogo-nav-container {
-        background: #ffffff;
-        border-bottom: 2px solid #e0e0e0;
-        padding: 0;
-        margin: -1rem -1rem 0 -1rem;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .nav-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 2rem;
-    }
-    
-    .nav-brand {
-        display: flex;
-        align-items: center;
-    }
-    
-    .logo-text {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2c3e50;
-        font-family: Arial, sans-serif;
-    }
-    
-    .nav-tabs {
-        display: flex;
-        gap: 0;
-        align-items: center;
-        background: #f8f9fa;
-        border-radius: 6px;
-        padding: 2px;
-    }
-    
-    .nav-tab {
-        padding: 0.75rem 1.5rem;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-family: Arial, sans-serif;
-        color: #6c757d;
-        border-radius: 4px;
-    }
-    
-    .nav-tab.active {
-        background: #ffffff;
-        color: #000000;
-        font-weight: 600;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .nav-tab:hover {
-        background: rgba(255, 255, 255, 0.7);
-        color: #495057;
-    }
-    
-    /* Mobile responsive */
-    @media (max-width: 768px) {
-        .nav-content {
-            padding: 0.5rem 1rem;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .nav-tabs {
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .nav-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 1rem;
-            font-size: 12px;
-        }
-    }
-    </style>
-    '''
-    
-    st.markdown(nav_html, unsafe_allow_html=True)
-
-def create_horizontal_tab_navigation():
-    """Alternative horizontal tab navigation similar to your second image"""
-    
-    # Try to load logo for brand section
-    try:
-        logo = Image.open("cloudeats.png")
-        logo_base64 = logo_to_base64(logo)
-        brand_html = f'''
-            <img src="data:image/png;base64,{logo_base64}" 
-                 class="brand-logo" alt="CloudEats" />
-        '''
-    except FileNotFoundError:
-        brand_html = '''
-            <div class="brand-fallback">
-                <span class="brand-icon">🍽️</span>
-                <span class="brand-name">cloudeats</span>
-            </div>
-        '''
-    
-    tab_nav_html = f'''
-    <div class="tab-nav-container">
-        <div class="tab-nav-content">
-            <div class="tab-brand-section">
-                {brand_html}
-            </div>
-            <div class="tab-navigation">
-                <div class="tab-item active" data-tab="main">
-                    <span class="tab-icon">🏠</span>
-                    <span class="tab-text">Main Page</span>
-                </div>
-                <div class="tab-item" data-tab="weekly">
-                    <span class="tab-icon">📅</span>
-                    <span class="tab-text">Weekly Production Schedule</span>
-                </div>
-                <div class="tab-item" data-tab="machine">
-                    <span class="tab-icon">⚙️</span>
-                    <span class="tab-text">Machine Utilization</span>
-                </div>
-                <div class="tab-item" data-tab="ytd">
-                    <span class="tab-icon">📈</span>
-                    <span class="tab-text">YTD Production Schedule</span>
-                </div>
+                <div class="nav-tab">Dashboard Details</div>
             </div>
         </div>
     </div>
@@ -1665,7 +1526,7 @@ def create_horizontal_tab_navigation():
     </style>
     '''
     
-    st.markdown(tab_nav_html, unsafe_allow_html=True)
+    st.markdown(nav_html, unsafe_allow_html=True)
 
 def main_page():
     """Main Page Content - Your existing dashboard"""
