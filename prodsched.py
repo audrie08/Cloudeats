@@ -295,12 +295,20 @@ st.markdown(f"""
         font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
         font-size: 2.2em;
         font-weight: 700;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.5rem;
         transition: all 0.3s ease;
     }}
 
     .kpi-label {{
+        font-size: 1em;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+        opacity: 1;
+    }}
+
+    .kpi-unit {{
         font-size: 0.9em;
+        font-weight: 400;
         opacity: 1;
     }}
 
@@ -1452,7 +1460,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{len(filtered_skus)}</div>
-                        <div class="kpi-label">Total SKUs (no.)</div>
+                        <div class="kpi-title">Total SKUs</div>
+                        <div class="kpi-unit">(no.)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1460,7 +1469,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_batches:,.0f}</div>
-                        <div class="kpi-label">Total Batches (no.)</div>
+                        <div class="kpi-title">Total Batches</div>
+                        <div class="kpi-unit">(no.)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1468,7 +1478,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_volume:,.0f}</div>
-                        <div class="kpi-label">Total Volume (kg)</div>
+                        <div class="kpi-title">Total Volume</div>
+                        <div class="kpi-unit">(kg)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1476,7 +1487,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_hours:,.0f}</div>
-                        <div class="kpi-label">Total Hours (hrs)</div>
+                        <div class="kpi-title">Total Hours</div>
+                        <div class="kpi-unit">(hrs)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1484,7 +1496,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_total_manpower:,.0f}</div>
-                        <div class="kpi-label">Total Manpower (count)</div>
+                        <div class="kpi-title">Total Manpower</div>
+                        <div class="kpi-unit">(count)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1492,7 +1505,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{overtime_percentage:.1f}%</div>
-                        <div class="kpi-label">Overtime %</div>
+                        <div class="kpi-title">Overtime</div>
+                        <div class="kpi-unit">%</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1563,7 +1577,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_machines:,.0f}</div>
-                        <div class="kpi-label">Total Machines</div>
+                        <div class="kpi-title">Total Machines</div>
+                        <div class="kpi-unit">(no.)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1571,7 +1586,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_needed_hrs:,.0f}</div>
-                        <div class="kpi-label">Needed Run Hours (hrs)</div>
+                        <div class="kpi-title">Needed Run Hours</div>
+                        <div class="kpi-unit">(hrs)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1579,7 +1595,8 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
-                        <div class="kpi-label">Remaining Available Hours (hrs)</div>
+                        <div class="kpi-title">Remaining Available Hours</div>
+                        <div class="kpi-unit">(hrs)</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -1587,15 +1604,17 @@ def main():
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_machine_needed:,.0f}</div>
-                        <div class="kpi-label">Additional Machines Needed (no.)</div>
+                        <div class="kpi-title">Additional Machines Needed</div>
+                        <div class="kpi-unit">(no.)</div>
                     </div>
                     """, unsafe_allow_html=True)
-            
+                
                 with colE:
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
-                        <div class="kpi-label">Capacity Utilization %</div>
+                        <div class="kpi-title">Capacity Utilization</div>
+                        <div class="kpi-unit">(%)</div>
                     </div>
                     """, unsafe_allow_html=True)
             
