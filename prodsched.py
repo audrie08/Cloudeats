@@ -1452,7 +1452,7 @@ def main():
                 
                 st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
 
-                # KPI Cards
+                # 
                 st.markdown("### Summary")
                 
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
@@ -1569,7 +1569,7 @@ def main():
                 # --- KPI Cards ---
                 st.markdown("### Summary")
                 
-                colA, colB, colC, colD, colE = st.columns([0.9, 1, 1.2, 1.3, 1])
+                colA, colB, colC, colD, colE = st.columns([0.9, 1, 1.2, 1.2, 1])
                 
                 # Use consistent naming with your totals
                 total_machines, total_needed_hrs, total_remaining_hrs, total_machine_needed, total_capacity_utilization = totals
