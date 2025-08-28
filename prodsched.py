@@ -523,6 +523,33 @@ PRODUCTION_SUMMARY_ROWS = {
     'pastry': 152               # Row 153
 }
 
+# --- DATA LOADER FUNCTION ---
+@st.cache_data(ttl=60)
+def load_production_data(sheet_index=1):
+    """Load production data from Google Sheets"""
+    credentials = load_credentials()
+    if not credentials:
+        return pd.DataFrame()
+    
+    try:
+        # Use gspread instead of googleapiclient for consistency with working version
+        import gspread
+        gc = gspread.authorize(credentials)
+
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
+
 # --- UTILITY FUNCTIONS ---
 def safe_float_convert(value):
     """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
@@ -1585,6 +1612,7 @@ def ytd_production():
     
     # --- Load Data ---
     try:
+        # Load YTD Production data from sheet index 6
         df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
         
@@ -1764,29 +1792,6 @@ def ytd_production():
                 st.metric("Total Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
         else:
             st.warning("No production list data available")
-        
-        # --- Station Performance Chart ---
-        if not production_df.empty:
-            st.markdown("### 📊 Station Performance Visualization")
-            
-            chart_type = st.selectbox(
-                "Chart Type", 
-                options=["Bar Chart - SKUs", "Bar Chart - Batches", "Pie Chart - SKUs", "Pie Chart - Batches"],
-                index=0
-            )
-            
-            if chart_type == "Bar Chart - SKUs":
-                st.bar_chart(production_df.set_index('Station')['Total SKUs'])
-            elif chart_type == "Bar Chart - Batches":
-                st.bar_chart(production_df.set_index('Station')['Batches per SKU'])
-            elif chart_type == "Pie Chart - SKUs":
-                fig_pie = px.pie(production_df, values='Total SKUs', names='Station', 
-                               title="SKU Distribution by Station")
-                st.plotly_chart(fig_pie, use_container_width=True)
-            elif chart_type == "Pie Chart - Batches":
-                fig_pie = px.pie(production_df, values='Batches per SKU', names='Station', 
-                               title="Batch Distribution by Station")
-                st.plotly_chart(fig_pie, use_container_width=True)
     
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
