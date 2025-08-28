@@ -1311,7 +1311,7 @@ class YTDProductionExtractor:
             st.error(f"Error creating production summary: {e}")
             return pd.DataFrame()
     
-    def get_all_stations_summary(self, week_number):
+    def get_all_stations(self, week_number):
         """Get summary data for all stations for a specific week"""
         try:
             summary_data = {}
