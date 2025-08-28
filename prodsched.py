@@ -1311,24 +1311,9 @@ class YTDProductionExtractor:
             st.error(f"Error creating production summary: {e}")
             return pd.DataFrame()
     
-    def get_all_stations(self, week_number):
-        """Get summary data for all stations for a specific week"""
-        try:
-            summary_data = {}
-            
-            for station_name in self.station_mappings.keys():
-                if station_name != "All Stations":
-                    station_data = self.get_station_data(station_name, week_number)
-                    if station_data and station_data.get('days_data'):
-                        # Calculate week totals
-                        week_total = sum(day['value'] for day in station_data['days_data'].values())
-                        station_data['week_total'] = week_total
-                        summary_data[station_name] = station_data
-            
-            return summary_data
-        except Exception as e:
-            st.error(f"Error creating stations summary: {e}")
-            return {}
+    def get_all_stations(self):
+        """Get list of all available stations (no week_number parameter needed)"""
+        return list(self.station_mappings.keys())
     
     def get_filtered_production_data(self, selected_week=None, selected_day=None, 
                                    selected_station=None, selected_sku=None):
