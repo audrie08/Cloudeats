@@ -2108,9 +2108,9 @@ def ytd_production():
     
     # --- Header ---
     st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%); border-radius: 10px; margin-bottom: 2rem;">
-        <h1 style="color: white; margin: 0; font-size: 2.5rem;">📈 YTD Production Schedule</h1>
-        <p style="color: #e8f4f8; margin: 0.5rem 0 0 0; font-size: 1.2rem;">Year-to-date production metrics, trends, and comprehensive analytics</p>
+    <div class="main-header">
+        <h1><b>📈 YTD Production Schedule</b></h1>
+        <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -2169,32 +2169,23 @@ def ytd_production():
         # --- KPI Cards ---
         st.markdown("### 📊 **Production Summary**")
         
-        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        col_kpi1, col_kpi2 = st.columns(2)
         
         with col_kpi1:
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">{total_skus:,}</div>
-                <div style="font-size: 1.1rem; opacity: 0.9;">Total SKUs</div>
-                <div style="font-size: 0.9rem; opacity: 0.7;">(subrecipes)</div>
+            <div class="kpi-card">
+                <div class="kpi-number">{total_skus:,.0f}</div>
+                <div class="kpi-title">Total SKUs</div>
+                <div class="kpi-unit">(subrecipes)</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col_kpi2:
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">{total_batches:,}</div>
-                <div style="font-size: 1.1rem; opacity: 0.9;">Total Batches</div>
-                <div style="font-size: 0.9rem; opacity: 0.7;">(units produced)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col_kpi3:
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">{avg_batches_per_sku:.1f}</div>
-                <div style="font-size: 1.1rem; opacity: 0.9;">Avg Batches/SKU</div>
-                <div style="font-size: 0.9rem; opacity: 0.7;">(efficiency metric)</div>
+            <div class="kpi-card">
+                <div class="kpi-number">{total_batches:,.0f}</div>
+                <div class="kpi-title">Total Batches</div>
+                <div class="kpi-unit">(units)</div>
             </div>
             """, unsafe_allow_html=True)
         
