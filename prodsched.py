@@ -1907,7 +1907,7 @@ def ytd_production():
     
     # --- Load Data ---
     try:
-        df_ytd = load_production_data(sheet_index=3)
+        df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
         
         # --- Time Period Selection Filter ---
