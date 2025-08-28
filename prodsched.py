@@ -1252,9 +1252,21 @@ class YTDProductionExtractor:
                             total_skus += 1
                             
                             # Sum production data from columns I to NI
-                            production_values = self.df.iloc[idx, YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(self.df.columns))]
-                            sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
-                            total_batches += sku_batches
+                            # Make sure we don't go beyond dataframe columns
+                            end_col = min(YTD_COLUMNS['data_end'], len(self.df.columns))
+                            production_values = self.df.iloc[idx, YTD_COLUMNS['data_start']:end_col]
+                            
+                            # Debug: Check what values we're getting
+                            batch_sum = 0
+                            for val in production_values:
+                                try:
+                                    numeric_val = pd.to_numeric(val, errors='coerce')
+                                    if not pd.isna(numeric_val):
+                                        batch_sum += numeric_val
+                                except:
+                                    continue
+                            
+                            total_batches += batch_sum
             
             return total_skus, total_batches
             
