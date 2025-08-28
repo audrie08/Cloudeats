@@ -1907,83 +1907,166 @@ def ytd_production():
     
     # --- Load Data ---
     try:
-        df_ytd = load_production_data(sheet_index=6)
+        df_ytd = load_production_data(sheet_index=3)
         extractor = YTDProductionExtractor(df_ytd)
+        
+        # --- Time Period Selection Filter ---
+        st.markdown("### 📅 Time Period Selection")
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            period_options = extractor.get_time_period_options()
+            selected_period = st.selectbox(
+                "Select Time Period", 
+                options=period_options,
+                index=0,
+                help="Choose a specific time period or view all periods combined"
+            )
+        
+        with col2:
+            st.markdown("""
+            <div style="margin-top: 25px; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
+                <small><b>Time Periods:</b><br>
+                Based on row 2 data (columns I to NI)<br>
+                Showing unique time periods from your data</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # --- Get Production Totals ---
+        total_skus, total_batches = extractor.get_production_totals(selected_period)
+        
+        # --- KPI Cards ---
+        st.markdown("### 📊 Production Summary")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{total_skus:,.0f}</div>
+                <div class="kpi-title">Total SKUs</div>
+                <div class="kpi-unit">(subrecipes)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{total_batches:,.0f}</div>
+                <div class="kpi-title">Total Batches</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # --- Production List DataFrame ---
+        st.markdown("### 📋 Production List")
+        
+        production_df = extractor.get_production_list(selected_period)
+        
+        if not production_df.empty:
+            # Add filters for the production list
+            col_filter1, col_filter2 = st.columns(2)
+            
+            with col_filter1:
+                station_options = ["All Stations"] + sorted(production_df['Station'].unique().tolist())
+                station_filter = st.selectbox("Filter by Station", options=station_options, index=0)
+            
+            with col_filter2:
+                # Sort options
+                sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
+                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
+            
+            # Apply station filter
+            filtered_df = production_df.copy()
+            if station_filter != "All Stations":
+                filtered_df = filtered_df[filtered_df['Station'] == station_filter]
+            
+            # Apply sorting
+            if sort_filter == "SKU (A-Z)":
+                filtered_df = filtered_df.sort_values('SKU')
+            elif sort_filter == "SKU (Z-A)":
+                filtered_df = filtered_df.sort_values('SKU', ascending=False)
+            elif sort_filter == "Batches (High-Low)":
+                filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
+            elif sort_filter == "Batches (Low-High)":
+                filtered_df = filtered_df.sort_values('Batches per SKU')
+            
+            # Display the filtered and sorted dataframe
+            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+            
+            # Summary stats for filtered data
+            col_stat1, col_stat2, col_stat3 = st.columns(3)
+            with col_stat1:
+                st.metric("Filtered SKUs", len(filtered_df))
+            with col_stat2:
+                st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+            with col_stat3:
+                if len(filtered_df) > 0:
+                    avg_batches = filtered_df['Batches per SKU'].mean()
+                    st.metric("Avg Batches/SKU", f"{avg_batches:.1f}")
+                else:
+                    st.metric("Avg Batches/SKU", "0")
+            
+            # Station breakdown chart
+            st.markdown("### 📊 Production by Station")
+            station_summary = production_df.groupby('Station')['Batches per SKU'].agg(['count', 'sum']).reset_index()
+            station_summary.columns = ['Station', 'SKU Count', 'Total Batches']
+            
+            col_chart1, col_chart2 = st.columns(2)
+            
+            with col_chart1:
+                fig_station_skus = px.bar(
+                    station_summary,
+                    x='Station',
+                    y='SKU Count',
+                    title="Number of SKUs by Station",
+                    color='Station'
+                )
+                fig_station_skus.update_layout(showlegend=False, height=400)
+                fig_station_skus.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_station_skus, use_container_width=True)
+            
+            with col_chart2:
+                fig_station_batches = px.bar(
+                    station_summary,
+                    x='Station',
+                    y='Total Batches',
+                    title="Total Batches by Station",
+                    color='Station'
+                )
+                fig_station_batches.update_layout(showlegend=False, height=400)
+                fig_station_batches.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_station_batches, use_container_width=True)
+        else:
+            st.info("No production data available for the selected period.")
+        
+        # --- Raw Data Preview ---
+        with st.expander("🗂️ Raw Data Preview"):
+            st.markdown("**Production Schedule Data Structure:**")
+            
+            # Show key columns and first few rows
+            display_df = df_ytd.iloc[:20, :15]  # First 20 rows, first 15 columns
+            st.dataframe(display_df, use_container_width=True)
+            
+            st.markdown(f"""
+            **Data Dimensions:** {df_ytd.shape[0]} rows × {df_ytd.shape[1]} columns
+            
+            **Key Information:**
+            - **Column B (Subrecipe):** SKU identifiers
+            - **Columns B-H:** Recipe details (subrecipe, batch qty, kg/mhr, etc.)
+            - **Columns I-NI:** Time period production data  
+            - **Row 2:** Time periods for dropdown selection
+            """)
+    
     except Exception as e:
-        st.error(f"❌ Failed to load production data: {e}")
-        return
-    
-    # --- Time Period Selection Filter ---
-    st.markdown("### 📅 Time Period Selection")
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        period_options = extractor.get_time_period_options()
-        selected_period = st.selectbox(
-            "Select Time Period", 
-            options=period_options,
-            index=0,
-            help="Choose a specific time period or view all periods combined"
-        )
-    
-    with col2:
-        st.info("ℹ️ Time periods are based on row 2 data (columns I → NI).")
-    
-    # --- Get Production Totals ---
-    total_skus, total_batches = extractor.get_production_totals(selected_period)
-    
-    # --- KPI Cards ---
-    st.markdown("### 📊 Production Summary")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Total SKUs (subrecipes)", f"{total_skus:,.0f}")
-    with col2:
-        st.metric("Total Batches (units)", f"{total_batches:,.0f}")
-    
-    # --- Production List DataFrame ---
-    st.markdown("### 📋 Production List")
-    production_df = extractor.get_production_list(selected_period)
-    
-    if production_df.empty:
-        st.warning("⚠️ No production data available for this period.")
-        return
-    
-    # Filters
-    col_filter1, col_filter2 = st.columns(2)
-    with col_filter1:
-        station_options = sorted(production_df['Station'].unique().tolist())
-        station_filter = st.multiselect("Filter by Station", options=station_options, default=station_options)
-    
-    with col_filter2:
-        sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
-        sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
-    
-    # Apply filters
-    filtered_df = production_df[production_df['Station'].isin(station_filter)].copy()
-    
-    # Apply sorting
-    if sort_filter == "SKU (A-Z)":
-        filtered_df = filtered_df.sort_values('SKU')
-    elif sort_filter == "SKU (Z-A)":
-        filtered_df = filtered_df.sort_values('SKU', ascending=False)
-    elif sort_filter == "Batches (High-Low)":
-        filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
-    elif sort_filter == "Batches (Low-High)":
-        filtered_df = filtered_df.sort_values('Batches per SKU')
-    
-    # Display table
-    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-    
-    # Summary Stats
-    col_stat1, col_stat2, col_stat3 = st.columns(3)
-    with col_stat1:
-        st.metric("Filtered SKUs", len(filtered_df))
-    with col_stat2:
-        st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
-    with col_stat3:
-        avg_batches = filtered_df['Batches per SKU'].mean()
-        st.metric("Avg Batches/SKU", f"{avg_batches:.1f}" if not pd.isna(avg_batches) else "0")
+        st.error(f"Error loading YTD Production data: {str(e)}")
+        st.markdown("""
+        <div class="dashboard-card">
+            <h3>📈 YTD Production Analysis</h3>
+            <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
+            <p><em>Please ensure the production data file is available and properly formatted.</em></p>
+        </div>
+        """, unsafe_allow_html=True)
             
 def main():
     """Main application function"""
