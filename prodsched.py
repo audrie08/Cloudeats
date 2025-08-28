@@ -2367,7 +2367,7 @@ def main():
     # Main navigation with smaller, centered buttons
     main_page_selection = option_menu(
         menu_title=None,
-        options=["KPI Dashboard", "Dashboard Details"],
+        options=["KPI Dashboard", "Production Details"],
         icons=["house-fill", "clipboard-data-fill"],
         default_index=0 if st.session_state.main_tab == "KPI Dashboard" else 1,
         orientation="horizontal",
@@ -2412,8 +2412,8 @@ def main():
     # Store the main page selection in session state
     st.session_state.main_tab = main_page_selection
     
-    # Show sub-navigation only if Dashboard Details is selected
-    if main_page_selection == "Dashboard Details":
+    # Show sub-navigation only if Production Details is selected
+    if main_page_selection == "Production Details":
         
         sub_page_selection = option_menu(
             menu_title=None,
