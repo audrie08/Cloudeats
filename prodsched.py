@@ -2006,16 +2006,6 @@ def ytd_production():
                 else:
                     st.metric("Avg Batches/SKU", "0")
             
-    except Exception as e:
-        st.error(f"Error loading YTD Production data: {str(e)}")
-        st.markdown("""
-        <div class="dashboard-card">
-            <h3>📈 YTD Production Analysis</h3>
-            <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
-            <p><em>Please ensure the production data file is available and properly formatted.</em></p>
-        </div>
-        """, unsafe_allow_html=True)
-            
 def main():
     """Main application function"""
     
