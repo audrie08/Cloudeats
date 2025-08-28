@@ -1907,7 +1907,7 @@ def ytd_production():
     
     # --- Load Data ---
     try:
-        df_ytd = load_production_data(sheet_index=3)
+        df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
         
         # --- Time Period Selection Filter ---
@@ -1974,7 +1974,6 @@ def ytd_production():
             with col_filter2:
                 # Sort options
                 sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
-                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
             
             # Apply station filter
             filtered_df = production_df.copy()
