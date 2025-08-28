@@ -1974,6 +1974,7 @@ def ytd_production():
             with col_filter2:
                 # Sort options
                 sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
+                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
             
             # Apply station filter
             filtered_df = production_df.copy()
