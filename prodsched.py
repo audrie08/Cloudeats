@@ -1059,65 +1059,37 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
 
-# -- YTD PRODUCTION SCHEDULE  --- 
 class YTDProductionExtractor:
     def __init__(self, df):
         self.df = df
-        self.week_numbers = self._extract_week_numbers()
-        self.dates = self._extract_dates()
+        self.time_periods = self._extract_time_periods()
         
-    def _extract_week_numbers(self):
-        """Extract week numbers from row 2"""
+    def _extract_time_periods(self):
+        """Extract time periods from row 2 (I to NI)"""
         try:
-            week_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-            return [str(w) if pd.notna(w) else '' for w in week_row]
+            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
+            periods = []
+            for i, period in enumerate(time_period_row):
+                if pd.notna(period) and str(period).strip():
+                    periods.append(str(period).strip())
+            return list(set(periods))  # Get unique periods
         except:
             return []
     
-    def _extract_dates(self):
-        """Extract dates from row 3"""
-        try:
-            date_row = self.df.iloc[2, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-            return [str(d) if pd.notna(d) else '' for d in date_row]
-        except:
-            return []
+    def get_time_period_options(self):
+        """Create time period dropdown options"""
+        return ["All Periods"] + sorted(self.time_periods)
     
-    def get_week_options(self):
-        """Create week dropdown options combining week numbers and dates"""
-        options = []
-        current_week = None
-        current_dates = []
-        
-        for i, (week, date) in enumerate(zip(self.week_numbers, self.dates)):
-            if week and week != current_week:
-                if current_week and current_dates:
-                    date_range = f"{current_dates[0]} - {current_dates[-1]}" if len(current_dates) > 1 else current_dates[0]
-                    options.append(f"Week {current_week}: {date_range}")
-                current_week = week
-                current_dates = [date] if date else []
-            elif date and current_week:
-                current_dates.append(date)
-        
-        # Add the last week
-        if current_week and current_dates:
-            date_range = f"{current_dates[0]} - {current_dates[-1]}" if len(current_dates) > 1 else current_dates[0]
-            options.append(f"Week {current_week}: {date_range}")
+    def get_production_totals(self, selected_period=None):
+        """Get total SKUs and total batches"""
+        # Calculate column range based on period selection
+        if selected_period and selected_period != "All Periods":
+            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
+            period_indices = [i for i, p in enumerate(time_period_row) if str(p).strip() == selected_period]
             
-        return options
-    
-    def get_production_summary(self, week_selection=None):
-        """Get production summary data for key categories"""
-        summary_data = {}
-        
-        # Calculate column range based on week selection
-        if week_selection and week_selection != "All Weeks":
-            # Extract week number from selection
-            week_num = week_selection.split(":")[0].replace("Week ", "")
-            week_indices = [i for i, w in enumerate(self.week_numbers) if str(w) == week_num]
-            
-            if week_indices:
-                start_col = YTD_COLUMNS['data_start'] + week_indices[0]
-                end_col = YTD_COLUMNS['data_start'] + week_indices[-1] + 1
+            if period_indices:
+                start_col = YTD_COLUMNS['data_start'] + period_indices[0] 
+                end_col = YTD_COLUMNS['data_start'] + period_indices[-1] + 1
             else:
                 start_col = YTD_COLUMNS['data_start']
                 end_col = YTD_COLUMNS['data_end']
@@ -1125,25 +1097,85 @@ class YTDProductionExtractor:
             start_col = YTD_COLUMNS['data_start']
             end_col = YTD_COLUMNS['data_end']
         
-        for category, row_idx in PRODUCTION_SUMMARY_ROWS.items():
+        # Count total SKUs (non-empty subrecipes)
+        subrecipe_col = self.df.iloc[:, YTD_COLUMNS['subrecipe']]
+        total_skus = subrecipe_col.notna().sum()
+        
+        # Calculate total batches from selected columns
+        total_batches = 0
+        for row_idx in range(len(self.df)):
             try:
-                if row_idx < len(self.df):
-                    row_data = self.df.iloc[row_idx, start_col:end_col]
-                    # Sum numeric values only
-                    numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
-                    summary_data[category] = numeric_data.sum()
-                else:
-                    summary_data[category] = 0
+                row_data = self.df.iloc[row_idx, start_col:end_col]
+                numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
+                total_batches += numeric_data.sum()
             except:
-                summary_data[category] = 0
+                continue
+                
+        return total_skus, total_batches
+    
+    def get_production_list(self, selected_period=None):
+        """Get production dataframe with station, sku, and batches per sku"""
+        # Calculate column range based on period selection
+        if selected_period and selected_period != "All Periods":
+            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
+            period_indices = [i for i, p in enumerate(time_period_row) if str(p).strip() == selected_period]
+            
+            if period_indices:
+                start_col = YTD_COLUMNS['data_start'] + period_indices[0] 
+                end_col = YTD_COLUMNS['data_start'] + period_indices[-1] + 1
+            else:
+                start_col = YTD_COLUMNS['data_start']
+                end_col = YTD_COLUMNS['data_end']
+        else:
+            start_col = YTD_COLUMNS['data_start']
+            end_col = YTD_COLUMNS['data_end']
         
-        # Calculate combined hot kitchen (sauce + savory)
-        summary_data['hot_kitchen_total'] = (
-            summary_data.get('hot_kitchen_sauce', 0) + 
-            summary_data.get('hot_kitchen_savory', 0)
-        )
+        production_data = []
         
-        return summary_data
+        for row_idx in range(len(self.df)):
+            try:
+                # Get subrecipe (SKU) from column B
+                sku = self.df.iloc[row_idx, YTD_COLUMNS['subrecipe']]
+                if pd.isna(sku) or str(sku).strip() == '':
+                    continue
+                
+                # Extract station from SKU or use row position logic
+                station = self._extract_station(sku, row_idx)
+                
+                # Calculate total batches for this SKU in selected period
+                row_data = self.df.iloc[row_idx, start_col:end_col]
+                numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
+                batches = numeric_data.sum()
+                
+                if batches > 0:  # Only include SKUs with production
+                    production_data.append({
+                        'Station': station,
+                        'SKU': str(sku).strip(),
+                        'Batches per SKU': batches
+                    })
+                    
+            except Exception as e:
+                continue
+        
+        return pd.DataFrame(production_data)
+    
+    def _extract_station(self, sku, row_idx):
+        """Extract station based on row position or SKU pattern"""
+        # Map row indices to stations based on your PRODUCTION_SUMMARY_ROWS
+        if row_idx <= PRODUCTION_SUMMARY_ROWS['hot_kitchen_sauce']:
+            return "Hot Kitchen Sauce"
+        elif row_idx <= PRODUCTION_SUMMARY_ROWS['hot_kitchen_savory']:
+            return "Hot Kitchen Savory" 
+        elif row_idx <= PRODUCTION_SUMMARY_ROWS['cold_sauce']:
+            return "Cold Sauce"
+        elif row_idx <= PRODUCTION_SUMMARY_ROWS['fab_poultry']:
+            return "Fab Poultry"
+        elif row_idx <= PRODUCTION_SUMMARY_ROWS['fab_meats']:
+            return "Fab Meats"
+        elif row_idx <= PRODUCTION_SUMMARY_ROWS['pastry']:
+            return "Pastry"
+        else:
+            return "Other"
 
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
@@ -1878,162 +1910,135 @@ def ytd_production():
         df_ytd = load_production_data(sheet_index=3)
         extractor = YTDProductionExtractor(df_ytd)
         
-        # --- Week Selection Filter ---
+        # --- Time Period Selection Filter ---
         st.markdown("### 📅 Time Period Selection")
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            week_options = ["All Weeks"] + extractor.get_week_options()
-            selected_week = st.selectbox(
-                "Select Week Period", 
-                options=week_options,
+            period_options = extractor.get_time_period_options()
+            selected_period = st.selectbox(
+                "Select Time Period", 
+                options=period_options,
                 index=0,
-                help="Choose a specific week or view all weeks combined"
+                help="Choose a specific time period or view all periods combined"
             )
         
         with col2:
             st.markdown("""
             <div style="margin-top: 25px; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
-                <small><b>Data Structure:</b><br>
-                • Columns B-H: Recipe details<br>
-                • Columns I-NI: Weekly production data<br>
-                • Row 2: Week numbers<br>
-                • Row 3: Corresponding dates</small>
+                <small><b>Time Periods:</b><br>
+                Based on row 2 data (columns I to NI)<br>
+                Showing unique time periods from your data</small>
             </div>
             """, unsafe_allow_html=True)
         
-        # --- Get Production Summary ---
-        summary_data = extractor.get_production_summary(selected_week)
+        # --- Get Production Totals ---
+        total_skus, total_batches = extractor.get_production_totals(selected_period)
         
         # --- KPI Cards ---
         st.markdown("### 📊 Production Summary")
         
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2 = st.columns(2)
         
         with col1:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('hot_kitchen_total', 0):,.0f}</div>
-                <div class="kpi-title">Hot Kitchen Total</div>
-                <div class="kpi-unit">(Sauce + Savory)</div>
+                <div class="kpi-number">{total_skus:,.0f}</div>
+                <div class="kpi-title">Total SKUs</div>
+                <div class="kpi-unit">(subrecipes)</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('cold_sauce', 0):,.0f}</div>
-                <div class="kpi-title">Cold Sauce</div>
+                <div class="kpi-number">{total_batches:,.0f}</div>
+                <div class="kpi-title">Total Batches</div>
                 <div class="kpi-unit">(units)</div>
             </div>
             """, unsafe_allow_html=True)
         
-        with col3:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('fab_poultry', 0):,.0f}</div>
-                <div class="kpi-title">Fab Poultry</div>
-                <div class="kpi-unit">(units)</div>
-            </div>
-            """, unsafe_allow_html=True)
+        # --- Production List DataFrame ---
+        st.markdown("### 📋 Production List")
         
-        with col4:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('fab_meats', 0):,.0f}</div>
-                <div class="kpi-title">Fab Meats</div>
-                <div class="kpi-unit">(units)</div>
-            </div>
-            """, unsafe_allow_html=True)
+        production_df = extractor.get_production_list(selected_period)
         
-        with col5:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('pastry', 0):,.0f}</div>
-                <div class="kpi-title">Pastry</div>
-                <div class="kpi-unit">(units)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # --- Detailed Breakdown ---
-        st.markdown("### 🔍 Detailed Production Breakdown")
-        
-        col_left, col_right = st.columns(2)
-        
-        with col_left:
-            # Hot Kitchen Breakdown
-            st.markdown("**Hot Kitchen Breakdown**")
-            breakdown_data = {
-                'Category': ['Hot Kitchen Sauce', 'Hot Kitchen Savory'],
-                'Production': [
-                    summary_data.get('hot_kitchen_sauce', 0),
-                    summary_data.get('hot_kitchen_savory', 0)
-                ]
-            }
+        if not production_df.empty:
+            # Add filters for the production list
+            col_filter1, col_filter2 = st.columns(2)
             
-            fig_breakdown = px.bar(
-                breakdown_data,
-                x='Category', 
-                y='Production',
-                title="Hot Kitchen Production Split",
-                color='Category',
-                color_discrete_map={
-                    'Hot Kitchen Sauce': '#FF6B6B',
-                    'Hot Kitchen Savory': '#4ECDC4'
-                }
-            )
-            fig_breakdown.update_layout(showlegend=False, height=350)
-            st.plotly_chart(fig_breakdown, use_container_width=True)
-        
-        with col_right:
-            # Production Distribution Pie Chart
-            pie_data = {
-                'Hot Kitchen': summary_data.get('hot_kitchen_total', 0),
-                'Cold Sauce': summary_data.get('cold_sauce', 0),
-                'Fab Poultry': summary_data.get('fab_poultry', 0),
-                'Fab Meats': summary_data.get('fab_meats', 0),
-                'Pastry': summary_data.get('pastry', 0)
-            }
+            with col_filter1:
+                station_options = ["All Stations"] + sorted(production_df['Station'].unique().tolist())
+                station_filter = st.selectbox("Filter by Station", options=station_options, index=0)
             
-            # Filter out zero values
-            pie_data = {k: v for k, v in pie_data.items() if v > 0}
+            with col_filter2:
+                # Sort options
+                sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
+                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
             
-            if pie_data:
-                fig_pie = px.pie(
-                    values=list(pie_data.values()),
-                    names=list(pie_data.keys()),
-                    title="Production Distribution by Category"
+            # Apply station filter
+            filtered_df = production_df.copy()
+            if station_filter != "All Stations":
+                filtered_df = filtered_df[filtered_df['Station'] == station_filter]
+            
+            # Apply sorting
+            if sort_filter == "SKU (A-Z)":
+                filtered_df = filtered_df.sort_values('SKU')
+            elif sort_filter == "SKU (Z-A)":
+                filtered_df = filtered_df.sort_values('SKU', ascending=False)
+            elif sort_filter == "Batches (High-Low)":
+                filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
+            elif sort_filter == "Batches (Low-High)":
+                filtered_df = filtered_df.sort_values('Batches per SKU')
+            
+            # Display the filtered and sorted dataframe
+            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+            
+            # Summary stats for filtered data
+            col_stat1, col_stat2, col_stat3 = st.columns(3)
+            with col_stat1:
+                st.metric("Filtered SKUs", len(filtered_df))
+            with col_stat2:
+                st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+            with col_stat3:
+                if len(filtered_df) > 0:
+                    avg_batches = filtered_df['Batches per SKU'].mean()
+                    st.metric("Avg Batches/SKU", f"{avg_batches:.1f}")
+                else:
+                    st.metric("Avg Batches/SKU", "0")
+            
+            # Station breakdown chart
+            st.markdown("### 📊 Production by Station")
+            station_summary = production_df.groupby('Station')['Batches per SKU'].agg(['count', 'sum']).reset_index()
+            station_summary.columns = ['Station', 'SKU Count', 'Total Batches']
+            
+            col_chart1, col_chart2 = st.columns(2)
+            
+            with col_chart1:
+                fig_station_skus = px.bar(
+                    station_summary,
+                    x='Station',
+                    y='SKU Count',
+                    title="Number of SKUs by Station",
+                    color='Station'
                 )
-                fig_pie.update_layout(height=350)
-                st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.info("No production data available for the selected period.")
-        
-        # --- Weekly Trends (only if "All Weeks" selected) ---
-        if selected_week == "All Weeks":
-            st.markdown("### 📈 Weekly Production Trends")
+                fig_station_skus.update_layout(showlegend=False, height=400)
+                fig_station_skus.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_station_skus, use_container_width=True)
             
-            trends_df = extractor.get_weekly_trends()
-            
-            if not trends_df.empty:
-                fig_trends = px.line(
-                    trends_df,
-                    x='Week',
-                    y='Production',
-                    color='Category',
-                    title="Weekly Production Trends by Category",
-                    markers=True
+            with col_chart2:
+                fig_station_batches = px.bar(
+                    station_summary,
+                    x='Station',
+                    y='Total Batches',
+                    title="Total Batches by Station",
+                    color='Station'
                 )
-                fig_trends.update_layout(height=500)
-                fig_trends.update_xaxes(tickangle=45)
-                st.plotly_chart(fig_trends, use_container_width=True)
-                
-                # Show trends table
-                st.markdown("**Weekly Trends Data**")
-                trends_pivot = trends_df.pivot(index='Week', columns='Category', values='Production').fillna(0)
-                st.dataframe(trends_pivot, use_container_width=True)
-            else:
-                st.info("Weekly trends data is not available.")
+                fig_station_batches.update_layout(showlegend=False, height=400)
+                fig_station_batches.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_station_batches, use_container_width=True)
+        else:
+            st.info("No production data available for the selected period.")
         
         # --- Raw Data Preview ---
         with st.expander("🗂️ Raw Data Preview"):
@@ -2047,11 +2052,10 @@ def ytd_production():
             **Data Dimensions:** {df_ytd.shape[0]} rows × {df_ytd.shape[1]} columns
             
             **Key Information:**
+            - **Column B (Subrecipe):** SKU identifiers
             - **Columns B-H:** Recipe details (subrecipe, batch qty, kg/mhr, etc.)
-            - **Columns I-NI:** Weekly production data (Jan Week 1 to Dec Week 53)  
-            - **Row 2:** Week numbers (repeated for each day)
-            - **Row 3:** Corresponding dates
-            - **Summary rows:** Production totals at specific row positions
+            - **Columns I-NI:** Time period production data  
+            - **Row 2:** Time periods for dropdown selection
             """)
     
     except Exception as e:
