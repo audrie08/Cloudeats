@@ -2160,7 +2160,7 @@ def ytd_production():
     # --- Header ---
     st.markdown("""
     <div class="main-header">
-        <h1><b>📈 YTD Production Schedule</b></h1>
+        <h1><b>YTD Production Schedule</b></h1>
         <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
     </div>
     """, unsafe_allow_html=True)
@@ -2172,9 +2172,7 @@ def ytd_production():
         
         extractor = YTDProductionExtractor(df_ytd)
        
-        # --- Single Row of Filters ---
-        st.markdown("### 🔍 Filters")
-       
+        # --- Single Row of Filters --  
         col1, col2, col3, col4 = st.columns(4)
        
         with col1:
@@ -2241,7 +2239,7 @@ def ytd_production():
         total_skus, total_batches = extractor.get_production_totals()
        
         # --- KPI Cards ---
-        st.markdown("### 📊 Production Summary")
+        st.markdown("### Production Summary")
        
         col_kpi1, col_kpi2 = st.columns(2)
        
@@ -2264,7 +2262,7 @@ def ytd_production():
             """, unsafe_allow_html=True)
        
         # --- Production Data Table ---
-        st.markdown("### 📋 Production Data")
+        st.markdown("### Production Data")
        
         if not production_df.empty:
             # Format batches column
