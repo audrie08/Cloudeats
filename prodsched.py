@@ -1223,9 +1223,9 @@ class YTDProductionExtractor:
             
             return skus
         
-    except Exception as e:
-        st.error(f"Error getting station SKUs: {e}")
-        return []
+        except Exception as e:
+            st.error(f"Error getting station SKUs: {e}")
+            return []
     
     def get_production_totals(self):
         """Calculate total SKUs and total batches from the YTD data"""
