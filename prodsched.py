@@ -575,399 +575,7 @@ def safe_sum_for_day(values, index):
         return v if isinstance(v, (int, float)) and v is not None else 0
     return 0
 
-# --- DATA LOADER FUNCTION ---
-@st.cache_data(ttl=60)
-def load_production_data(sheet_index=1):
-    """Load production data from Google Sheets"""
-    credentials = load_credentials()
-    if not credentials:
-        return pd.DataFrame()
-    
-    try:
-        # Use gspread instead of googleapiclient for consistency with working version
-        import gspread
-        gc = gspread.authorize(credentials)
-
-        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-        sh = gc.open_by_key(spreadsheet_id)
-        worksheet = sh.get_worksheet(sheet_index)
-        data = worksheet.get_all_values()
-
-        df = pd.DataFrame(data)
-        df = df.fillna('')
-        
-        return df
-        
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()
-
-def update_week_dropdown(worksheet, selected_week):
-    """Update the week dropdown selection in the spreadsheet"""
-    try:
-        # Adjust this cell reference to match where your week dropdown is located
-        worksheet.update('H1', selected_week)  # Adjust cell reference
-        
-        # Clear cache to force reload of updated data
-        load_production_data.clear()
-        
-        return True
-    except Exception as e:
-        st.error(f"Error updating spreadsheet: {str(e)}")
-        return False
-
-
-class ProductionDataExtractor:
-    def __init__(self, df):
-        self.df = df
-
-    def get_unique_skus_by_station(self, station_filter="All Stations"):
-        """Get list of unique SKU names filtered by station"""
-        skus = self.get_all_skus(station_filter=station_filter)
-        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))        
-
-    def get_week_info(self):
-        """Extract week dates for title with improved error handling"""
-        try:
-            # Try multiple strategies to find date information
-            dates = []
-            
-            # Strategy 1: Look in row 1 (index 1) for dates in batches columns
-            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                if col < len(self.df.columns):
-                    date_val = str(self.df.iloc[1, col]).strip()
-                    if date_val and date_val != '' and date_val != 'nan':
-                        dates.append(date_val)
-            
-            # Strategy 2: If no dates found, try row 0
-            if not dates:
-                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                    if col < len(self.df.columns):
-                        date_val = str(self.df.iloc[0, col]).strip()
-                        if date_val and date_val != '' and date_val != 'nan':
-                            dates.append(date_val)
-            
-            # Strategy 3: If still no dates, look for any date-like patterns in first few rows
-            if not dates:
-                for row_idx in range(min(5, len(self.df))):
-                    for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                        if col < len(self.df.columns):
-                            cell_val = str(self.df.iloc[row_idx, col]).strip()
-                            # Look for date patterns (containing /, -, or numbers)
-                            if cell_val and any(char in cell_val for char in ['/', '-']) and any(char.isdigit() for char in cell_val):
-                                dates.append(cell_val)
-                                if len(dates) >= 7:  # Stop after finding enough dates
-                                    break
-                    if len(dates) >= 7:
-                        break
-            
-            if len(dates) >= 2:
-                start_date = dates[0]
-                end_date = dates[-1]
-                return start_date, end_date
-            elif len(dates) == 1:
-                # If only one date found, use it as both start and end
-                return dates[0], dates[0]
-            else:
-                # Fallback: use current date
-                current_date = datetime.now().strftime("%m/%d/%Y")
-                return current_date, current_date
-                
-        except Exception as e:
-            # Fallback to current date
-            current_date = datetime.now().strftime("%m/%d/%Y")
-            return current_date, current_date
-    
-    def get_days_of_week(self):
-        """Extract days of week from row 4 (index 3)"""
-        try:
-            days = []
-            # Try row 4 first (index 3) as shown in your screenshot
-            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                if col < len(self.df.columns):
-                    day_val = str(self.df.iloc[2, col]).strip()  # Changed from index 2 to 3
-                    if day_val and day_val != '':
-                        days.append(day_val)
-            
-            # If no days found in row 4, try row 3 (index 2) as fallback
-            if not days:
-                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                    if col < len(self.df.columns):
-                        day_val = str(self.df.iloc[2, col]).strip()
-                        if day_val and day_val != '':
-                            days.append(day_val)
-            
-            return days
-        except Exception as e:
-            return []
-        
-    def get_week_number(self):
-        """Extract week number from column H, row 1"""
-        try:
-            # Column H is index 7 (0-based), Row 1 is index 0 (0-based)
-            week_number = str(self.df.iloc[0, 7]).strip()
-            if week_number and week_number != '' and week_number != 'nan':
-                return week_number
-            else:
-                return "Week N/A"
-        except Exception as e:
-            return "Week N/A"
-    
-    def get_all_skus(self, station_filter="All Stations", sku_filter="All SKUs", day_filter="All Days"):
-        """Get all SKUs based on filters"""
-        skus = []
-        
-        # Determine which ranges to process
-        if station_filter == "All Stations":
-            ranges_to_process = []
-            for station_ranges in STATION_RANGES.values():
-                ranges_to_process.extend(station_ranges)
-        else:
-            ranges_to_process = STATION_RANGES.get(station_filter, [])
-        
-        # Extract SKUs from ranges
-        for start_row, end_row in ranges_to_process:
-            for row_idx in range(start_row - 1, end_row):
-                if row_idx < len(self.df):
-                    sku_data = self.extract_sku_data(row_idx)
-                    if sku_data and sku_data['sku']:
-                        # Determine station
-                        sku_data['station'] = self.determine_station(row_idx + 1)
-                        skus.append(sku_data)
-        
-        # Apply SKU filter
-        if sku_filter != "All SKUs":
-            skus = [sku for sku in skus if sku['sku'] == sku_filter]
-        
-        # Apply day filter (filter based on which days have production)
-        if day_filter != "Current Week":
-            days = self.get_days_of_week()
-            if day_filter in days:
-                day_index = days.index(day_filter)
-                filtered_skus = []
-                for sku in skus:
-                    if (day_index < len(sku['daily_batches']) and 
-                        sku['daily_batches'][day_index] and 
-                        sku['daily_batches'][day_index] != '' and 
-                        sku['daily_batches'][day_index] != '0'):
-                        filtered_skus.append(sku)
-                skus = filtered_skus
-        
-        return skus
-    
-    def determine_station(self, row_number):
-        """Determine which station a row belongs to"""
-        for station, ranges in STATION_RANGES.items():
-            for start_row, end_row in ranges:
-                if start_row <= row_number <= end_row:
-                    return station
-        return "Unknown"
-    
-    def extract_sku_data(self, row_idx):
-        """Extract all data for a SKU row"""
-        try:
-            row = self.df.iloc[row_idx]
-            
-            def safe_value(col_idx, default=''):
-                try:
-                    return str(row[col_idx]).strip() if col_idx < len(row) else default
-                except:
-                    return default
-            
-            sku_name = safe_value(COLUMNS['sku'])
-            if not sku_name:
-                return None
-            
-            sku_data = {
-                'sku': sku_name,
-                'batch_qty': safe_value(COLUMNS['batch_qty']),
-                'daily_batches': [],
-                'daily_volume': [],
-                'daily_hours': [],
-                'daily_manpower': [],
-                'overtime': [],
-                'overtime_percentage': [],           
-            }
-            
-            # Extract daily data
-            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
-                sku_data['daily_batches'].append(safe_value(col))
-            
-            for col in range(COLUMNS['volume_start'], COLUMNS['volume_end'] + 1):
-                sku_data['daily_volume'].append(safe_value(col))
-            
-            for col in range(COLUMNS['hours_start'], COLUMNS['hours_end'] + 1):
-                sku_data['daily_hours'].append(safe_value(col))
-            
-            # Extract manpower from columns AP to AV (41-47)
-            for col in range(COLUMNS['manpower_start'], COLUMNS['manpower_end'] + 1):
-                sku_data['daily_manpower'].append(safe_value(col))
-
-            # Extract overtime per person (AX-BD, columns 49-55)
-            for col in range(COLUMNS['overtime_start'], COLUMNS['overtime_end'] + 1):
-                sku_data['overtime'].append(safe_value(col))
-
-            # Extract overtime percentage
-            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
-                sku_data['overtime_percentage'].append(safe_value(col))
-
-            return sku_data
-            
-        except Exception as e:
-            return None
-        
-    def get_overtime_percentage(self):
-        """Get overtime percentage from row 6 (index 5), columns BP to BV (60 to 66)"""
-        try:
-            overtime_percentages = []
-            row_idx = COLUMNS['header_row']  # Row 6 (index 5)
-            
-            # Use the CORRECT column range from your COLUMNS mapping
-            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
-                if row_idx < len(self.df) and col < len(self.df.columns):
-                    value = str(self.df.iloc[row_idx, col]).strip()
-                    overtime_percentages.append(value)
-                else:
-                    overtime_percentages.append('')
-            
-            return overtime_percentages
-        except Exception as e:
-            st.error(f"Error extracting overtime percentage: {str(e)}")
-            return []
-    
-    def get_unique_skus(self):
-        """Get list of unique SKU names"""
-        skus = self.get_all_skus()
-        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))
-
-def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None):
-    """Calculate KPI totals with day-specific filtering for manpower and overtime percentage"""
-    def safe_sum_daily_values(values_list, attr):
-        total = 0
-        for sku in values_list:
-            daily_values = sku.get(attr, [])
-            for val in daily_values:
-                total += safe_float_convert(val)
-        return total
-    
-    def safe_sum_daily_values_for_day(values_list, attr, day_index):
-        """Sum values for a specific day index"""
-        total = 0
-        for sku in values_list:
-            daily_values = sku.get(attr, [])
-            if day_index < len(daily_values):
-                total += safe_float_convert(daily_values[day_index])
-        return total
-    
-    # Standard calculations (unchanged)
-    total_batches = safe_sum_daily_values(skus, 'daily_batches')
-    total_volume = safe_sum_daily_values(skus, 'daily_volume')  
-    total_hours = safe_sum_daily_values(skus, 'daily_hours')
-    
-    # FIXED: Manpower calculation based on day filter
-    if day_filter == "Current Week":
-        # Sum all manpower for the week
-        total_manpower = safe_sum_daily_values(skus, 'daily_manpower')
-    else:
-        # Sum manpower for specific day only
-        if days and day_filter in days:
-            day_index = days.index(day_filter)
-            total_manpower = safe_sum_daily_values_for_day(skus, 'daily_manpower', day_index)
-        else:
-            total_manpower = 0.0
-
-    # FIXED: Overtime percentage calculation based on day filter
-    overtime_percentage = 0.0
-    if extractor:
-        overtime_percentages = extractor.get_overtime_percentage()
-        
-        if day_filter == "Current Week":
-            # Average of all valid percentages for the week (excluding empty/zero values)
-            valid_percentages = []
-            for p in overtime_percentages:
-                # Clean the percentage value first
-                clean_p = str(p).replace('%', '').strip()
-                converted_value = safe_float_convert(clean_p)
-                if converted_value > 0:
-                    valid_percentages.append(converted_value)
-            
-            if valid_percentages:
-                overtime_percentage = sum(valid_percentages) / len(valid_percentages)
-        else:
-            # Get percentage for specific day
-            if days and day_filter in days:
-                day_index = days.index(day_filter)
-                if day_index < len(overtime_percentages):
-                    # Clean the percentage value before conversion
-                    raw_value = overtime_percentages[day_index]
-                    clean_value = str(raw_value).replace('%', '').strip()
-                    overtime_percentage = safe_float_convert(clean_value)
-    
-    return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
-
-def render_sku_table(skus, day_filter="Current Week", days=None):
-    """Render the main SKU table with day-specific manpower calculation and color-coded station pills"""
-    if not skus:
-        st.warning("No SKUs match the current filters.")
-        return
-    
-    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
-
-    st.markdown("### Production List")
-    
-    # Station color mapping for pills
-    station_colors = {
-        'Hot Kitchen': "#f26556",
-        'Cold Sauce': "#7dbfea", 
-        'Fabrication': "#febc51",
-        'Pastry': "#ba85cf",
-        'Unknown': "#94abad"
-    }
-    
-    # Prepare table data
-    table_data = []
-    for sku in skus:
-        def safe_sum(values):
-            total = 0
-            for v in values:
-                total += safe_float_convert(v)
-            return total
-        
-        def safe_sum_for_day(values, day_index):
-            if day_index < len(values):
-                return safe_float_convert(values[day_index])
-            return 0.0
-        
-        sku_overtime_per_person = safe_sum(sku.get('overtime', []))
-        
-        # Manpower calc depending on filter
-        if day_filter == "Current Week":
-            sku_manpower = safe_sum(sku.get('daily_manpower', []))
-        else:
-            if days and day_filter in days:
-                day_index = days.index(day_filter)
-                sku_manpower = safe_sum_for_day(sku.get('daily_manpower', []), day_index)
-            else:
-                sku_manpower = 0.0
-        
-        station = sku.get('station', 'Unknown')
-        station_color = station_colors.get(station, station_colors['Unknown'])
-        
-        # --- Improved HTML pill with better escaping ---
-        station_pill = f"""<span style="background-color: {station_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">{station}</span>"""
-        
-        table_data.append({
-            'Station': station_pill,
-            'SKU': sku['sku'],
-            'Batches (no.)': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
-            'Volume (kg)': f"{safe_sum(sku.get('daily_volume', [])):,.1f}",
-            'Hours (hr)': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
-            'Manpower (count)': f"{sku_manpower:,.0f}",
-            'Overtime per Person (hrs)': f"{sku_overtime_per_person:,.0f}"
-        })
-
-    # Build DataFrame
-    df_display = pd.DataFrame(table_data)
+ 
     
     # Add CSS styling first
     st.markdown("""
@@ -1062,120 +670,190 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
 class YTDProductionExtractor:
     def __init__(self, df):
         self.df = df
-        self.time_periods = self._extract_time_periods()
-        
-    def _extract_time_periods(self):
-        """Extract time periods from row 2 (I to NI)"""
+        self.setup_station_mappings()
+    
+    def setup_station_mappings(self):
+        """Define station row mappings based on your specification"""
+        self.station_mappings = {
+            "All Stations": {"row": 6, "name": "All Stations"},
+            "Hot Kitchen Sauce": {"row": 7, "name": "Hot Kitchen Sauce"},
+            "Hot Kitchen Savory": {"row": 37, "name": "Hot Kitchen Savory"}, 
+            "Combined Hot Kitchen": {"rows": [7, 37], "name": "Combined Hot Kitchen"},  # Sum of sauce + savory
+            "Cold Sauce": {"row": 73, "name": "Cold Sauce"},
+            "Fab Poultry": {"row": 114, "name": "Fab Poultry"},
+            "Fab Meats": {"row": 129, "name": "Fab Meats"},
+            "Pastry": {"row": 153, "name": "Pastry"}
+        }
+    
+    def get_available_weeks(self):
+        """Extract available weeks from row 2 (week numbers)"""
         try:
-            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-            periods = []
-            for i, period in enumerate(time_period_row):
-                if pd.notna(period) and str(period).strip():
-                    periods.append(str(period).strip())
-            return list(set(periods))  # Get unique periods
-        except:
+            # Get week numbers from row 2, columns I onwards (column index 8+)
+            week_row = self.df.iloc[1, 8:]  # Row 2 (0-indexed as 1), from column I
+            
+            # Find non-empty week numbers
+            available_weeks = []
+            for col_idx, week_num in enumerate(week_row):
+                if pd.notna(week_num) and str(week_num).strip() != '':
+                    try:
+                        week_number = int(float(week_num))
+                        available_weeks.append({
+                            'week_number': week_number,
+                            'column_index': col_idx + 8  # Adjust for actual column position
+                        })
+                    except (ValueError, TypeError):
+                        continue
+            
+            return available_weeks
+        except Exception as e:
+            st.error(f"Error extracting weeks: {e}")
             return []
     
-    def get_time_period_options(self):
-        """Create time period dropdown options"""
-        return ["All Periods"] + sorted(self.time_periods)
-    
-    def get_production_totals(self, selected_period=None):
-        """Get total SKUs and total batches"""
-        # Calculate column range based on period selection
-        if selected_period and selected_period != "All Periods":
-            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-            period_indices = [i for i, p in enumerate(time_period_row) if str(p).strip() == selected_period]
+    def get_week_days(self, week_number):
+        """Get the days for a specific week from row 3"""
+        try:
+            available_weeks = self.get_available_weeks()
+            week_columns = []
             
-            if period_indices:
-                start_col = YTD_COLUMNS['data_start'] + period_indices[0] 
-                end_col = YTD_COLUMNS['data_start'] + period_indices[-1] + 1
-            else:
-                start_col = YTD_COLUMNS['data_start']
-                end_col = YTD_COLUMNS['data_end']
-        else:
-            start_col = YTD_COLUMNS['data_start']
-            end_col = YTD_COLUMNS['data_end']
-        
-        # Count total SKUs (non-empty subrecipes)
-        subrecipe_col = self.df.iloc[:, YTD_COLUMNS['subrecipe']]
-        total_skus = subrecipe_col.notna().sum()
-        
-        # Calculate total batches from selected columns
-        total_batches = 0
-        for row_idx in range(len(self.df)):
-            try:
-                row_data = self.df.iloc[row_idx, start_col:end_col]
-                numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
-                total_batches += numeric_data.sum()
-            except:
-                continue
-                
-        return total_skus, total_batches
-    
-    def get_production_list(self, selected_period=None):
-        """Get production dataframe with station, sku, and batches per sku"""
-        # Calculate column range based on period selection
-        if selected_period and selected_period != "All Periods":
-            time_period_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-            period_indices = [i for i, p in enumerate(time_period_row) if str(p).strip() == selected_period]
-            
-            if period_indices:
-                start_col = YTD_COLUMNS['data_start'] + period_indices[0] 
-                end_col = YTD_COLUMNS['data_start'] + period_indices[-1] + 1
-            else:
-                start_col = YTD_COLUMNS['data_start']
-                end_col = YTD_COLUMNS['data_end']
-        else:
-            start_col = YTD_COLUMNS['data_start']
-            end_col = YTD_COLUMNS['data_end']
-        
-        production_data = []
-        
-        for row_idx in range(len(self.df)):
-            try:
-                # Get subrecipe (SKU) from column B
-                sku = self.df.iloc[row_idx, YTD_COLUMNS['subrecipe']]
-                if pd.isna(sku) or str(sku).strip() == '':
-                    continue
-                
-                # Extract station from SKU or use row position logic
-                station = self._extract_station(sku, row_idx)
-                
-                # Calculate total batches for this SKU in selected period
-                row_data = self.df.iloc[row_idx, start_col:end_col]
-                numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
-                batches = numeric_data.sum()
-                
-                if batches > 0:  # Only include SKUs with production
-                    production_data.append({
-                        'Station': station,
-                        'SKU': str(sku).strip(),
-                        'Batches per SKU': batches
-                    })
+            # Find all columns for the selected week
+            for week_info in available_weeks:
+                if week_info['week_number'] == week_number:
+                    col_idx = week_info['column_index']
                     
-            except Exception as e:
-                continue
-        
-        return pd.DataFrame(production_data)
+                    # Get the date from row 3 (0-indexed as 2)
+                    date_value = self.df.iloc[2, col_idx]
+                    
+                    if pd.notna(date_value):
+                        # Try to parse the date
+                        try:
+                            if isinstance(date_value, str):
+                                # Handle different date formats
+                                if '/' in date_value:
+                                    date_obj = datetime.strptime(date_value, '%m/%d')
+                                    # Add current year
+                                    date_obj = date_obj.replace(year=datetime.now().year)
+                                elif '-' in date_value:
+                                    date_obj = datetime.strptime(date_value, '%m-%d')
+                                    date_obj = date_obj.replace(year=datetime.now().year)
+                                else:
+                                    # Try parsing as is
+                                    date_obj = pd.to_datetime(date_value)
+                            else:
+                                date_obj = pd.to_datetime(date_value)
+                            
+                            week_columns.append({
+                                'column_index': col_idx,
+                                'date': date_obj,
+                                'day_name': date_obj.strftime('%A'),
+                                'formatted_date': date_obj.strftime('%b %d')
+                            })
+                        except:
+                            # If date parsing fails, use raw value
+                            week_columns.append({
+                                'column_index': col_idx,
+                                'date': date_value,
+                                'day_name': f"Day {len(week_columns) + 1}",
+                                'formatted_date': str(date_value)
+                            })
+            
+            return sorted(week_columns, key=lambda x: x['column_index'])
+        except Exception as e:
+            st.error(f"Error extracting week days: {e}")
+            return []
     
-    def _extract_station(self, sku, row_idx):
-        """Extract station based on row position or SKU pattern"""
-        # Map row indices to stations based on your PRODUCTION_SUMMARY_ROWS
-        if row_idx <= PRODUCTION_SUMMARY_ROWS['hot_kitchen_sauce']:
-            return "Hot Kitchen Sauce"
-        elif row_idx <= PRODUCTION_SUMMARY_ROWS['hot_kitchen_savory']:
-            return "Hot Kitchen Savory" 
-        elif row_idx <= PRODUCTION_SUMMARY_ROWS['cold_sauce']:
-            return "Cold Sauce"
-        elif row_idx <= PRODUCTION_SUMMARY_ROWS['fab_poultry']:
-            return "Fab Poultry"
-        elif row_idx <= PRODUCTION_SUMMARY_ROWS['fab_meats']:
-            return "Fab Meats"
-        elif row_idx <= PRODUCTION_SUMMARY_ROWS['pastry']:
-            return "Pastry"
-        else:
-            return "Other"
+    def get_station_data(self, station_name, week_number):
+        """Extract production data for a specific station and week"""
+        try:
+            if station_name not in self.station_mappings:
+                return {}
+            
+            station_config = self.station_mappings[station_name]
+            week_days = self.get_week_days(week_number)
+            
+            if not week_days:
+                return {}
+            
+            # Get basic recipe data (columns B-H)
+            station_data = {
+                'station_name': station_name,
+                'week_number': week_number,
+                'days_data': {},
+                'recipe_info': {}
+            }
+            
+            # Handle combined stations (Hot Kitchen = Sauce + Savory)
+            if station_name == "Combined Hot Kitchen":
+                # Sum data from both rows 7 and 37
+                for day_info in week_days:
+                    col_idx = day_info['column_index']
+                    
+                    # Get values from both rows
+                    sauce_value = self.df.iloc[6, col_idx] if col_idx < len(self.df.columns) else 0  # Row 7 (0-indexed as 6)
+                    savory_value = self.df.iloc[36, col_idx] if col_idx < len(self.df.columns) else 0  # Row 37 (0-indexed as 36)
+                    
+                    # Convert to numeric, handling NaN
+                    sauce_val = pd.to_numeric(sauce_value, errors='coerce') or 0
+                    savory_val = pd.to_numeric(savory_value, errors='coerce') or 0
+                    
+                    combined_value = sauce_val + savory_val
+                    
+                    station_data['days_data'][day_info['formatted_date']] = {
+                        'value': combined_value,
+                        'day_name': day_info['day_name'],
+                        'column_index': col_idx
+                    }
+            else:
+                # Single station data
+                station_row = station_config['row'] - 1  # Convert to 0-based index
+                
+                # Extract recipe information (columns B-H)
+                try:
+                    station_data['recipe_info'] = {
+                        'subrecipe': self.df.iloc[station_row, 1] if len(self.df.columns) > 1 else '',
+                        'batch_qty': self.df.iloc[station_row, 2] if len(self.df.columns) > 2 else 0,
+                        'kg_per_mhr': self.df.iloc[station_row, 3] if len(self.df.columns) > 3 else 0,
+                        'mhr_per_kg': self.df.iloc[station_row, 4] if len(self.df.columns) > 4 else 0,
+                        'hrs_per_run': self.df.iloc[station_row, 5] if len(self.df.columns) > 5 else 0,
+                        'working_hrs': self.df.iloc[station_row, 6] if len(self.df.columns) > 6 else 0,
+                        'std_manpower': self.df.iloc[station_row, 7] if len(self.df.columns) > 7 else 0
+                    }
+                except:
+                    station_data['recipe_info'] = {}
+                
+                # Extract daily production data
+                for day_info in week_days:
+                    col_idx = day_info['column_index']
+                    
+                    if col_idx < len(self.df.columns):
+                        value = self.df.iloc[station_row, col_idx]
+                        numeric_value = pd.to_numeric(value, errors='coerce') or 0
+                        
+                        station_data['days_data'][day_info['formatted_date']] = {
+                            'value': numeric_value,
+                            'day_name': day_info['day_name'],
+                            'column_index': col_idx
+                        }
+            
+            return station_data
+        except Exception as e:
+            st.error(f"Error extracting station data: {e}")
+            return {}
+    
+    def get_all_stations_summary(self, week_number):
+        """Get summary data for all stations for a specific week"""
+        try:
+            summary_data = {}
+            
+            for station_name in self.station_mappings.keys():
+                if station_name != "All Stations":  # Skip the summary row for individual calculations
+                    station_data = self.get_station_data(station_name, week_number)
+                    if station_data and station_data.get('days_data'):
+                        summary_data[station_name] = station_data
+            
+            return summary_data
+        except Exception as e:
+            st.error(f"Error creating stations summary: {e}")
+            return {}
 
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
@@ -1910,30 +1588,51 @@ def ytd_production():
         df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
         
-        # --- Time Period Selection Filter ---
+        # --- Week and Day Selection Filters ---
         st.markdown("### 📅 Time Period Selection")
-        col1, col2 = st.columns([2, 1])
         
-        with col1:
-            period_options = extractor.get_time_period_options()
-            selected_period = st.selectbox(
-                "Select Time Period", 
-                options=period_options,
-                index=0,
-                help="Choose a specific time period or view all periods combined"
-            )
+        col_time1, col_time2 = st.columns(2)
         
-        with col2:
-            st.markdown("""
-            <div style="margin-top: 25px; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
-                <small><b>Time Periods:</b><br>
-                Based on row 2 data (columns I to NI)<br>
-                Showing unique time periods from your data</small>
-            </div>
-            """, unsafe_allow_html=True)
+        with col_time1:
+            # Get available weeks
+            available_weeks = extractor.get_available_weeks()
+            if available_weeks:
+                week_options = [f"Week {week['week_number']}" for week in available_weeks]
+                week_numbers = [week['week_number'] for week in available_weeks]
+                
+                selected_week_display = st.selectbox(
+                    "Select Week", 
+                    options=week_options,
+                    index=0,
+                    help="Choose a week to view detailed daily production data"
+                )
+                
+                # Get the actual week number
+                selected_week = week_numbers[week_options.index(selected_week_display)]
+            else:
+                st.warning("No week data available")
+                selected_week = 1
+        
+        with col_time2:
+            # Get days for selected week
+            if available_weeks:
+                week_days = extractor.get_week_days(selected_week)
+                if week_days:
+                    day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
+                    selected_day = st.selectbox(
+                        "Select Day", 
+                        options=day_options,
+                        index=0,
+                        help="Choose a specific day or view all days in the week"
+                    )
+                else:
+                    st.warning("No day data available for selected week")
+                    selected_day = "All Days"
+            else:
+                selected_day = "All Days"
         
         # --- Get Production Totals ---
-        total_skus, total_batches = extractor.get_production_totals(selected_period)
+        total_skus, total_batches = extractor.get_production_totals()
         
         # --- KPI Cards ---
         st.markdown("### 📊 Production Summary")
@@ -1958,10 +1657,67 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        # --- Production List DataFrame ---
-        st.markdown("### 📋 Production List")
+        # --- Weekly Station Summary ---
+        if available_weeks:
+            st.markdown(f"### 🏭 Station Production Summary - Week {selected_week}")
+            
+            # Get all stations data for the selected week
+            stations_summary = extractor.get_all_stations_summary(selected_week)
+            
+            if stations_summary:
+                # Create summary table
+                summary_data = []
+                for station_name, station_data in stations_summary.items():
+                    week_total = station_data.get('week_total', 0)
+                    daily_avg = week_total / len(station_data['days_data']) if station_data['days_data'] else 0
+                    
+                    summary_data.append({
+                        'Station': station_name,
+                        'Week Total': f"{week_total:,.0f}",
+                        'Daily Average': f"{daily_avg:.1f}",
+                        'Days Active': len([d for d in station_data['days_data'].values() if d['value'] > 0])
+                    })
+                
+                summary_df = pd.DataFrame(summary_data)
+                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                
+                # --- Detailed Day View ---
+                if selected_day != "All Days":
+                    st.markdown(f"### 📋 Detailed Production - {selected_day}")
+                    
+                    # Extract day info from selection
+                    day_info = None
+                    for day in week_days:
+                        if f"{day['day_name']} ({day['formatted_date']})" == selected_day:
+                            day_info = day
+                            break
+                    
+                    if day_info:
+                        detailed_data = []
+                        for station_name, station_data in stations_summary.items():
+                            day_key = day_info['formatted_date']
+                            if day_key in station_data['days_data']:
+                                day_production = station_data['days_data'][day_key]['value']
+                                
+                                # Add recipe info if available
+                                recipe_info = station_data.get('recipe_info', {})
+                                
+                                detailed_data.append({
+                                    'Station': station_name,
+                                    'Production': f"{day_production:,.0f}",
+                                    'Batch Qty': recipe_info.get('batch_qty', 'N/A'),
+                                    'Kg per MHr': recipe_info.get('kg_per_mhr', 'N/A'),
+                                    'Working Hrs': recipe_info.get('working_hrs', 'N/A'),
+                                    'Std Manpower': recipe_info.get('std_manpower', 'N/A')
+                                })
+                        
+                        detailed_df = pd.DataFrame(detailed_data)
+                        st.dataframe(detailed_df, use_container_width=True, hide_index=True)
         
-        production_df = extractor.get_production_list(selected_period)
+        # --- Production List DataFrame ---
+        st.markdown("### 📋 Production List by Station")
+        
+        production_df = extractor.get_production_list()
         
         if not production_df.empty:
             # Add filters for the production list
@@ -1973,7 +1729,7 @@ def ytd_production():
             
             with col_filter2:
                 # Sort options
-                sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
+                sort_options = ["Station (A-Z)", "Station (Z-A)", "SKUs (High-Low)", "SKUs (Low-High)", "Batches (High-Low)", "Batches (Low-High)"]
                 sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
             
             # Apply station filter
@@ -1982,10 +1738,14 @@ def ytd_production():
                 filtered_df = filtered_df[filtered_df['Station'] == station_filter]
             
             # Apply sorting
-            if sort_filter == "SKU (A-Z)":
-                filtered_df = filtered_df.sort_values('SKU')
-            elif sort_filter == "SKU (Z-A)":
-                filtered_df = filtered_df.sort_values('SKU', ascending=False)
+            if sort_filter == "Station (A-Z)":
+                filtered_df = filtered_df.sort_values('Station')
+            elif sort_filter == "Station (Z-A)":
+                filtered_df = filtered_df.sort_values('Station', ascending=False)
+            elif sort_filter == "SKUs (High-Low)":
+                filtered_df = filtered_df.sort_values('Total SKUs', ascending=False)
+            elif sort_filter == "SKUs (Low-High)":
+                filtered_df = filtered_df.sort_values('Total SKUs')
             elif sort_filter == "Batches (High-Low)":
                 filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
             elif sort_filter == "Batches (Low-High)":
@@ -1997,15 +1757,36 @@ def ytd_production():
             # Summary stats for filtered data
             col_stat1, col_stat2, col_stat3 = st.columns(3)
             with col_stat1:
-                st.metric("Filtered SKUs", len(filtered_df))
+                st.metric("Stations", len(filtered_df))
             with col_stat2:
-                st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+                st.metric("Total SKUs", f"{filtered_df['Total SKUs'].sum():,.0f}")
             with col_stat3:
-                if len(filtered_df) > 0:
-                    avg_batches = filtered_df['Batches per SKU'].mean()
-                    st.metric("Avg Batches/SKU", f"{avg_batches:.1f}")
-                else:
-                    st.metric("Avg Batches/SKU", "0")
+                st.metric("Total Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+        else:
+            st.warning("No production list data available")
+        
+        # --- Station Performance Chart ---
+        if not production_df.empty:
+            st.markdown("### 📊 Station Performance Visualization")
+            
+            chart_type = st.selectbox(
+                "Chart Type", 
+                options=["Bar Chart - SKUs", "Bar Chart - Batches", "Pie Chart - SKUs", "Pie Chart - Batches"],
+                index=0
+            )
+            
+            if chart_type == "Bar Chart - SKUs":
+                st.bar_chart(production_df.set_index('Station')['Total SKUs'])
+            elif chart_type == "Bar Chart - Batches":
+                st.bar_chart(production_df.set_index('Station')['Batches per SKU'])
+            elif chart_type == "Pie Chart - SKUs":
+                fig_pie = px.pie(production_df, values='Total SKUs', names='Station', 
+                               title="SKU Distribution by Station")
+                st.plotly_chart(fig_pie, use_container_width=True)
+            elif chart_type == "Pie Chart - Batches":
+                fig_pie = px.pie(production_df, values='Batches per SKU', names='Station', 
+                               title="Batch Distribution by Station")
+                st.plotly_chart(fig_pie, use_container_width=True)
     
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
@@ -2014,6 +1795,13 @@ def ytd_production():
             <h3>📈 YTD Production Analysis</h3>
             <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
             <p><em>Please ensure the production data file is available and properly formatted.</em></p>
+            <ul>
+                <li>Sheet index 6 should contain YTD Production Schedule</li>
+                <li>Row 2: Week numbers (starting from column I)</li>
+                <li>Row 3: Corresponding dates for each day</li>
+                <li>Columns B-H: Recipe information (subrecipe, batch qty, etc.)</li>
+                <li>Key station rows: 6 (All), 7 (Hot Kitchen Sauce), 37 (Hot Kitchen Savory), 73 (Cold Sauce), 114 (Fab Poultry), 129 (Fab Meats), 153 (Pastry)</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
             
