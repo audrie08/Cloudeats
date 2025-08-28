@@ -2230,6 +2230,9 @@ def ytd_production():
             # Show empty dataframe structure
             empty_df = pd.DataFrame(columns=['Station', 'SKU', 'Batches'])
             st.dataframe(empty_df, use_container_width=True, hide_index=True)
+
+    except Exception as e:
+        st.error(f"Error loading YTD Production data: {str(e)}")
             
 def main():
     """Main application function"""
