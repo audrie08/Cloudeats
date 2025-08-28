@@ -2171,21 +2171,21 @@ def ytd_production():
                 selected_week = week_numbers[week_options.index(selected_week_display) - 1]
        
         with col2:
-            # Day Selection
+            # Day Selection - initialize as None
+            selected_day = None
+            
             if selected_week:
                 week_days = extractor.get_week_days(selected_week)
                 day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
                 selected_day_display = st.selectbox("Select Day", options=day_options, index=0)
                 
-                # Extract date from the selected day display
+                # Extract the actual day value for filtering
                 if selected_day_display != "All Days":
-                    # Extract the date part from the string (e.g., "01 Jan" from "Monday (01 Jan)")
-                    selected_date = selected_day_display.split('(')[1].split(')')[0].strip()
-                else:
-                    selected_date = None
+                    # Use the actual day value from week_days instead of the display string
+                    selected_index = day_options.index(selected_day_display) - 1  # Subtract 1 for "All Days"
+                    selected_day = week_days[selected_index]
             else:
                 selected_day_display = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
-                selected_date = None
        
         with col3:
             # Station Selection
@@ -2205,7 +2205,7 @@ def ytd_production():
         # Get filtered production data for KPI calculations
         production_df = extractor.get_filtered_production_data(
             selected_week=selected_week,
-            selected_date=selected_date,  # Pass the extracted date instead of the display string
+            selected_day=selected_day,  # Pass the day object instead of display string
             selected_station=selected_station if selected_station != "All Stations" else None,
             selected_sku=selected_sku if selected_sku != "All SKUs" else None
         )
