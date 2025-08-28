@@ -1200,33 +1200,33 @@ class YTDProductionExtractor:
             # Single station data
             station_row = station_config['row'] - 1  # Convert to 0-based index
                 
-                # Extract recipe information (columns B-H)
-                try:
-                    station_data['recipe_info'] = {
-                        'subrecipe': self.df.iloc[station_row, YTD_COLUMNS['subrecipe']] if len(self.df.columns) > YTD_COLUMNS['subrecipe'] else '',
-                        'batch_qty': self.df.iloc[station_row, YTD_COLUMNS['batch_qty']] if len(self.df.columns) > YTD_COLUMNS['batch_qty'] else 0,
-                        'kg_per_mhr': self.df.iloc[station_row, YTD_COLUMNS['kg_per_mhr']] if len(self.df.columns) > YTD_COLUMNS['kg_per_mhr'] else 0,
-                        'mhr_per_kg': self.df.iloc[station_row, YTD_COLUMNS['mhr_per_kg']] if len(self.df.columns) > YTD_COLUMNS['mhr_per_kg'] else 0,
-                        'hrs_per_run': self.df.iloc[station_row, YTD_COLUMNS['hrs_per_run']] if len(self.df.columns) > YTD_COLUMNS['hrs_per_run'] else 0,
-                        'working_hrs': self.df.iloc[station_row, YTD_COLUMNS['working_hrs']] if len(self.df.columns) > YTD_COLUMNS['working_hrs'] else 0,
-                        'std_manpower': self.df.iloc[station_row, YTD_COLUMNS['std_manpower']] if len(self.df.columns) > YTD_COLUMNS['std_manpower'] else 0
-                    }
-                except:
-                    station_data['recipe_info'] = {}
+            # Extract recipe information (columns B-H)
+            try:
+                station_data['recipe_info'] = {
+                    'subrecipe': self.df.iloc[station_row, YTD_COLUMNS['subrecipe']] if len(self.df.columns) > YTD_COLUMNS['subrecipe'] else '',
+                    'batch_qty': self.df.iloc[station_row, YTD_COLUMNS['batch_qty']] if len(self.df.columns) > YTD_COLUMNS['batch_qty'] else 0,
+                    'kg_per_mhr': self.df.iloc[station_row, YTD_COLUMNS['kg_per_mhr']] if len(self.df.columns) > YTD_COLUMNS['kg_per_mhr'] else 0,
+                    'mhr_per_kg': self.df.iloc[station_row, YTD_COLUMNS['mhr_per_kg']] if len(self.df.columns) > YTD_COLUMNS['mhr_per_kg'] else 0,
+                    'hrs_per_run': self.df.iloc[station_row, YTD_COLUMNS['hrs_per_run']] if len(self.df.columns) > YTD_COLUMNS['hrs_per_run'] else 0,
+                    'working_hrs': self.df.iloc[station_row, YTD_COLUMNS['working_hrs']] if len(self.df.columns) > YTD_COLUMNS['working_hrs'] else 0,
+                    'std_manpower': self.df.iloc[station_row, YTD_COLUMNS['std_manpower']] if len(self.df.columns) > YTD_COLUMNS['std_manpower'] else 0
+                }
+            except:
+                station_data['recipe_info'] = {}
+            
+            # Extract daily production data
+            for day_info in week_days:
+                col_idx = day_info['column_index']
                 
-                # Extract daily production data
-                for day_info in week_days:
-                    col_idx = day_info['column_index']
+                if col_idx < len(self.df.columns):
+                    value = self.df.iloc[station_row, col_idx]
+                    numeric_value = pd.to_numeric(value, errors='coerce') or 0
                     
-                    if col_idx < len(self.df.columns):
-                        value = self.df.iloc[station_row, col_idx]
-                        numeric_value = pd.to_numeric(value, errors='coerce') or 0
-                        
-                        station_data['days_data'][day_info['formatted_date']] = {
-                            'value': numeric_value,
-                            'day_name': day_info['day_name'],
-                            'column_index': col_idx
-                        }
+                    station_data['days_data'][day_info['formatted_date']] = {
+                        'value': numeric_value,
+                        'day_name': day_info['day_name'],
+                        'column_index': col_idx
+                    }
             
             return station_data
         except Exception as e:
