@@ -1071,8 +1071,8 @@ class YTDProductionExtractor:
             "Hot Kitchen Sauce": {"row": 7, "name": "Hot Kitchen Sauce"},
             "Hot Kitchen Savory": {"row": 37, "name": "Hot Kitchen Savory"}, 
             "Cold Sauce": {"row": 73, "name": "Cold Sauce"},
-            "Fab Poultry": {"row": 114, "name": "Fab Poultry"},
-            "Fab Meats": {"row": 129, "name": "Fab Meats"},
+            "Fabrication Poultry": {"row": 114, "name": "Fabrication Poultry"},
+            "Fabrication Meats": {"row": 129, "name": "Fabrication Meats"},
             "Pastry": {"row": 153, "name": "Pastry"}
         }
     
@@ -1271,8 +1271,8 @@ class YTDProductionExtractor:
                 "Hot Kitchen Sauce": (7, 37),
                 "Hot Kitchen Savory": (37, 73),
                 "Cold Sauce": (73, 114),
-                "Fab Poultry": (114, 129),
-                "Fab Meats": (129, 153),
+                "Fabrication Poultry": (114, 129),
+                "Fabrication Meats": (129, 153),
                 "Pastry": (153, None)
             }
             
