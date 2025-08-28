@@ -1077,7 +1077,7 @@ class YTDProductionExtractor:
         }
     
     def get_available_weeks(self):
-        """Extract unique weeks from row 2 (week numbers) - one entry per week"""
+        """Extract unique weeks from row 2 (week numbers)"""
         try:
             # Get week numbers from row 2, columns I onwards
             week_row = self.df.iloc[1, YTD_COLUMNS['data_start']:]
@@ -1094,7 +1094,7 @@ class YTDProductionExtractor:
                     try:
                         week_number = int(float(week_num))
                         
-                        # If this is a new week number that we haven't seen before
+                        # If this is a new week number
                         if week_number != current_week:
                             # Save the previous week if it exists
                             if current_week is not None and current_week not in seen_weeks:
@@ -1252,83 +1252,6 @@ class YTDProductionExtractor:
                     total_skus += 1
                     
                     # Sum all production values for this SKU (columns I onwards)
-                    production_values = row.iloc[YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
-                    sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
-                    total_batches += sku_batches
-            
-            return total_skus, total_batches
-        except Exception as e:
-            st.error(f"Error calculating production totals: {e}")
-            return 0, 0
-    
-    def get_production_list(self):
-        """Create a production list DataFrame showing stations, SKUs, and batches"""
-        try:
-            production_data = []
-            
-            # Define station ranges (you may need to adjust these based on your actual data structure)
-            station_ranges = {
-                "Hot Kitchen Sauce": (7, 37),      # Rows 7-36
-                "Hot Kitchen Savory": (37, 73),    # Rows 37-72
-                "Cold Sauce": (73, 114),           # Rows 73-113
-                "Fab Poultry": (114, 129),         # Rows 114-128
-                "Fab Meats": (129, 153),           # Rows 129-152
-                "Pastry": (153, None)              # Rows 153 onwards
-            }
-            
-            for station, (start_row, end_row) in station_ranges.items():
-                station_skus = 0
-                station_batches = 0
-                
-                # Convert to 0-based indexing and handle end_row
-                start_idx = start_row - 1
-                end_idx = (end_row - 1) if end_row else len(self.df)
-                
-                for idx in range(start_idx, min(end_idx, len(self.df))):
-                    try:
-                        subrecipe = self.df.iloc[idx, YTD_COLUMNS['subrecipe']]
-                        
-                        if pd.notna(subrecipe) and str(subrecipe).strip() != '':
-                            station_skus += 1
-                            
-                            # Sum all production values for this SKU
-                            production_values = self.df.iloc[idx, YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(self.df.columns))]
-                            sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
-                            station_batches += sku_batches
-                    except:
-                        continue
-                
-                if station_skus > 0:  # Only add stations with actual SKUs
-                    production_data.append({
-                        'Station': station,
-                        'Total SKUs': station_skus,
-                        'Batches per SKU': station_batches
-                    })
-            
-            return pd.DataFrame(production_data)
-        except Exception as e:
-            st.error(f"Error creating production list: {e}")
-            return pd.DataFrame()
-    
-    def get_production_totals(self):
-        """Calculate total SKUs and total batches from the YTD data"""
-        try:
-            total_skus = 0
-            total_batches = 0
-            
-            # Count all rows with subrecipe data (non-empty values in column B)
-            subrecipe_col = YTD_COLUMNS['subrecipe']
-            
-            for idx, row in self.df.iterrows():
-                if idx < 5:  # Skip header rows
-                    continue
-                    
-                subrecipe = row.iloc[subrecipe_col] if subrecipe_col < len(row) else ''
-                
-                if pd.notna(subrecipe) and str(subrecipe).strip() != '':
-                    total_skus += 1
-                    
-                    # Sum all production values for this SKU (columns I onwards)
                     production_values = row.iloc[YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(row))]
                     sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
                     total_batches += sku_batches
@@ -1338,26 +1261,26 @@ class YTDProductionExtractor:
             st.error(f"Error calculating production totals: {e}")
             return 0, 0
     
-    def get_production_list(self):
-        """Create a production list DataFrame showing stations, SKUs, and batches"""
+    def get_station_production_summary(self):
+        """Create a production summary by station"""
         try:
             production_data = []
             
-            # Define station ranges (you may need to adjust these based on your actual data structure)
+            # Define station ranges
             station_ranges = {
-                "Hot Kitchen Sauce": (7, 37),      # Rows 7-36
-                "Hot Kitchen Savory": (37, 73),    # Rows 37-72
-                "Cold Sauce": (73, 114),           # Rows 73-113
-                "Fab Poultry": (114, 129),         # Rows 114-128
-                "Fab Meats": (129, 153),           # Rows 129-152
-                "Pastry": (153, None)              # Rows 153 onwards
+                "Hot Kitchen Sauce": (7, 37),
+                "Hot Kitchen Savory": (37, 73),
+                "Cold Sauce": (73, 114),
+                "Fab Poultry": (114, 129),
+                "Fab Meats": (129, 153),
+                "Pastry": (153, None)
             }
             
             for station, (start_row, end_row) in station_ranges.items():
                 station_skus = 0
                 station_batches = 0
                 
-                # Convert to 0-based indexing and handle end_row
+                # Convert to 0-based indexing
                 start_idx = start_row - 1
                 end_idx = (end_row - 1) if end_row else len(self.df)
                 
@@ -1375,19 +1298,20 @@ class YTDProductionExtractor:
                     except:
                         continue
                 
-                if station_skus > 0:  # Only add stations with actual SKUs
+                if station_skus > 0:
                     production_data.append({
                         'Station': station,
                         'Total SKUs': station_skus,
-                        'Batches per SKU': station_batches
+                        'Total Batches': station_batches,
+                        'Avg Batches per SKU': station_batches / station_skus if station_skus > 0 else 0
                     })
             
             return pd.DataFrame(production_data)
         except Exception as e:
-            st.error(f"Error creating production list: {e}")
+            st.error(f"Error creating production summary: {e}")
             return pd.DataFrame()
     
-    def get_all_stations(self, week_number):
+    def get_all_stations_summary(self, week_number):
         """Get summary data for all stations for a specific week"""
         try:
             summary_data = {}
@@ -1405,6 +1329,165 @@ class YTDProductionExtractor:
         except Exception as e:
             st.error(f"Error creating stations summary: {e}")
             return {}
+    
+    def get_filtered_production_data(self, selected_week=None, selected_day=None, 
+                                   selected_station=None, selected_sku=None):
+        """Get filtered production data based on user selections"""
+        # This method needs to be implemented based on your data structure
+        # For now, return empty DataFrame
+        return pd.DataFrame()
+
+def load_production_data(sheet_index):
+    """Mock function to load production data - replace with your actual implementation"""
+    # This should load your Excel/CSV data
+    return pd.DataFrame()
+
+def ytd_production():
+    """YTD Production Schedule Page"""
+    
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>📈 YTD Production Schedule</b></h1>
+        <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    try:
+        # Load YTD Production data
+        df_ytd = load_production_data(sheet_index=6)
+        extractor = YTDProductionExtractor(df_ytd)
+        
+        # --- Filters ---
+        st.markdown("### 🔍 Filters")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Week Selection
+            available_weeks = extractor.get_available_weeks()
+            week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
+            selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
+            
+            if selected_week_display == "All Weeks":
+                selected_week = None
+            else:
+                selected_week = int(selected_week_display.split()[-1])
+        
+        with col2:
+            # Station Selection
+            station_options = list(extractor.station_mappings.keys())
+            selected_station = st.selectbox("Select Station", options=station_options, index=0)
+        
+        # --- Production Totals ---
+        total_skus, total_batches = extractor.get_production_totals()
+        
+        st.markdown("### 📊 Production Summary")
+        
+        col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+        
+        with col_kpi1:
+            st.metric("Total SKUs", f"{total_skus:,}")
+        
+        with col_kpi2:
+            st.metric("Total Batches", f"{total_batches:,}")
+        
+        with col_kpi3:
+            avg_batches = total_batches / total_skus if total_skus > 0 else 0
+            st.metric("Avg Batches per SKU", f"{avg_batches:,.1f}")
+        
+        # --- Station Summary ---
+        st.markdown("### 🏭 Station Summary")
+        station_summary = extractor.get_station_production_summary()
+        
+        if not station_summary.empty:
+            # Format numbers
+            formatted_summary = station_summary.copy()
+            formatted_summary['Total SKUs'] = formatted_summary['Total SKUs'].apply(lambda x: f"{x:,}")
+            formatted_summary['Total Batches'] = formatted_summary['Total Batches'].apply(lambda x: f"{x:,}")
+            formatted_summary['Avg Batches per SKU'] = formatted_summary['Avg Batches per SKU'].apply(lambda x: f"{x:,.1f}")
+            
+            st.dataframe(formatted_summary, use_container_width=True)
+        else:
+            st.warning("No station summary data available")
+        
+        # --- Weekly Data (if a specific week is selected) ---
+        if selected_week:
+            st.markdown(f"### 📅 Week {selected_week} Details")
+            
+            week_summary = extractor.get_all_stations_summary(selected_week)
+            
+            if week_summary:
+                # Create a summary table for the selected week
+                week_data = []
+                for station_name, data in week_summary.items():
+                    week_data.append({
+                        'Station': station_name,
+                        'Week Total': data.get('week_total', 0),
+                        'Days with Data': len(data.get('days_data', {}))
+                    })
+                
+                week_df = pd.DataFrame(week_data)
+                week_df['Week Total'] = week_df['Week Total'].apply(lambda x: f"{x:,.0f}")
+                
+                st.dataframe(week_df, use_container_width=True)
+                
+                # Show detailed data for selected station
+                if selected_station != "All Stations":
+                    st.markdown(f"#### {selected_station} - Week {selected_week}")
+                    
+                    station_data = extractor.get_station_data(selected_station, selected_week)
+                    if station_data and station_data.get('days_data'):
+                        # Create daily data table
+                        daily_data = []
+                        for day, info in station_data['days_data'].items():
+                            daily_data.append({
+                                'Day': day,
+                                'Batches': info['value'],
+                                'Day Name': info['day_name']
+                            })
+                        
+                        daily_df = pd.DataFrame(daily_data)
+                        daily_df['Batches'] = daily_df['Batches'].apply(lambda x: f"{x:,.0f}")
+                        
+                        st.dataframe(daily_df, use_container_width=True)
+                        
+                        # Show recipe info if available
+                        if station_data.get('recipe_info'):
+                            st.markdown("**Recipe Information:**")
+                            recipe_info = station_data['recipe_info']
+                            info_text = f"""
+                            - Subrecipe: {recipe_info.get('subrecipe', 'N/A')}
+                            - Batch Qty: {recipe_info.get('batch_qty', 0):.2f}
+                            - kg per MHR: {recipe_info.get('kg_per_mhr', 0):.2f}
+                            - Working Hours: {recipe_info.get('working_hrs', 0):.2f}
+                            """
+                            st.write(info_text)
+            else:
+                st.warning(f"No data available for Week {selected_week}")
+        
+    except Exception as e:
+        st.error(f"Error loading YTD Production data: {str(e)}")
+
+# Add CSS styling
+st.markdown("""
+<style>
+.main-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    margin-bottom: 20px;
+}
+.main-header h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+.main-header p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+}
+</style>
+""", unsafe_allow_html=True)
             
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
