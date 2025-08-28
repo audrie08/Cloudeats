@@ -2153,8 +2153,8 @@ def ytd_production():
     </div>
     """, unsafe_allow_html=True)
        
-        # --- Single Row of Filters ---
-        st.markdown("### 🔍 Filters")
+    # --- Single Row of Filters ---
+    st.markdown("### 🔍 Filters")
        
         col1, col2, col3, col4 = st.columns(4)
        
