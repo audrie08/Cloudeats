@@ -520,17 +520,6 @@ STATION_RANGES = {
     'Pastry': [(154, 176)]
 }
 
-# Key production summary rows
-PRODUCTION_SUMMARY_ROWS = {
-    'total_stations': 5,        # Row 6 (0-indexed as 5)
-    'hot_kitchen_sauce': 6,     # Row 7 
-    'hot_kitchen_savory': 36,   # Row 37
-    'cold_sauce': 72,           # Row 73
-    'fab_poultry': 113,         # Row 114
-    'fab_meats': 128,           # Row 129
-    'pastry': 152               # Row 153
-}
-
 # --- UTILITY FUNCTIONS ---
 def safe_float_convert(value):
     """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
@@ -2191,7 +2180,24 @@ def ytd_production():
             else:
                 selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
        
-        # --- Get Production Totals for KPIs ---
+        # --- Get Production Data for KPIs ---
+        # Get filtered production data for KPI calculations
+        production_df = extractor.get_filtered_production_data(
+            selected_week=selected_week,
+            selected_day=selected_day if selected_day != "All Days" else None,
+            selected_station=selected_station if selected_station != "All Stations" else None,
+            selected_sku=selected_sku if selected_sku != "All SKUs" else None
+        )
+        
+        # Calculate filtered totals for KPI cards
+        if not production_df.empty:
+            filtered_skus = production_df['SKU'].nunique()
+            filtered_batches = production_df['Batches'].sum()
+        else:
+            filtered_skus = 0
+            filtered_batches = 0
+        
+        # Get overall totals (without filters) for comparison
         total_skus, total_batches = extractor.get_production_totals()
        
         # --- KPI Cards ---
@@ -2202,7 +2208,7 @@ def ytd_production():
         with col_kpi1:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-number">{total_skus:,.0f}</div>
+                <div class="kpi-number">{filtered_skus:,.0f}</div>
                 <div class="kpi-title">Total SKUs</div>
                 <div class="kpi-unit">(subrecipes)</div>
             </div>
@@ -2211,7 +2217,7 @@ def ytd_production():
         with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-number">{total_batches:,.0f}</div>
+                <div class="kpi-number">{filtered_batches:,.0f}</div>
                 <div class="kpi-title">Total Batches</div>
                 <div class="kpi-unit">(units)</div>
             </div>
@@ -2219,14 +2225,6 @@ def ytd_production():
        
         # --- Production Data Table ---
         st.markdown("### 📋 Production Data")
-       
-        # Get filtered production data
-        production_df = extractor.get_filtered_production_data(
-            selected_week=selected_week,
-            selected_day=selected_day if selected_day != "All Days" else None,
-            selected_station=selected_station if selected_station != "All Stations" else None,
-            selected_sku=selected_sku if selected_sku != "All SKUs" else None
-        )
        
         if not production_df.empty:
             # Format batches column
