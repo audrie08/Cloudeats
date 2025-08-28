@@ -1108,6 +1108,8 @@ class YTDProductionExtractor:
                             # Start tracking the new week
                             current_week = week_number
                             week_start_col = actual_col_idx
+                    except (ValueError, TypeError):
+                        continue
                 
                 # Check if we've reached the end of data
                 if actual_col_idx >= len(self.df.columns) - 1 or col_idx >= len(week_row) - 1:
