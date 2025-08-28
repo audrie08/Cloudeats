@@ -2171,19 +2171,17 @@ def ytd_production():
                 selected_week = week_numbers[week_options.index(selected_week_display) - 1]
        
         with col2:
-            # Day Selection - initialize as None
-            selected_day = None
+            # Day Selection
+            selected_day_filter = None
             
             if selected_week:
                 week_days = extractor.get_week_days(selected_week)
                 day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
                 selected_day_display = st.selectbox("Select Day", options=day_options, index=0)
                 
-                # Extract the actual day value for filtering
+                # Store the selected day for filtering
                 if selected_day_display != "All Days":
-                    # Use the actual day value from week_days instead of the display string
-                    selected_index = day_options.index(selected_day_display) - 1  # Subtract 1 for "All Days"
-                    selected_day = week_days[selected_index]
+                    selected_day_filter = selected_day_display
             else:
                 selected_day_display = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
        
@@ -2202,13 +2200,25 @@ def ytd_production():
                 selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
        
         # --- Get Production Data for KPIs ---
-        # Get filtered production data for KPI calculations
+        # First get data filtered by week, station, and SKU
         production_df = extractor.get_filtered_production_data(
             selected_week=selected_week,
-            selected_day=selected_day,  # Pass the day object instead of display string
             selected_station=selected_station if selected_station != "All Stations" else None,
             selected_sku=selected_sku if selected_sku != "All SKUs" else None
         )
+        
+        # Apply day filtering manually if a specific day is selected
+        if selected_day_filter and not production_df.empty:
+            # Extract the date from the selected day display (e.g., "11 Jan" from "Day 1 (11 Jan)")
+            date_part = selected_day_filter.split('(')[1].split(')')[0].strip()
+            
+            # Check if the dataframe has a date column to filter by
+            if 'Date' in production_df.columns:
+                # Convert both dates to same format for comparison
+                production_df = production_df[production_df['Date'].astype(str).str.contains(date_part)]
+            elif 'Day' in production_df.columns:
+                # If there's a Day column, try to match the display text
+                production_df = production_df[production_df['Day'] == selected_day_display]
         
         # Calculate filtered totals for KPI cards
         if not production_df.empty:
