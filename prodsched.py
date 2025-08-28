@@ -2449,7 +2449,9 @@ def main():
     if st.session_state.main_tab == "Main Page":
         main_page()
     else:
-        if st.session_state.sub_tab == "Weekly Production Schedule":
+        if st.session_state.sub_tab == "Summary":
+            weekly_prod_schedule()
+        elif st.session_state.sub_tab == "Weekly Production Schedule":
             weekly_prod_schedule()
         elif st.session_state.sub_tab == "Machine Utilization":
             machine_utilization()
