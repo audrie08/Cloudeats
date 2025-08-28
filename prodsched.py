@@ -2007,57 +2007,6 @@ def ytd_production():
                 else:
                     st.metric("Avg Batches/SKU", "0")
             
-            # Station breakdown chart
-            st.markdown("### 📊 Production by Station")
-            station_summary = production_df.groupby('Station')['Batches per SKU'].agg(['count', 'sum']).reset_index()
-            station_summary.columns = ['Station', 'SKU Count', 'Total Batches']
-            
-            col_chart1, col_chart2 = st.columns(2)
-            
-            with col_chart1:
-                fig_station_skus = px.bar(
-                    station_summary,
-                    x='Station',
-                    y='SKU Count',
-                    title="Number of SKUs by Station",
-                    color='Station'
-                )
-                fig_station_skus.update_layout(showlegend=False, height=400)
-                fig_station_skus.update_xaxes(tickangle=45)
-                st.plotly_chart(fig_station_skus, use_container_width=True)
-            
-            with col_chart2:
-                fig_station_batches = px.bar(
-                    station_summary,
-                    x='Station',
-                    y='Total Batches',
-                    title="Total Batches by Station",
-                    color='Station'
-                )
-                fig_station_batches.update_layout(showlegend=False, height=400)
-                fig_station_batches.update_xaxes(tickangle=45)
-                st.plotly_chart(fig_station_batches, use_container_width=True)
-        else:
-            st.info("No production data available for the selected period.")
-        
-        # --- Raw Data Preview ---
-        with st.expander("🗂️ Raw Data Preview"):
-            st.markdown("**Production Schedule Data Structure:**")
-            
-            # Show key columns and first few rows
-            display_df = df_ytd.iloc[:20, :15]  # First 20 rows, first 15 columns
-            st.dataframe(display_df, use_container_width=True)
-            
-            st.markdown(f"""
-            **Data Dimensions:** {df_ytd.shape[0]} rows × {df_ytd.shape[1]} columns
-            
-            **Key Information:**
-            - **Column B (Subrecipe):** SKU identifiers
-            - **Columns B-H:** Recipe details (subrecipe, batch qty, kg/mhr, etc.)
-            - **Columns I-NI:** Time period production data  
-            - **Row 2:** Time periods for dropdown selection
-            """)
-    
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
         st.markdown("""
