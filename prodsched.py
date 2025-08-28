@@ -1467,27 +1467,6 @@ def ytd_production():
         
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
-
-# Add CSS styling
-st.markdown("""
-<style>
-.main-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-    border-radius: 10px;
-    color: white;
-    margin-bottom: 20px;
-}
-.main-header h1 {
-    margin: 0;
-    font-size: 2.5em;
-}
-.main-header p {
-    margin: 5px 0 0 0;
-    opacity: 0.9;
-}
-</style>
-""", unsafe_allow_html=True)
             
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
