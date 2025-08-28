@@ -2140,58 +2140,56 @@ def ytd_production():
         df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
         
-        # --- Week and Day Selection Filters ---
-        st.markdown("### 📅 Time Period Selection")
+        # --- Single Row of Filters ---
+        st.markdown("### 🔍 Filters")
         
-        col_time1, col_time2 = st.columns(2)
+        col1, col2, col3, col4 = st.columns(4)
         
-        with col_time1:
-            # Get available weeks
+        with col1:
+            # Week Selection
             available_weeks = extractor.get_available_weeks()
-            if available_weeks:
-                week_options = [f"Week {week['week_number']}" for week in available_weeks]
+            week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
+            selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
+            
+            # Get actual week number
+            if selected_week_display == "All Weeks":
+                selected_week = None
+            else:
                 week_numbers = [week['week_number'] for week in available_weeks]
-                
-                selected_week_display = st.selectbox(
-                    "Select Week", 
-                    options=week_options,
-                    index=0,
-                    help="Choose a week to view detailed daily production data"
-                )
-                
-                # Get the actual week number
-                selected_week = week_numbers[week_options.index(selected_week_display)]
-            else:
-                st.warning("No week data available")
-                selected_week = 1
+                selected_week = week_numbers[week_options.index(selected_week_display) - 1]
         
-        with col_time2:
-            # Get days for selected week
-            if available_weeks:
+        with col2:
+            # Day Selection
+            if selected_week:
                 week_days = extractor.get_week_days(selected_week)
-                if week_days:
-                    day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
-                    selected_day = st.selectbox(
-                        "Select Day", 
-                        options=day_options,
-                        index=0,
-                        help="Choose a specific day or view all days in the week"
-                    )
-                else:
-                    st.warning("No day data available for selected week")
-                    selected_day = "All Days"
+                day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
+                selected_day = st.selectbox("Select Day", options=day_options, index=0)
             else:
-                selected_day = "All Days"
+                selected_day = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
         
-        # --- Get Production Totals ---
+        with col3:
+            # Station Selection
+            all_stations = extractor.get_all_stations()
+            selected_station = st.selectbox("Select Station", options=all_stations, index=0)
+        
+        with col4:
+            # SKU Selection
+            if selected_station:
+                station_skus = extractor.get_station_skus(selected_station)
+                sku_options = ["All SKUs"] + station_skus
+                selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
+            else:
+                selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
+        
+        # --- Get Production Totals for KPIs ---
         total_skus, total_batches = extractor.get_production_totals()
         
         # --- KPI Cards ---
         st.markdown("### 📊 Production Summary")
         
-        col1, col2 = st.columns(2)
+        col_kpi1, col_kpi2 = st.columns(2)
         
-        with col1:
+        with col_kpi1:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-number">{total_skus:,.0f}</div>
@@ -2200,7 +2198,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col2:
+        with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-number">{total_batches:,.0f}</div>
@@ -2209,130 +2207,29 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        # --- Weekly Station Summary ---
-        if available_weeks:
-            st.markdown(f"### 🏭 Station Production Summary - Week {selected_week}")
-            
-            # Get all stations data for the selected week
-            stations_summary = extractor.get_all_stations_summary(selected_week)
-            
-            if stations_summary:
-                # Create summary table
-                summary_data = []
-                for station_name, station_data in stations_summary.items():
-                    week_total = station_data.get('week_total', 0)
-                    daily_avg = week_total / len(station_data['days_data']) if station_data['days_data'] else 0
-                    
-                    summary_data.append({
-                        'Station': station_name,
-                        'Week Total': f"{week_total:,.0f}",
-                        'Daily Average': f"{daily_avg:.1f}",
-                        'Days Active': len([d for d in station_data['days_data'].values() if d['value'] > 0])
-                    })
-                
-                summary_df = pd.DataFrame(summary_data)
-                st.dataframe(summary_df, use_container_width=True, hide_index=True)
-                
-                # --- Detailed Day View ---
-                if selected_day != "All Days":
-                    st.markdown(f"### 📋 Detailed Production - {selected_day}")
-                    
-                    # Extract day info from selection
-                    day_info = None
-                    for day in week_days:
-                        if f"{day['day_name']} ({day['formatted_date']})" == selected_day:
-                            day_info = day
-                            break
-                    
-                    if day_info:
-                        detailed_data = []
-                        for station_name, station_data in stations_summary.items():
-                            day_key = day_info['formatted_date']
-                            if day_key in station_data['days_data']:
-                                day_production = station_data['days_data'][day_key]['value']
-                                
-                                # Add recipe info if available
-                                recipe_info = station_data.get('recipe_info', {})
-                                
-                                detailed_data.append({
-                                    'Station': station_name,
-                                    'Production': f"{day_production:,.0f}",
-                                    'Batch Qty': recipe_info.get('batch_qty', 'N/A'),
-                                    'Kg per MHr': recipe_info.get('kg_per_mhr', 'N/A'),
-                                    'Working Hrs': recipe_info.get('working_hrs', 'N/A'),
-                                    'Std Manpower': recipe_info.get('std_manpower', 'N/A')
-                                })
-                        
-                        detailed_df = pd.DataFrame(detailed_data)
-                        st.dataframe(detailed_df, use_container_width=True, hide_index=True)
+        # --- Production Data Table ---
+        st.markdown("### 📋 Production Data")
         
-        # --- Production List DataFrame ---
-        st.markdown("### 📋 Production List by Station")
-        
-        production_df = extractor.get_production_list()
+        # Get filtered production data
+        production_df = extractor.get_filtered_production_data(
+            selected_week=selected_week,
+            selected_day=selected_day if selected_day != "All Days" else None,
+            selected_station=selected_station if selected_station != "All Stations" else None,
+            selected_sku=selected_sku if selected_sku != "All SKUs" else None
+        )
         
         if not production_df.empty:
-            # Add filters for the production list
-            col_filter1, col_filter2 = st.columns(2)
+            # Format batches column
+            production_df['Batches'] = production_df['Batches'].apply(lambda x: f"{x:,.0f}")
             
-            with col_filter1:
-                station_options = ["All Stations"] + sorted(production_df['Station'].unique().tolist())
-                station_filter = st.selectbox("Filter by Station", options=station_options, index=0)
-            
-            with col_filter2:
-                # Sort options
-                sort_options = ["Station (A-Z)", "Station (Z-A)", "SKUs (High-Low)", "SKUs (Low-High)", "Batches (High-Low)", "Batches (Low-High)"]
-                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
-            
-            # Apply station filter
-            filtered_df = production_df.copy()
-            if station_filter != "All Stations":
-                filtered_df = filtered_df[filtered_df['Station'] == station_filter]
-            
-            # Apply sorting
-            if sort_filter == "Station (A-Z)":
-                filtered_df = filtered_df.sort_values('Station')
-            elif sort_filter == "Station (Z-A)":
-                filtered_df = filtered_df.sort_values('Station', ascending=False)
-            elif sort_filter == "SKUs (High-Low)":
-                filtered_df = filtered_df.sort_values('Total SKUs', ascending=False)
-            elif sort_filter == "SKUs (Low-High)":
-                filtered_df = filtered_df.sort_values('Total SKUs')
-            elif sort_filter == "Batches (High-Low)":
-                filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
-            elif sort_filter == "Batches (Low-High)":
-                filtered_df = filtered_df.sort_values('Batches per SKU')
-            
-            # Display the filtered and sorted dataframe
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-            
-            # Summary stats for filtered data
-            col_stat1, col_stat2, col_stat3 = st.columns(3)
-            with col_stat1:
-                st.metric("Stations", len(filtered_df))
-            with col_stat2:
-                st.metric("Total SKUs", f"{filtered_df['Total SKUs'].sum():,.0f}")
-            with col_stat3:
-                st.metric("Total Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+            # Display the dataframe
+            st.dataframe(production_df, use_container_width=True, hide_index=True)
+        
         else:
-            st.warning("No production list data available")
-    
-    except Exception as e:
-        st.error(f"Error loading YTD Production data: {str(e)}")
-        st.markdown("""
-        <div class="dashboard-card">
-            <h3>📈 YTD Production Analysis</h3>
-            <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
-            <p><em>Please ensure the production data file is available and properly formatted.</em></p>
-            <ul>
-                <li>Sheet index 6 should contain YTD Production Schedule</li>
-                <li>Row 2: Week numbers (starting from column I)</li>
-                <li>Row 3: Corresponding dates for each day</li>
-                <li>Columns B-H: Recipe information (subrecipe, batch qty, etc.)</li>
-                <li>Key station rows: 6 (All), 7 (Hot Kitchen Sauce), 37 (Hot Kitchen Savory), 73 (Cold Sauce), 114 (Fab Poultry), 129 (Fab Meats), 153 (Pastry)</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+            st.warning("No production data matches the selected filters")
+            # Show empty dataframe structure
+            empty_df = pd.DataFrame(columns=['Station', 'SKU', 'Batches'])
+            st.dataframe(empty_df, use_container_width=True, hide_index=True)
             
 def main():
     """Main application function"""
