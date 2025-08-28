@@ -520,6 +520,18 @@ STATION_RANGES = {
     'Pastry': [(154, 176)]
 }
 
+# Key production summary rows
+PRODUCTION_SUMMARY_ROWS = {
+    'total_stations': 5,        # Row 6 (0-indexed as 5)
+    'hot_kitchen_sauce': 6,     # Row 7
+    'hot_kitchen_savory': 36,   # Row 37
+    'cold_sauce': 72,           # Row 73
+    'fab_poultry': 113,         # Row 114
+    'fab_meats': 128,           # Row 129
+    'pastry': 152               # Row 153
+}
+
+
 # --- UTILITY FUNCTIONS ---
 def safe_float_convert(value):
     """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
