@@ -2092,7 +2092,7 @@ def ytd_production():
         with col4:
             # SKU Selection
             if selected_station:
-                station_skus = extractor.get_station_data(selected_station)
+                station_skus = extractor.get_station_skus(selected_station, selected_week)
                 sku_options = ["All SKUs"] + station_skus
                 selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
             else:
