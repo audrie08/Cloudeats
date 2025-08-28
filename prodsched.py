@@ -2092,8 +2092,10 @@ def ytd_production():
         with col4:
             # SKU Selection
             if selected_station:
-                station_skus = extractor.get_station_data(selected_station, selected_week)
-                sku_options = ["All SKUs"] + station_skus
+                station_data = extractor.get_station_data(selected_station, selected_week)
+                # Extract SKU name from the recipe info
+                sku_name = station_data.get('recipe_info', {}).get('subrecipe', 'Unknown SKU')
+                sku_options = ["All SKUs"] + [sku_name]
                 selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
             else:
                 selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
