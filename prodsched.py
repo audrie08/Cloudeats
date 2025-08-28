@@ -1186,60 +1186,46 @@ class YTDProductionExtractor:
             st.error(f"Error extracting week days: {e}")
             return []
     
-    def get_station_data(self, station_name, week_number):
-        """Extract production data for a specific station and week"""
+    def get_station_skus(self, station_name):
+        """Get all SKUs for a specific station from the station ranges"""
         try:
-            if station_name not in self.station_mappings:
-                return {}
-            
-            station_config = self.station_mappings[station_name]
-            week_days = self.get_week_days(week_number)
-            
-            if not week_days:
-                return {}
-            
-            station_data = {
-                'station_name': station_name,
-                'week_number': week_number,
-                'days_data': {},
-                'recipe_info': {}
+            STATION_RANGES = {
+                'Hot Kitchen': [(8, 36), (38, 72)],
+                'Cold Sauce': [(74, 113)],
+                'Fabrication': [(115, 128), (130, 152)],
+                'Pastry': [(154, 176)]
             }
             
-            # Single station data
-            station_row = station_config['row'] - 1  # Convert to 0-based index
-                
-            # Extract recipe information (columns B-H)
-            try:
-                station_data['recipe_info'] = {
-                    'subrecipe': self.df.iloc[station_row, YTD_COLUMNS['subrecipe']] if len(self.df.columns) > YTD_COLUMNS['subrecipe'] else '',
-                    'batch_qty': self.df.iloc[station_row, YTD_COLUMNS['batch_qty']] if len(self.df.columns) > YTD_COLUMNS['batch_qty'] else 0,
-                    'kg_per_mhr': self.df.iloc[station_row, YTD_COLUMNS['kg_per_mhr']] if len(self.df.columns) > YTD_COLUMNS['kg_per_mhr'] else 0,
-                    'mhr_per_kg': self.df.iloc[station_row, YTD_COLUMNS['mhr_per_kg']] if len(self.df.columns) > YTD_COLUMNS['mhr_per_kg'] else 0,
-                    'hrs_per_run': self.df.iloc[station_row, YTD_COLUMNS['hrs_per_run']] if len(self.df.columns) > YTD_COLUMNS['hrs_per_run'] else 0,
-                    'working_hrs': self.df.iloc[station_row, YTD_COLUMNS['working_hrs']] if len(self.df.columns) > YTD_COLUMNS['working_hrs'] else 0,
-                    'std_manpower': self.df.iloc[station_row, YTD_COLUMNS['std_manpower']] if len(self.df.columns) > YTD_COLUMNS['std_manpower'] else 0
+            skus = []
+            
+            # Get the appropriate ranges for the station
+            if station_name in STATION_RANGES:
+                ranges = STATION_RANGES[station_name]
+            else:
+                # Handle individual stations
+                station_to_range = {
+                    "Hot Kitchen Sauce": [(8, 36)],
+                    "Hot Kitchen Savory": [(38, 72)],
+                    "Fabrication Poultry": [(115, 128)],
+                    "Fabrication Meats": [(130, 152)]
                 }
-            except:
-                station_data['recipe_info'] = {}
+                ranges = station_to_range.get(station_name, [])
             
-            # Extract daily production data
-            for day_info in week_days:
-                col_idx = day_info['column_index']
+            # Extract SKUs from the ranges
+            for start_row, end_row in ranges:
+                start_idx = start_row - 1  # Convert to 0-based
+                end_idx = end_row - 1
                 
-                if col_idx < len(self.df.columns):
-                    value = self.df.iloc[station_row, col_idx]
-                    numeric_value = pd.to_numeric(value, errors='coerce') or 0
-                    
-                    station_data['days_data'][day_info['formatted_date']] = {
-                        'value': numeric_value,
-                        'day_name': day_info['day_name'],
-                        'column_index': col_idx
-                    }
+                for idx in range(start_idx, min(end_idx + 1, len(self.df))):
+                    subrecipe = self.df.iloc[idx, YTD_COLUMNS['subrecipe']]
+                    if pd.notna(subrecipe) and str(subrecipe).strip() != '':
+                        skus.append(subrecipe)
             
-            return station_data
-        except Exception as e:
-            st.error(f"Error extracting station data: {e}")
-            return {}
+            return skus
+        
+    except Exception as e:
+        st.error(f"Error getting station SKUs: {e}")
+        return []
     
     def get_production_totals(self):
         """Calculate total SKUs and total batches from the YTD data"""
@@ -1247,24 +1233,31 @@ class YTDProductionExtractor:
             total_skus = 0
             total_batches = 0
             
-            # Count all rows with subrecipe data (non-empty values in column B)
-            subrecipe_col = YTD_COLUMNS['subrecipe']
+            STATION_RANGES = {
+                'Hot Kitchen': [(8, 36), (38, 72)],
+                'Cold Sauce': [(74, 113)],
+                'Fabrication': [(115, 128), (130, 152)],
+                'Pastry': [(154, 176)]
+            }
             
-            for idx, row in self.df.iterrows():
-                if idx < 5:  # Skip header rows
-                    continue
+            # Count SKUs and batches from all station ranges
+            for station_name, ranges in STATION_RANGES.items():
+                for start_row, end_row in ranges:
+                    start_idx = start_row - 1
+                    end_idx = end_row - 1
                     
-                subrecipe = row.iloc[subrecipe_col] if subrecipe_col < len(row) else ''
-                
-                if pd.notna(subrecipe) and str(subrecipe).strip() != '':
-                    total_skus += 1
-                    
-                    # Sum all production values for this SKU (columns I onwards)
-                    production_values = row.iloc[YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(row))]
-                    sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
-                    total_batches += sku_batches
+                    for idx in range(start_idx, min(end_idx + 1, len(self.df))):
+                        subrecipe = self.df.iloc[idx, YTD_COLUMNS['subrecipe']]
+                        if pd.notna(subrecipe) and str(subrecipe).strip() != '':
+                            total_skus += 1
+                            
+                            # Sum production data from columns I to NI
+                            production_values = self.df.iloc[idx, YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(self.df.columns))]
+                            sku_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
+                            total_batches += sku_batches
             
             return total_skus, total_batches
+            
         except Exception as e:
             st.error(f"Error calculating production totals: {e}")
             return 0, 0
@@ -1326,9 +1319,80 @@ class YTDProductionExtractor:
     def get_filtered_production_data(self, selected_week=None, selected_day=None, 
                                    selected_station=None, selected_sku=None):
         """Get filtered production data based on user selections"""
-        # This method needs to be implemented based on your data structure
-        # For now, return empty DataFrame
-        return pd.DataFrame()
+        try:
+            STATION_RANGES = {
+                'Hot Kitchen': [(8, 36), (38, 72)],
+                'Cold Sauce': [(74, 113)],
+                'Fabrication': [(115, 128), (130, 152)],
+                'Pastry': [(154, 176)]
+            }
+            
+            production_data = []
+            
+            # Determine which station ranges to process
+            stations_to_process = []
+            if selected_station and selected_station != "All Stations":
+                if selected_station in STATION_RANGES:
+                    stations_to_process = [selected_station]
+                else:
+                    # Map individual stations to their groups
+                    station_mapping = {
+                        "Hot Kitchen Sauce": "Hot Kitchen",
+                        "Hot Kitchen Savory": "Hot Kitchen", 
+                        "Fabrication Poultry": "Fabrication",
+                        "Fabrication Meats": "Fabrication",
+                        "Cold Sauce": "Cold Sauce",
+                        "Pastry": "Pastry"
+                    }
+                    if selected_station in station_mapping:
+                        stations_to_process = [station_mapping[selected_station]]
+            else:
+                stations_to_process = list(STATION_RANGES.keys())
+            
+            # Process each station
+            for station_name in stations_to_process:
+                ranges = STATION_RANGES[station_name]
+                
+                for start_row, end_row in ranges:
+                    start_idx = start_row - 1
+                    end_idx = end_row - 1
+                    
+                    for idx in range(start_idx, min(end_idx + 1, len(self.df))):
+                        subrecipe = self.df.iloc[idx, YTD_COLUMNS['subrecipe']]
+                        
+                        # Apply SKU filter
+                        if selected_sku and selected_sku != "All SKUs" and subrecipe != selected_sku:
+                            continue
+                        
+                        if pd.notna(subrecipe) and str(subrecipe).strip() != '':
+                            total_batches = 0
+                            
+                            if selected_week:
+                                # Get specific week data
+                                week_days = self.get_week_days(selected_week)
+                                for day_info in week_days:
+                                    col_idx = day_info['column_index']
+                                    if col_idx < len(self.df.columns):
+                                        value = self.df.iloc[idx, col_idx]
+                                        batch_count = pd.to_numeric(value, errors='coerce') or 0
+                                        total_batches += batch_count
+                            else:
+                                # Get all data (columns I to NI)
+                                production_values = self.df.iloc[idx, YTD_COLUMNS['data_start']:min(YTD_COLUMNS['data_end'], len(self.df.columns))]
+                                total_batches = sum(pd.to_numeric(val, errors='coerce') or 0 for val in production_values)
+                            
+                            if total_batches > 0:
+                                production_data.append({
+                                    'Station': station_name,
+                                    'SKU': subrecipe,
+                                    'Batches': total_batches
+                                })
+            
+            return pd.DataFrame(production_data)
+            
+        except Exception as e:
+            st.error(f"Error filtering production data: {e}")
+            return pd.DataFrame()
 
             
 # --- MACHINE UTILIZATION EXTRACTOR ---
@@ -2099,11 +2163,9 @@ def ytd_production():
         
         with col4:
             # SKU Selection
-            if selected_station:
-                station_data = extractor.get_station_data(selected_station, selected_week)
-                # Extract SKU name from the recipe info
-                sku_name = station_data.get('recipe_info', {}).get('subrecipe', 'Unknown SKU')
-                sku_options = ["All SKUs"] + [sku_name]
+            if selected_station and selected_station != "All Stations":
+                station_skus = extractor.get_station_skus(selected_station)
+                sku_options = ["All SKUs"] + station_skus
                 selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
             else:
                 selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
