@@ -1178,7 +1178,7 @@ class YTDProductionExtractor:
             st.error(f"Error extracting week days: {e}")
             return []
     
-    def get_station_data(self, station_name, week_number):
+    def get_station_data(self, station_name):
         """Extract production data for a specific station and week"""
         try:
             if station_name not in self.station_mappings:
