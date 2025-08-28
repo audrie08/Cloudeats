@@ -1273,6 +1273,15 @@ class YTDProductionExtractor:
         except Exception as e:
             st.error(f"Error calculating production totals: {e}")
             return 0, 0
+
+        # Temporary debug in your ytd_production function
+        total_skus, total_batches = extractor.get_production_totals()
+        st.write(f"Debug - total_skus: {total_skus}, total_batches: {total_batches}")
+        
+        # Check if dataframe has data
+        st.write(f"DataFrame shape: {df_ytd.shape}")
+        st.write(f"First few rows of production data:")
+        st.write(df_ytd.iloc[7:12, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_start']+5])
     
     def get_station_production_summary(self):
         """Create a production summary by station"""
