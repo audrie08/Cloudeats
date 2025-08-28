@@ -2152,30 +2152,6 @@ def ytd_production():
         <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
     </div>
     """, unsafe_allow_html=True)
-   
-    # --- Debug Section ---
-    st.markdown("### 🐛 Debug Information")
-    debug_expander = st.expander("Show Debug Info", expanded=False)
-    
-    # --- Load Data ---
-    try:
-        with debug_expander:
-            st.write("Loading data from Google Sheets...")
-        
-        # Load YTD Production data from sheet index 6
-        df_ytd = load_production_data(sheet_index=6)
-        
-        # Debug: Show raw data info
-        with debug_expander:
-            st.write(f"Data shape: {df_ytd.shape}")
-            if not df_ytd.empty:
-                st.write(f"Columns: {list(df_ytd.columns)}")
-                st.write("First few rows:")
-                st.dataframe(df_ytd.head(10))
-            else:
-                st.error("Dataframe is empty!")
-        
-        extractor = YTDProductionExtractor(df_ytd)
        
         # --- Single Row of Filters ---
         st.markdown("### 🔍 Filters")
