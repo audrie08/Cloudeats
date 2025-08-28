@@ -1137,7 +1137,7 @@ class YTDProductionExtractor:
             return []
     
     def get_week_days(self, week_number):
-        """Get the days for a specific week from row 3"""
+        """Get the days for a specific week from row 3 (dates) and row 4 (day names)"""
         try:
             available_weeks = self.get_available_weeks()
             week_info = next((w for w in available_weeks if w['week_number'] == week_number), None)
@@ -1150,6 +1150,8 @@ class YTDProductionExtractor:
                 if col_idx < len(self.df.columns):
                     # Get the date from row 3 (0-indexed as 2)
                     date_value = self.df.iloc[2, col_idx]
+                    # Get the day name from row 4 (0-indexed as 3)
+                    day_name_value = self.df.iloc[3, col_idx] if len(self.df) > 3 else None
                     
                     if pd.notna(date_value):
                         try:
@@ -1167,18 +1169,28 @@ class YTDProductionExtractor:
                             else:
                                 date_obj = pd.to_datetime(date_value)
                             
+                            # Use the day name from row 4 if available, otherwise calculate from date
+                            if pd.notna(day_name_value) and str(day_name_value).strip() != '':
+                                day_name = str(day_name_value).strip()
+                            else:
+                                day_name = date_obj.strftime('%A')
+                            
                             week_days.append({
                                 'column_index': col_idx,
                                 'date': date_obj,
-                                'day_name': date_obj.strftime('%A'),
+                                'day_name': day_name,
                                 'formatted_date': date_obj.strftime('%b %d')
                             })
                         except:
-                            # If date parsing fails, use raw value
+                            # If date parsing fails, use raw values
+                            day_name = f"Day {len(week_days) + 1}"
+                            if pd.notna(day_name_value) and str(day_name_value).strip() != '':
+                                day_name = str(day_name_value).strip()
+                            
                             week_days.append({
                                 'column_index': col_idx,
                                 'date': date_value,
-                                'day_name': f"Day {len(week_days) + 1}",
+                                'day_name': day_name,
                                 'formatted_date': str(date_value)
                             })
             
@@ -2238,7 +2250,7 @@ def ytd_production():
             <div class="kpi-card">
                 <div class="kpi-number">{filtered_skus:,.0f}</div>
                 <div class="kpi-title">Total SKUs</div>
-                <div class="kpi-unit">(subrecipes)</div>
+                <div class="kpi-unit">(no.)</div>
             </div>
             """, unsafe_allow_html=True)
        
@@ -2247,7 +2259,7 @@ def ytd_production():
             <div class="kpi-card">
                 <div class="kpi-number">{filtered_batches:,.0f}</div>
                 <div class="kpi-title">Total Batches</div>
-                <div class="kpi-unit">(units)</div>
+                <div class="kpi-unit">(no.)</div>
             </div>
             """, unsafe_allow_html=True)
        
