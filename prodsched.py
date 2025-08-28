@@ -1802,7 +1802,7 @@ def create_navigation():
                 <div class="brand-logo">
                     <img src="data:image/png;base64,{logo_base64}" alt="Bites To Go Logo">
                 </div>
-                <div class="brand-text">Bites To Go</div>
+                <div class="brand-text">Bites To Go - Commissary Dashboard</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -2349,7 +2349,7 @@ def main():
     # Main navigation with smaller, centered buttons
     main_page_selection = option_menu(
         menu_title=None,
-        options=["Main Page", "Dashboard Details"],
+        options=["KPI Dashboard", "Dashboard Details"],
         icons=["house-fill", "clipboard-data-fill"],
         default_index=0 if st.session_state.main_tab == "Main Page" else 1,
         orientation="horizontal",
@@ -2399,7 +2399,7 @@ def main():
         
         sub_page_selection = option_menu(
             menu_title=None,
-            options=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
+            options=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
             icons=["calendar-week-fill", "gear-fill", "graph-up"],
             default_index=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
             orientation="horizontal",
