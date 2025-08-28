@@ -523,33 +523,6 @@ PRODUCTION_SUMMARY_ROWS = {
     'pastry': 152               # Row 153
 }
 
-# --- DATA LOADER FUNCTION ---
-@st.cache_data(ttl=60)
-def load_production_data(sheet_index=1):
-    """Load production data from Google Sheets"""
-    credentials = load_credentials()
-    if not credentials:
-        return pd.DataFrame()
-    
-    try:
-        # Use gspread instead of googleapiclient for consistency with working version
-        import gspread
-        gc = gspread.authorize(credentials)
-
-        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-        sh = gc.open_by_key(spreadsheet_id)
-        worksheet = sh.get_worksheet(sheet_index)
-        data = worksheet.get_all_values()
-
-        df = pd.DataFrame(data)
-        df = df.fillna('')
-        
-        return df
-        
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()
-
 # --- UTILITY FUNCTIONS ---
 def safe_float_convert(value):
     """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
@@ -589,7 +562,7 @@ def safe_float_convert(value):
     except ValueError:
         # If conversion fails, return 0
         return 0.0
-    
+
 # --- Helper functions for safe summing ---
 def safe_sum(values):
     """Safely sum a list, ignoring None or non-numeric values."""
@@ -602,7 +575,399 @@ def safe_sum_for_day(values, index):
         return v if isinstance(v, (int, float)) and v is not None else 0
     return 0
 
- 
+
+# --- DATA LOADER FUNCTION ---
+@st.cache_data(ttl=60)
+def load_production_data(sheet_index=1):
+    """Load production data from Google Sheets"""
+    credentials = load_credentials()
+    if not credentials:
+        return pd.DataFrame()
+    
+    try:
+        # Use gspread instead of googleapiclient for consistency with working version
+        import gspread
+        gc = gspread.authorize(credentials)
+
+        spreadsheet_id = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
+
+def update_week_dropdown(worksheet, selected_week):
+    """Update the week dropdown selection in the spreadsheet"""
+    try:
+        # Adjust this cell reference to match where your week dropdown is located
+        worksheet.update('H1', selected_week)  # Adjust cell reference
+        
+        # Clear cache to force reload of updated data
+        load_production_data.clear()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error updating spreadsheet: {str(e)}")
+        return False
+
+class ProductionDataExtractor:
+    def __init__(self, df):
+        self.df = df
+
+    def get_unique_skus_by_station(self, station_filter="All Stations"):
+        """Get list of unique SKU names filtered by station"""
+        skus = self.get_all_skus(station_filter=station_filter)
+        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))        
+
+    def get_week_info(self):
+        """Extract week dates for title with improved error handling"""
+        try:
+            # Try multiple strategies to find date information
+            dates = []
+            
+            # Strategy 1: Look in row 1 (index 1) for dates in batches columns
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                if col < len(self.df.columns):
+                    date_val = str(self.df.iloc[1, col]).strip()
+                    if date_val and date_val != '' and date_val != 'nan':
+                        dates.append(date_val)
+            
+            # Strategy 2: If no dates found, try row 0
+            if not dates:
+                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                    if col < len(self.df.columns):
+                        date_val = str(self.df.iloc[0, col]).strip()
+                        if date_val and date_val != '' and date_val != 'nan':
+                            dates.append(date_val)
+            
+            # Strategy 3: If still no dates, look for any date-like patterns in first few rows
+            if not dates:
+                for row_idx in range(min(5, len(self.df))):
+                    for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                        if col < len(self.df.columns):
+                            cell_val = str(self.df.iloc[row_idx, col]).strip()
+                            # Look for date patterns (containing /, -, or numbers)
+                            if cell_val and any(char in cell_val for char in ['/', '-']) and any(char.isdigit() for char in cell_val):
+                                dates.append(cell_val)
+                                if len(dates) >= 7:  # Stop after finding enough dates
+                                    break
+                    if len(dates) >= 7:
+                        break
+            
+            if len(dates) >= 2:
+                start_date = dates[0]
+                end_date = dates[-1]
+                return start_date, end_date
+            elif len(dates) == 1:
+                # If only one date found, use it as both start and end
+                return dates[0], dates[0]
+            else:
+                # Fallback: use current date
+                current_date = datetime.now().strftime("%m/%d/%Y")
+                return current_date, current_date
+                
+        except Exception as e:
+            # Fallback to current date
+            current_date = datetime.now().strftime("%m/%d/%Y")
+            return current_date, current_date
+    
+    def get_days_of_week(self):
+        """Extract days of week from row 4 (index 3)"""
+        try:
+            days = []
+            # Try row 4 first (index 3) as shown in your screenshot
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                if col < len(self.df.columns):
+                    day_val = str(self.df.iloc[2, col]).strip()  # Changed from index 2 to 3
+                    if day_val and day_val != '':
+                        days.append(day_val)
+            
+            # If no days found in row 4, try row 3 (index 2) as fallback
+            if not days:
+                for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                    if col < len(self.df.columns):
+                        day_val = str(self.df.iloc[2, col]).strip()
+                        if day_val and day_val != '':
+                            days.append(day_val)
+            
+            return days
+        except Exception as e:
+            return []
+        
+    def get_week_number(self):
+        """Extract week number from column H, row 1"""
+        try:
+            # Column H is index 7 (0-based), Row 1 is index 0 (0-based)
+            week_number = str(self.df.iloc[0, 7]).strip()
+            if week_number and week_number != '' and week_number != 'nan':
+                return week_number
+            else:
+                return "Week N/A"
+        except Exception as e:
+            return "Week N/A"
+    
+    def get_all_skus(self, station_filter="All Stations", sku_filter="All SKUs", day_filter="All Days"):
+        """Get all SKUs based on filters"""
+        skus = []
+        
+        # Determine which ranges to process
+        if station_filter == "All Stations":
+            ranges_to_process = []
+            for station_ranges in STATION_RANGES.values():
+                ranges_to_process.extend(station_ranges)
+        else:
+            ranges_to_process = STATION_RANGES.get(station_filter, [])
+        
+        # Extract SKUs from ranges
+        for start_row, end_row in ranges_to_process:
+            for row_idx in range(start_row - 1, end_row):
+                if row_idx < len(self.df):
+                    sku_data = self.extract_sku_data(row_idx)
+                    if sku_data and sku_data['sku']:
+                        # Determine station
+                        sku_data['station'] = self.determine_station(row_idx + 1)
+                        skus.append(sku_data)
+        
+        # Apply SKU filter
+        if sku_filter != "All SKUs":
+            skus = [sku for sku in skus if sku['sku'] == sku_filter]
+        
+        # Apply day filter (filter based on which days have production)
+        if day_filter != "Current Week":
+            days = self.get_days_of_week()
+            if day_filter in days:
+                day_index = days.index(day_filter)
+                filtered_skus = []
+                for sku in skus:
+                    if (day_index < len(sku['daily_batches']) and 
+                        sku['daily_batches'][day_index] and 
+                        sku['daily_batches'][day_index] != '' and 
+                        sku['daily_batches'][day_index] != '0'):
+                        filtered_skus.append(sku)
+                skus = filtered_skus
+        
+        return skus
+    
+    def determine_station(self, row_number):
+        """Determine which station a row belongs to"""
+        for station, ranges in STATION_RANGES.items():
+            for start_row, end_row in ranges:
+                if start_row <= row_number <= end_row:
+                    return station
+        return "Unknown"
+    
+    def extract_sku_data(self, row_idx):
+        """Extract all data for a SKU row"""
+        try:
+            row = self.df.iloc[row_idx]
+            
+            def safe_value(col_idx, default=''):
+                try:
+                    return str(row[col_idx]).strip() if col_idx < len(row) else default
+                except:
+                    return default
+            
+            sku_name = safe_value(COLUMNS['sku'])
+            if not sku_name:
+                return None
+            
+            sku_data = {
+                'sku': sku_name,
+                'batch_qty': safe_value(COLUMNS['batch_qty']),
+                'daily_batches': [],
+                'daily_volume': [],
+                'daily_hours': [],
+                'daily_manpower': [],
+                'overtime': [],
+                'overtime_percentage': [],           
+            }
+            
+            # Extract daily data
+            for col in range(COLUMNS['batches_start'], COLUMNS['batches_end'] + 1):
+                sku_data['daily_batches'].append(safe_value(col))
+            
+            for col in range(COLUMNS['volume_start'], COLUMNS['volume_end'] + 1):
+                sku_data['daily_volume'].append(safe_value(col))
+            
+            for col in range(COLUMNS['hours_start'], COLUMNS['hours_end'] + 1):
+                sku_data['daily_hours'].append(safe_value(col))
+            
+            # Extract manpower from columns AP to AV (41-47)
+            for col in range(COLUMNS['manpower_start'], COLUMNS['manpower_end'] + 1):
+                sku_data['daily_manpower'].append(safe_value(col))
+
+            # Extract overtime per person (AX-BD, columns 49-55)
+            for col in range(COLUMNS['overtime_start'], COLUMNS['overtime_end'] + 1):
+                sku_data['overtime'].append(safe_value(col))
+
+            # Extract overtime percentage
+            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
+                sku_data['overtime_percentage'].append(safe_value(col))
+
+            return sku_data
+            
+        except Exception as e:
+            return None
+        
+    def get_overtime_percentage(self):
+        """Get overtime percentage from row 6 (index 5), columns BP to BV (60 to 66)"""
+        try:
+            overtime_percentages = []
+            row_idx = COLUMNS['header_row']  # Row 6 (index 5)
+            
+            # Use the CORRECT column range from your COLUMNS mapping
+            for col in range(COLUMNS['overtime_percentage_start'], COLUMNS['overtime_percentage_end'] + 1):
+                if row_idx < len(self.df) and col < len(self.df.columns):
+                    value = str(self.df.iloc[row_idx, col]).strip()
+                    overtime_percentages.append(value)
+                else:
+                    overtime_percentages.append('')
+            
+            return overtime_percentages
+        except Exception as e:
+            st.error(f"Error extracting overtime percentage: {str(e)}")
+            return []
+    
+    def get_unique_skus(self):
+        """Get list of unique SKU names"""
+        skus = self.get_all_skus()
+        return sorted(list(set([sku['sku'] for sku in skus if sku['sku']])))
+
+def calculate_totals(skus, extractor=None, day_filter="Current Week", days=None):
+    """Calculate KPI totals with day-specific filtering for manpower and overtime percentage"""
+    def safe_sum_daily_values(values_list, attr):
+        total = 0
+        for sku in values_list:
+            daily_values = sku.get(attr, [])
+            for val in daily_values:
+                total += safe_float_convert(val)
+        return total
+    
+    def safe_sum_daily_values_for_day(values_list, attr, day_index):
+        """Sum values for a specific day index"""
+        total = 0
+        for sku in values_list:
+            daily_values = sku.get(attr, [])
+            if day_index < len(daily_values):
+                total += safe_float_convert(daily_values[day_index])
+        return total
+    
+    # Standard calculations (unchanged)
+    total_batches = safe_sum_daily_values(skus, 'daily_batches')
+    total_volume = safe_sum_daily_values(skus, 'daily_volume')  
+    total_hours = safe_sum_daily_values(skus, 'daily_hours')
+    
+    # FIXED: Manpower calculation based on day filter
+    if day_filter == "Current Week":
+        # Sum all manpower for the week
+        total_manpower = safe_sum_daily_values(skus, 'daily_manpower')
+    else:
+        # Sum manpower for specific day only
+        if days and day_filter in days:
+            day_index = days.index(day_filter)
+            total_manpower = safe_sum_daily_values_for_day(skus, 'daily_manpower', day_index)
+        else:
+            total_manpower = 0.0
+
+    # FIXED: Overtime percentage calculation based on day filter
+    overtime_percentage = 0.0
+    if extractor:
+        overtime_percentages = extractor.get_overtime_percentage()
+        
+        if day_filter == "Current Week":
+            # Average of all valid percentages for the week (excluding empty/zero values)
+            valid_percentages = []
+            for p in overtime_percentages:
+                # Clean the percentage value first
+                clean_p = str(p).replace('%', '').strip()
+                converted_value = safe_float_convert(clean_p)
+                if converted_value > 0:
+                    valid_percentages.append(converted_value)
+            
+            if valid_percentages:
+                overtime_percentage = sum(valid_percentages) / len(valid_percentages)
+        else:
+            # Get percentage for specific day
+            if days and day_filter in days:
+                day_index = days.index(day_filter)
+                if day_index < len(overtime_percentages):
+                    # Clean the percentage value before conversion
+                    raw_value = overtime_percentages[day_index]
+                    clean_value = str(raw_value).replace('%', '').strip()
+                    overtime_percentage = safe_float_convert(clean_value)
+    
+    return total_batches, total_volume, total_hours, total_manpower, overtime_percentage
+
+def render_sku_table(skus, day_filter="Current Week", days=None):
+    """Render the main SKU table with day-specific manpower calculation and color-coded station pills"""
+    if not skus:
+        st.warning("No SKUs match the current filters.")
+        return
+    
+    st.markdown("<div style='margin:20px 0;'></div>", unsafe_allow_html=True)
+
+    st.markdown("### Production List")
+    
+    # Station color mapping for pills
+    station_colors = {
+        'Hot Kitchen': "#f26556",
+        'Cold Sauce': "#7dbfea", 
+        'Fabrication': "#febc51",
+        'Pastry': "#ba85cf",
+        'Unknown': "#94abad"
+    }
+    
+    # Prepare table data
+    table_data = []
+    for sku in skus:
+        def safe_sum(values):
+            total = 0
+            for v in values:
+                total += safe_float_convert(v)
+            return total
+        
+        def safe_sum_for_day(values, day_index):
+            if day_index < len(values):
+                return safe_float_convert(values[day_index])
+            return 0.0
+        
+        sku_overtime_per_person = safe_sum(sku.get('overtime', []))
+        
+        # Manpower calc depending on filter
+        if day_filter == "Current Week":
+            sku_manpower = safe_sum(sku.get('daily_manpower', []))
+        else:
+            if days and day_filter in days:
+                day_index = days.index(day_filter)
+                sku_manpower = safe_sum_for_day(sku.get('daily_manpower', []), day_index)
+            else:
+                sku_manpower = 0.0
+        
+        station = sku.get('station', 'Unknown')
+        station_color = station_colors.get(station, station_colors['Unknown'])
+        
+        # --- Improved HTML pill with better escaping ---
+        station_pill = f"""<span style="background-color: {station_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">{station}</span>"""
+        
+        table_data.append({
+            'Station': station_pill,
+            'SKU': sku['sku'],
+            'Batches (no.)': f"{safe_sum(sku.get('daily_batches', [])):,.0f}",
+            'Volume (kg)': f"{safe_sum(sku.get('daily_volume', [])):,.1f}",
+            'Hours (hr)': f"{safe_sum(sku.get('daily_hours', [])):,.1f}",
+            'Manpower (count)': f"{sku_manpower:,.0f}",
+            'Overtime per Person (hrs)': f"{sku_overtime_per_person:,.0f}"
+        })
+
+    # Build DataFrame
+    df_display = pd.DataFrame(table_data)
     
     # Add CSS styling first
     st.markdown("""
