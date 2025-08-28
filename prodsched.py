@@ -2363,7 +2363,6 @@ def ytd_production():
         import traceback
         with debug_expander:
             st.error(f"Full error: {traceback.format_exc()}")
-This debug version will help us identify:
         
 def main():
     """Main application function"""
