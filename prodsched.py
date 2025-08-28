@@ -2342,7 +2342,7 @@ def main():
     
     # Initialize session state for navigation
     if 'main_tab' not in st.session_state:
-        st.session_state.main_tab = "Main Page"
+        st.session_state.main_tab = "KPI Dashboard"
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Weekly Production Schedule"
     
@@ -2351,7 +2351,7 @@ def main():
         menu_title=None,
         options=["KPI Dashboard", "Dashboard Details"],
         icons=["house-fill", "clipboard-data-fill"],
-        default_index=0 if st.session_state.main_tab == "Main Page" else 1,
+        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else 1,
         orientation="horizontal",
         key="main_navigation",
         styles={
@@ -2446,7 +2446,7 @@ def main():
         st.session_state.sub_tab = sub_page_selection
     
     # Display the appropriate content based on navigation
-    if st.session_state.main_tab == "Main Page":
+    if st.session_state.main_tab == "KPI Dashboard":
         main_page()
     else:
         if st.session_state.sub_tab == "Weekly Production Schedule":
