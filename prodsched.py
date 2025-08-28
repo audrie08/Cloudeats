@@ -2158,69 +2158,59 @@ def ytd_production():
        
     col1, col2, col3, col4 = st.columns(4)
        
-        with col1:
-            # Week Selection
-            available_weeks = extractor.get_available_weeks()
-            with debug_expander:
-                st.write("Available weeks:", available_weeks)
-            week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
-            selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
-           
-            # Get actual week number
-            if selected_week_display == "All Weeks":
-                selected_week = None
-            else:
-                week_numbers = [week['week_number'] for week in available_weeks]
-                selected_week = week_numbers[week_options.index(selected_week_display) - 1]
-       
-        with col2:
-            # Day Selection
-            selected_day_filter = None
-            selected_day_display = "All Days"
-            
-            if selected_week:
-                week_days = extractor.get_week_days(selected_week)
-                with debug_expander:
-                    st.write(f"Week {selected_week} days:", week_days)
-                day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
-                selected_day_display = st.selectbox("Select Day", options=day_options, index=0)
-                
-                # Store the selected day for filtering
-                if selected_day_display != "All Days":
-                    selected_day_filter = selected_day_display
-                    with debug_expander:
-                        st.write(f"Selected day filter: {selected_day_filter}")
-            else:
-                selected_day_display = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
-       
-        with col3:
-            # Station Selection
-            all_stations = extractor.get_all_stations()
-            with debug_expander:
-                st.write("All stations:", all_stations)
-            selected_station = st.selectbox("Select Station", options=all_stations, index=0)
-       
-        with col4:
-            # SKU Selection
-            if selected_station and selected_station != "All Stations":
-                station_skus = extractor.get_station_skus(selected_station)
-                with debug_expander:
-                    st.write(f"{selected_station} SKUs:", station_skus)
-                sku_options = ["All SKUs"] + station_skus
-                selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
-            else:
-                selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
-       
-        # --- Get Production Data for KPIs ---
+    with col1:
+        # Week Selection
+        available_weeks = extractor.get_available_weeks()
         with debug_expander:
-            st.write("Getting filtered production data...")
-            st.write("Filter parameters:", {
-                "week": selected_week,
-                "day_filter": selected_day_filter,
-                "station": selected_station,
-                "sku": selected_sku
-            })
+            st.write("Available weeks:", available_weeks)
+        week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
+        selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
+       
+        # Get actual week number
+        if selected_week_display == "All Weeks":
+            selected_week = None
+        else:
+            week_numbers = [week['week_number'] for week in available_weeks]
+            selected_week = week_numbers[week_options.index(selected_week_display) - 1]
+   
+    with col2:
+        # Day Selection
+        selected_day_filter = None
+        selected_day_display = "All Days"
         
+        if selected_week:
+            week_days = extractor.get_week_days(selected_week)
+            with debug_expander:
+                st.write(f"Week {selected_week} days:", week_days)
+            day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
+            selected_day_display = st.selectbox("Select Day", options=day_options, index=0)
+            
+            # Store the selected day for filtering
+            if selected_day_display != "All Days":
+                selected_day_filter = selected_day_display
+                with debug_expander:
+                    st.write(f"Selected day filter: {selected_day_filter}")
+        else:
+            selected_day_display = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
+   
+    with col3:
+        # Station Selection
+        all_stations = extractor.get_all_stations()
+        with debug_expander:
+            st.write("All stations:", all_stations)
+        selected_station = st.selectbox("Select Station", options=all_stations, index=0)
+   
+    with col4:
+        # SKU Selection
+        if selected_station and selected_station != "All Stations":
+            station_skus = extractor.get_station_skus(selected_station)
+            with debug_expander:
+                st.write(f"{selected_station} SKUs:", station_skus)
+            sku_options = ["All SKUs"] + station_skus
+            selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
+        else:
+            selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
+
         # First get data filtered by week, station, and SKU
         production_df = extractor.get_filtered_production_data(
             selected_week=selected_week,
@@ -2228,14 +2218,7 @@ def ytd_production():
             selected_station=selected_station if selected_station != "All Stations" else None,
             selected_sku=selected_sku if selected_sku != "All SKUs" else None
         )
-        
-        with debug_expander:
-            st.write(f"Production DF before day filtering - shape: {production_df.shape}")
-            if not production_df.empty:
-                st.write("Production DF columns:", list(production_df.columns))
-                st.write("Production DF sample:")
-                st.dataframe(production_df.head())
-        
+         
         # Apply day filtering manually if a specific day is selected
         if selected_day_filter and not production_df.empty:
             with debug_expander:
@@ -2279,9 +2262,6 @@ def ytd_production():
                                 with debug_expander:
                                     st.write(f"Filtered using day name in column '{col}', found {len(production_df)} rows")
                                 break
-                
-                with debug_expander:
-                    st.write(f"After day filtering - shape: {production_df.shape}")
                     
             except Exception as e:
                 with debug_expander:
@@ -2296,13 +2276,9 @@ def ytd_production():
         else:
             filtered_skus = 0
             filtered_batches = 0
-            with debug_expander:
-                st.write("Production DF is empty, setting counts to 0")
         
         # Get overall totals (without filters) for comparison
         total_skus, total_batches = extractor.get_production_totals()
-        with debug_expander:
-            st.write(f"Total SKUs: {total_skus}, Total Batches: {total_batches}")
        
         # --- KPI Cards ---
         st.markdown("### 📊 Production Summary")
@@ -2346,8 +2322,6 @@ def ytd_production():
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
         import traceback
-        with debug_expander:
-            st.error(f"Full error: {traceback.format_exc()}")
         
 def main():
     """Main application function"""
