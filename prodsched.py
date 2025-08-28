@@ -2399,14 +2399,14 @@ def main():
         
         sub_page_selection = option_menu(
             menu_title=None,
-            options=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
+            options=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
             icons=["calendar-week-fill", "gear-fill", "graph-up"],
-            default_index=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
+            default_index=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
             orientation="horizontal",
             key="sub_navigation",
             styles={
                 "container": {
-                    "max-width": "1000px",
+                    "max-width": "600px",
                     "text-align": "center",
                     "border-radius": "20px",
                     "color": "#ffffff"
