@@ -2147,7 +2147,7 @@ def ytd_production():
    
     # --- Debug Section ---
     st.markdown("### 🐛 Debug Information")
-    debug_expander = st.expander("Show Debug Info", expanded=False)
+    debug_expander = st.expander("Show Debug Info", expanded=True)  # Expanded for debugging
     
     # --- Load Data ---
     try:
@@ -2164,8 +2164,30 @@ def ytd_production():
                 st.write(f"Raw data columns: {list(df_ytd.columns)}")
                 st.write("First few rows of raw data:")
                 st.dataframe(df_ytd.head(10))
+                st.write("Data types:")
+                st.write(df_ytd.dtypes)
             else:
                 st.error("Raw dataframe is empty!")
+                return
+        
+        # Check if required columns exist
+        required_columns = ['Station', 'SKU']
+        missing_columns = [col for col in required_columns if col not in df_ytd.columns]
+        
+        if missing_columns:
+            st.error(f"Missing required columns: {missing_columns}")
+            st.info("Available columns: " + ", ".join(df_ytd.columns.tolist()))
+            
+            # Try to find similar columns
+            station_alternatives = [col for col in df_ytd.columns if 'station' in col.lower()]
+            sku_alternatives = [col for col in df_ytd.columns if 'sku' in col.lower()]
+            
+            if station_alternatives:
+                st.info(f"Possible Station alternatives: {station_alternatives}")
+            if sku_alternatives:
+                st.info(f"Possible SKU alternatives: {sku_alternatives}")
+            
+            return
         
         extractor = YTDProductionExtractor(df_ytd)
        
@@ -2215,7 +2237,8 @@ def ytd_production():
             all_stations = extractor.get_all_stations()
             with debug_expander:
                 st.write("All stations:", all_stations)
-            selected_station = st.selectbox("Select Station", options=all_stations, index=0)
+            station_options = ["All Stations"] + all_stations
+            selected_station = st.selectbox("Select Station", options=station_options, index=0)
        
         with col4:
             # SKU Selection
@@ -2289,9 +2312,11 @@ def ytd_production():
                 st.write("Final Production DF columns:", list(production_df.columns))
                 st.write("Final Production DF sample:")
                 st.dataframe(production_df.head())
+            else:
+                st.warning("Production dataframe is empty")
         
         # Calculate filtered totals for KPI cards
-        if not production_df.empty:
+        if not production_df.empty and 'Batches' in production_df.columns:
             filtered_skus = production_df['SKU'].nunique()
             filtered_batches = production_df['Batches'].sum()
             with debug_expander:
@@ -2300,7 +2325,7 @@ def ytd_production():
             filtered_skus = 0
             filtered_batches = 0
             with debug_expander:
-                st.write("Production DF is empty, setting counts to 0")
+                st.write("Production DF is empty or missing Batches column, setting counts to 0")
         
         # Get overall totals (without filters) for comparison
         total_skus, total_batches = extractor.get_production_totals()
@@ -2333,7 +2358,7 @@ def ytd_production():
         # --- Production Data Table ---
         st.markdown("### 📋 Production Data")
        
-        if not production_df.empty:
+        if not production_df.empty and 'Batches' in production_df.columns:
             # Format batches column
             production_df['Batches'] = production_df['Batches'].apply(lambda x: f"{x:,.0f}")
            
