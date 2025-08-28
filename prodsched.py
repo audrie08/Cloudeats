@@ -1909,103 +1909,81 @@ def ytd_production():
     try:
         df_ytd = load_production_data(sheet_index=6)
         extractor = YTDProductionExtractor(df_ytd)
-        
-        # --- Time Period Selection Filter ---
-        st.markdown("### 📅 Time Period Selection")
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            period_options = extractor.get_time_period_options()
-            selected_period = st.selectbox(
-                "Select Time Period", 
-                options=period_options,
-                index=0,
-                help="Choose a specific time period or view all periods combined"
-            )
-        
-        with col2:
-            st.markdown("""
-            <div style="margin-top: 25px; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
-                <small><b>Time Periods:</b><br>
-                Based on row 2 data (columns I to NI)<br>
-                Showing unique time periods from your data</small>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # --- Get Production Totals ---
-        total_skus, total_batches = extractor.get_production_totals(selected_period)
-        
-        # --- KPI Cards ---
-        st.markdown("### 📊 Production Summary")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_skus:,.0f}</div>
-                <div class="kpi-title">Total SKUs</div>
-                <div class="kpi-unit">(subrecipes)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_batches:,.0f}</div>
-                <div class="kpi-title">Total Batches</div>
-                <div class="kpi-unit">(units)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # --- Production List DataFrame ---
-        st.markdown("### 📋 Production List")
-        
-        production_df = extractor.get_production_list(selected_period)
-        
-        if not production_df.empty:
-            # Add filters for the production list
-            col_filter1, col_filter2 = st.columns(2)
-            
-            with col_filter1:
-                station_options = ["All Stations"] + sorted(production_df['Station'].unique().tolist())
-                station_filter = st.selectbox("Filter by Station", options=station_options, index=0)
-            
-            with col_filter2:
-                # Sort options
-                sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
-                sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
-            
-            # Apply station filter
-            filtered_df = production_df.copy()
-            if station_filter != "All Stations":
-                filtered_df = filtered_df[filtered_df['Station'] == station_filter]
-            
-            # Apply sorting
-            if sort_filter == "SKU (A-Z)":
-                filtered_df = filtered_df.sort_values('SKU')
-            elif sort_filter == "SKU (Z-A)":
-                filtered_df = filtered_df.sort_values('SKU', ascending=False)
-            elif sort_filter == "Batches (High-Low)":
-                filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
-            elif sort_filter == "Batches (Low-High)":
-                filtered_df = filtered_df.sort_values('Batches per SKU')
-            
-            # Display the filtered and sorted dataframe
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-            
-            # Summary stats for filtered data
-            col_stat1, col_stat2, col_stat3 = st.columns(3)
-            with col_stat1:
-                st.metric("Filtered SKUs", len(filtered_df))
-            with col_stat2:
-                st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
-            with col_stat3:
-                if len(filtered_df) > 0:
-                    avg_batches = filtered_df['Batches per SKU'].mean()
-                    st.metric("Avg Batches/SKU", f"{avg_batches:.1f}")
-                else:
-                    st.metric("Avg Batches/SKU", "0")
+    except Exception as e:
+        st.error(f"❌ Failed to load production data: {e}")
+        return
+    
+    # --- Time Period Selection Filter ---
+    st.markdown("### 📅 Time Period Selection")
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        period_options = extractor.get_time_period_options()
+        selected_period = st.selectbox(
+            "Select Time Period", 
+            options=period_options,
+            index=0,
+            help="Choose a specific time period or view all periods combined"
+        )
+    
+    with col2:
+        st.info("ℹ️ Time periods are based on row 2 data (columns I → NI).")
+    
+    # --- Get Production Totals ---
+    total_skus, total_batches = extractor.get_production_totals(selected_period)
+    
+    # --- KPI Cards ---
+    st.markdown("### 📊 Production Summary")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Total SKUs (subrecipes)", f"{total_skus:,.0f}")
+    with col2:
+        st.metric("Total Batches (units)", f"{total_batches:,.0f}")
+    
+    # --- Production List DataFrame ---
+    st.markdown("### 📋 Production List")
+    production_df = extractor.get_production_list(selected_period)
+    
+    if production_df.empty:
+        st.warning("⚠️ No production data available for this period.")
+        return
+    
+    # Filters
+    col_filter1, col_filter2 = st.columns(2)
+    with col_filter1:
+        station_options = sorted(production_df['Station'].unique().tolist())
+        station_filter = st.multiselect("Filter by Station", options=station_options, default=station_options)
+    
+    with col_filter2:
+        sort_options = ["SKU (A-Z)", "SKU (Z-A)", "Batches (High-Low)", "Batches (Low-High)"]
+        sort_filter = st.selectbox("Sort by", options=sort_options, index=0)
+    
+    # Apply filters
+    filtered_df = production_df[production_df['Station'].isin(station_filter)].copy()
+    
+    # Apply sorting
+    if sort_filter == "SKU (A-Z)":
+        filtered_df = filtered_df.sort_values('SKU')
+    elif sort_filter == "SKU (Z-A)":
+        filtered_df = filtered_df.sort_values('SKU', ascending=False)
+    elif sort_filter == "Batches (High-Low)":
+        filtered_df = filtered_df.sort_values('Batches per SKU', ascending=False)
+    elif sort_filter == "Batches (Low-High)":
+        filtered_df = filtered_df.sort_values('Batches per SKU')
+    
+    # Display table
+    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+    
+    # Summary Stats
+    col_stat1, col_stat2, col_stat3 = st.columns(3)
+    with col_stat1:
+        st.metric("Filtered SKUs", len(filtered_df))
+    with col_stat2:
+        st.metric("Filtered Batches", f"{filtered_df['Batches per SKU'].sum():,.0f}")
+    with col_stat3:
+        avg_batches = filtered_df['Batches per SKU'].mean()
+        st.metric("Avg Batches/SKU", f"{avg_batches:.1f}" if not pd.isna(avg_batches) else "0")
             
 def main():
     """Main application function"""
