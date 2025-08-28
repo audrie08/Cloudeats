@@ -499,6 +499,30 @@ MACHINE_COLUMNS = {
     'header_row': 1             # Row 2 (0-based index 1)
 }
 
+# Constants for YTD Production data structure
+YTD_COLUMNS = {
+    'subrecipe': 1,          # Column B
+    'batch_qty': 2,          # Column C  
+    'kg_per_mhr': 3,         # Column D
+    'mhr_per_kg': 4,         # Column E
+    'hrs_per_run': 5,        # Column F
+    'working_hrs': 6,        # Column G
+    'std_manpower': 7,       # Column H
+    'data_start': 8,         # Column I (Jan Week 1)
+    'data_end': 60           # Approximate end column (Dec Week 53)
+}
+
+# Key production summary rows
+PRODUCTION_SUMMARY_ROWS = {
+    'total_stations': 5,        # Row 6 (0-indexed as 5)
+    'hot_kitchen_sauce': 6,     # Row 7 
+    'hot_kitchen_savory': 36,   # Row 37
+    'cold_sauce': 72,           # Row 73
+    'fab_poultry': 113,         # Row 114
+    'fab_meats': 128,           # Row 129
+    'pastry': 152               # Row 153
+}
+
 # --- UTILITY FUNCTIONS ---
 def safe_float_convert(value):
     """Safely convert a value to float, handling various edge cases - ONLY POSITIVE VALUES"""
@@ -1034,7 +1058,93 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
     """
     
     st.markdown(scrollable_html, unsafe_allow_html=True)
+
+# -- YTD PRODUCTION SCHEDULE  --- 
+class YTDProductionExtractor:
+    def __init__(self, df):
+        self.df = df
+        self.week_numbers = self._extract_week_numbers()
+        self.dates = self._extract_dates()
+        
+    def _extract_week_numbers(self):
+        """Extract week numbers from row 2"""
+        try:
+            week_row = self.df.iloc[1, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
+            return [str(w) if pd.notna(w) else '' for w in week_row]
+        except:
+            return []
     
+    def _extract_dates(self):
+        """Extract dates from row 3"""
+        try:
+            date_row = self.df.iloc[2, YTD_COLUMNS['data_start']:YTD_COLUMNS['data_end']]
+            return [str(d) if pd.notna(d) else '' for d in date_row]
+        except:
+            return []
+    
+    def get_week_options(self):
+        """Create week dropdown options combining week numbers and dates"""
+        options = []
+        current_week = None
+        current_dates = []
+        
+        for i, (week, date) in enumerate(zip(self.week_numbers, self.dates)):
+            if week and week != current_week:
+                if current_week and current_dates:
+                    date_range = f"{current_dates[0]} - {current_dates[-1]}" if len(current_dates) > 1 else current_dates[0]
+                    options.append(f"Week {current_week}: {date_range}")
+                current_week = week
+                current_dates = [date] if date else []
+            elif date and current_week:
+                current_dates.append(date)
+        
+        # Add the last week
+        if current_week and current_dates:
+            date_range = f"{current_dates[0]} - {current_dates[-1]}" if len(current_dates) > 1 else current_dates[0]
+            options.append(f"Week {current_week}: {date_range}")
+            
+        return options
+    
+    def get_production_summary(self, week_selection=None):
+        """Get production summary data for key categories"""
+        summary_data = {}
+        
+        # Calculate column range based on week selection
+        if week_selection and week_selection != "All Weeks":
+            # Extract week number from selection
+            week_num = week_selection.split(":")[0].replace("Week ", "")
+            week_indices = [i for i, w in enumerate(self.week_numbers) if str(w) == week_num]
+            
+            if week_indices:
+                start_col = YTD_COLUMNS['data_start'] + week_indices[0]
+                end_col = YTD_COLUMNS['data_start'] + week_indices[-1] + 1
+            else:
+                start_col = YTD_COLUMNS['data_start']
+                end_col = YTD_COLUMNS['data_end']
+        else:
+            start_col = YTD_COLUMNS['data_start']
+            end_col = YTD_COLUMNS['data_end']
+        
+        for category, row_idx in PRODUCTION_SUMMARY_ROWS.items():
+            try:
+                if row_idx < len(self.df):
+                    row_data = self.df.iloc[row_idx, start_col:end_col]
+                    # Sum numeric values only
+                    numeric_data = pd.to_numeric(row_data, errors='coerce').fillna(0)
+                    summary_data[category] = numeric_data.sum()
+                else:
+                    summary_data[category] = 0
+            except:
+                summary_data[category] = 0
+        
+        # Calculate combined hot kitchen (sauce + savory)
+        summary_data['hot_kitchen_total'] = (
+            summary_data.get('hot_kitchen_sauce', 0) + 
+            summary_data.get('hot_kitchen_savory', 0)
+        )
+        
+        return summary_data
+
 # --- MACHINE UTILIZATION EXTRACTOR ---
 class MachineUtilizationExtractor:
     def __init__(self, df):
@@ -1754,12 +1864,205 @@ def machine_utilization():
 
 def ytd_production():
     """YTD Production Schedule Page"""
+    
+    # --- Header ---
     st.markdown("""
-    <div class="dashboard-card">
-        <h3>📈 YTD Production Analysis</h3>
-        <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
+    <div class="main-header">
+        <h1><b>📈 YTD Production Schedule</b></h1>
+        <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # --- Load Data ---
+    try:
+        df_ytd = load_production_data(sheet_index=3)
+        extractor = YTDProductionExtractor(df_ytd)
+        
+        # --- Week Selection Filter ---
+        st.markdown("### 📅 Time Period Selection")
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            week_options = ["All Weeks"] + extractor.get_week_options()
+            selected_week = st.selectbox(
+                "Select Week Period", 
+                options=week_options,
+                index=0,
+                help="Choose a specific week or view all weeks combined"
+            )
+        
+        with col2:
+            st.markdown("""
+            <div style="margin-top: 25px; padding: 10px; background-color: #f0f2f6; border-radius: 5px;">
+                <small><b>Data Structure:</b><br>
+                • Columns B-H: Recipe details<br>
+                • Columns I-NI: Weekly production data<br>
+                • Row 2: Week numbers<br>
+                • Row 3: Corresponding dates</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # --- Get Production Summary ---
+        summary_data = extractor.get_production_summary(selected_week)
+        
+        # --- KPI Cards ---
+        st.markdown("### 📊 Production Summary")
+        
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('hot_kitchen_total', 0):,.0f}</div>
+                <div class="kpi-title">Hot Kitchen Total</div>
+                <div class="kpi-unit">(Sauce + Savory)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('cold_sauce', 0):,.0f}</div>
+                <div class="kpi-title">Cold Sauce</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('fab_poultry', 0):,.0f}</div>
+                <div class="kpi-title">Fab Poultry</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('fab_meats', 0):,.0f}</div>
+                <div class="kpi-title">Fab Meats</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col5:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('pastry', 0):,.0f}</div>
+                <div class="kpi-title">Pastry</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # --- Detailed Breakdown ---
+        st.markdown("### 🔍 Detailed Production Breakdown")
+        
+        col_left, col_right = st.columns(2)
+        
+        with col_left:
+            # Hot Kitchen Breakdown
+            st.markdown("**Hot Kitchen Breakdown**")
+            breakdown_data = {
+                'Category': ['Hot Kitchen Sauce', 'Hot Kitchen Savory'],
+                'Production': [
+                    summary_data.get('hot_kitchen_sauce', 0),
+                    summary_data.get('hot_kitchen_savory', 0)
+                ]
+            }
+            
+            fig_breakdown = px.bar(
+                breakdown_data,
+                x='Category', 
+                y='Production',
+                title="Hot Kitchen Production Split",
+                color='Category',
+                color_discrete_map={
+                    'Hot Kitchen Sauce': '#FF6B6B',
+                    'Hot Kitchen Savory': '#4ECDC4'
+                }
+            )
+            fig_breakdown.update_layout(showlegend=False, height=350)
+            st.plotly_chart(fig_breakdown, use_container_width=True)
+        
+        with col_right:
+            # Production Distribution Pie Chart
+            pie_data = {
+                'Hot Kitchen': summary_data.get('hot_kitchen_total', 0),
+                'Cold Sauce': summary_data.get('cold_sauce', 0),
+                'Fab Poultry': summary_data.get('fab_poultry', 0),
+                'Fab Meats': summary_data.get('fab_meats', 0),
+                'Pastry': summary_data.get('pastry', 0)
+            }
+            
+            # Filter out zero values
+            pie_data = {k: v for k, v in pie_data.items() if v > 0}
+            
+            if pie_data:
+                fig_pie = px.pie(
+                    values=list(pie_data.values()),
+                    names=list(pie_data.keys()),
+                    title="Production Distribution by Category"
+                )
+                fig_pie.update_layout(height=350)
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.info("No production data available for the selected period.")
+        
+        # --- Weekly Trends (only if "All Weeks" selected) ---
+        if selected_week == "All Weeks":
+            st.markdown("### 📈 Weekly Production Trends")
+            
+            trends_df = extractor.get_weekly_trends()
+            
+            if not trends_df.empty:
+                fig_trends = px.line(
+                    trends_df,
+                    x='Week',
+                    y='Production',
+                    color='Category',
+                    title="Weekly Production Trends by Category",
+                    markers=True
+                )
+                fig_trends.update_layout(height=500)
+                fig_trends.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_trends, use_container_width=True)
+                
+                # Show trends table
+                st.markdown("**Weekly Trends Data**")
+                trends_pivot = trends_df.pivot(index='Week', columns='Category', values='Production').fillna(0)
+                st.dataframe(trends_pivot, use_container_width=True)
+            else:
+                st.info("Weekly trends data is not available.")
+        
+        # --- Raw Data Preview ---
+        with st.expander("🗂️ Raw Data Preview"):
+            st.markdown("**Production Schedule Data Structure:**")
+            
+            # Show key columns and first few rows
+            display_df = df_ytd.iloc[:20, :15]  # First 20 rows, first 15 columns
+            st.dataframe(display_df, use_container_width=True)
+            
+            st.markdown(f"""
+            **Data Dimensions:** {df_ytd.shape[0]} rows × {df_ytd.shape[1]} columns
+            
+            **Key Information:**
+            - **Columns B-H:** Recipe details (subrecipe, batch qty, kg/mhr, etc.)
+            - **Columns I-NI:** Weekly production data (Jan Week 1 to Dec Week 53)  
+            - **Row 2:** Week numbers (repeated for each day)
+            - **Row 3:** Corresponding dates
+            - **Summary rows:** Production totals at specific row positions
+            """)
+    
+    except Exception as e:
+        st.error(f"Error loading YTD Production data: {str(e)}")
+        st.markdown("""
+        <div class="dashboard-card">
+            <h3>📈 YTD Production Analysis</h3>
+            <p>Year-to-date production metrics, trends, and comprehensive analytics.</p>
+            <p><em>Please ensure the production data file is available and properly formatted.</em></p>
+        </div>
+        """, unsafe_allow_html=True)
             
 def main():
     """Main application function"""
