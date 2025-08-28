@@ -2161,7 +2161,7 @@ def ytd_production():
     st.markdown("""
     <div class="main-header">
         <h1><b>YTD Production Schedule</b></h1>
-        <p><b>Year-to-date production metrics, trends, and comprehensive analytics</b></p>
+        <p><b>Comprehensive Production Schedule – 2025</b></p>
     </div>
     """, unsafe_allow_html=True)
    
