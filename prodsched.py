@@ -2149,6 +2149,15 @@ def ytd_production():
     try:
         # Load YTD Production data from sheet index 6
         df_ytd = load_production_data(sheet_index=6)
+        
+        # Debug: Show raw data info
+        st.sidebar.markdown("### 🔧 Debug Info")
+        st.sidebar.write(f"Data shape: {df_ytd.shape}")
+        if not df_ytd.empty:
+            st.sidebar.write(f"Columns: {list(df_ytd.columns)}")
+            st.sidebar.write("First few rows:")
+            st.sidebar.dataframe(df_ytd.head(10))
+        
         extractor = YTDProductionExtractor(df_ytd)
        
         # --- Single Row of Filters ---
@@ -2159,6 +2168,7 @@ def ytd_production():
         with col1:
             # Week Selection
             available_weeks = extractor.get_available_weeks()
+            st.sidebar.write("Available weeks:", available_weeks)
             week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
             selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
            
@@ -2173,6 +2183,7 @@ def ytd_production():
             # Day Selection
             if selected_week:
                 week_days = extractor.get_week_days(selected_week)
+                st.sidebar.write(f"Week {selected_week} days:", week_days)
                 day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
                 selected_day = st.selectbox("Select Day", options=day_options, index=0)
             else:
@@ -2181,12 +2192,14 @@ def ytd_production():
         with col3:
             # Station Selection
             all_stations = extractor.get_all_stations()
+            st.sidebar.write("All stations:", all_stations)
             selected_station = st.selectbox("Select Station", options=all_stations, index=0)
        
         with col4:
             # SKU Selection
             if selected_station and selected_station != "All Stations":
                 station_skus = extractor.get_station_skus(selected_station)
+                st.sidebar.write(f"{selected_station} SKUs:", station_skus)
                 sku_options = ["All SKUs"] + station_skus
                 selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
             else:
@@ -2201,16 +2214,32 @@ def ytd_production():
             selected_sku=selected_sku if selected_sku != "All SKUs" else None
         )
         
+        # Debug: Show filter parameters and resulting dataframe
+        st.sidebar.write("Filter parameters:", {
+            "week": selected_week,
+            "day": selected_day,
+            "station": selected_station,
+            "sku": selected_sku
+        })
+        st.sidebar.write("Production DF shape:", production_df.shape)
+        if not production_df.empty:
+            st.sidebar.write("Production DF columns:", list(production_df.columns))
+            st.sidebar.write("Production DF sample:")
+            st.sidebar.dataframe(production_df.head())
+        
         # Calculate filtered totals for KPI cards
         if not production_df.empty:
             filtered_skus = production_df['SKU'].nunique()
             filtered_batches = production_df['Batches'].sum()
+            st.sidebar.write(f"Filtered SKUs: {filtered_skus}, Filtered Batches: {filtered_batches}")
         else:
             filtered_skus = 0
             filtered_batches = 0
+            st.sidebar.write("Production DF is empty")
         
         # Get overall totals (without filters) for comparison
         total_skus, total_batches = extractor.get_production_totals()
+        st.sidebar.write(f"Total SKUs: {total_skus}, Total Batches: {total_batches}")
        
         # --- KPI Cards ---
         st.markdown("### 📊 Production Summary")
@@ -2239,6 +2268,9 @@ def ytd_production():
         st.markdown("### 📋 Production Data")
        
         if not production_df.empty:
+            # Debug: Check batch values before formatting
+            st.sidebar.write("Batch values before formatting:", production_df['Batches'].tolist()[:5])
+            
             # Format batches column
             production_df['Batches'] = production_df['Batches'].apply(lambda x: f"{x:,.0f}")
            
@@ -2253,6 +2285,8 @@ def ytd_production():
 
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
+        import traceback
+        st.sidebar.error(f"Full error: {traceback.format_exc()}")
         
 def main():
     """Main application function"""
