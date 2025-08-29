@@ -713,7 +713,30 @@ def get_kpi_color(current, target, kpi_type):
 def create_kpi_card(title, value, target, kpi_type, size="small"):
     """Create a modern KPI card"""
     formatted_value = format_kpi_value(value, kpi_type)
-    formatted_target = format_kpi_value(target, kpi_type)
+    
+    # Preserve the < and > symbols from the target
+    # Check if target already contains these symbols and preserve them
+    target_str = str(target)
+    if target_str.startswith(('<', '>')):
+        # Target already has symbol, format the numeric part only
+        symbol = target_str[0]
+        numeric_part = target_str[1:]
+        try:
+            numeric_value = float(numeric_part.strip('%'))
+            if kpi_type == "percentage":
+                formatted_numeric = f"{numeric_value:.1f}%"
+            elif kpi_type == "currency":
+                formatted_numeric = f"${numeric_value:,.2f}"
+            else:
+                formatted_numeric = f"{numeric_value:,.0f}"
+            formatted_target = f"{symbol}{formatted_numeric}"
+        except ValueError:
+            # If parsing fails, use the original target
+            formatted_target = target_str
+    else:
+        # Target doesn't have symbols, format normally
+        formatted_target = format_kpi_value(target, kpi_type)
+    
     color = get_kpi_color(value, target, kpi_type)
     
     if size == "large":
