@@ -814,7 +814,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             margin: 10px 0;
         ">{formatted_value}</div>
         <div style="
-            color: #64748b;
+            color: #ffffff;
             font-size: 12px;
             font-weight: 500;
         ">Target: {formatted_target}</div>
