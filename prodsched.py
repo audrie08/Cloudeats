@@ -2390,9 +2390,9 @@ def main_page():
         <p><b>Weekly Performance Metrics</b></p>
     </div>
     """, unsafe_allow_html=True)
+
     
     # Display KPI Dashboard
-    create_kpi_card()
     display_kpi_dashboard()
 
 def weekly_prod_schedule():
