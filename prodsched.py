@@ -2387,11 +2387,12 @@ def main_page():
     st.markdown("""
     <div class="main-header">
         <h1><b>2025 Commissary KPI Dashboard</b></h1>
-        <p><b></b></p>
+        <p><b>Weekly Performance Metrics</b></p>
     </div>
     """, unsafe_allow_html=True)
     
     # Display KPI Dashboard
+    create_kpi_card()
     display_kpi_dashboard()
 
 def weekly_prod_schedule():
