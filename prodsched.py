@@ -26,8 +26,43 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CREDENTIALS HANDLING ---
-def load_credentials():
+# --- CREDENTIALS HANDLING KPI DASHBOARD ---
+def load_credentials_kpi():
+    """Load Google credentials from Streamlit secrets"""
+    try:
+        # Check if secrets are available
+        if "google_credentials1" not in st.secrets:
+            st.error("Google credentials not found in secrets")
+            return None
+            
+        # Convert secrets to the format expected by google-auth
+        credentials_dict = {
+            "type": st.secrets["google_credentials1"]["type"],
+            "project_id": st.secrets["google_credentials1"]["project_id"],
+            "private_key_id": st.secrets["google_credentials1"]["private_key_id"],
+            "private_key": st.secrets["google_credentials1"]["private_key"].replace('\\n', '\n'),
+            "client_email": st.secrets["google_credentials1"]["client_email"],
+            "client_id": st.secrets["google_credentials1"]["client_id"],
+            "auth_uri": st.secrets["google_credentials1"]["auth_uri"],
+            "token_uri": st.secrets["google_credentials1"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_credentials1"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_credentials1"]["client_x509_cert_url"]
+        }
+        
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        return credentials
+        
+    except Exception as e:
+        st.error(f"Error loading credentials: {str(e)}")
+        return None
+
+# --- CREDENTIALS HANDLING PROD SCHED---
+def load_credentials_prod():
     """Load Google credentials from Streamlit secrets"""
     try:
         # Convert secrets to the format expected by google-auth
@@ -585,11 +620,363 @@ def safe_sum_for_day(values, index):
     return 0
 
 
+# --- LOAD KPI DASHBOARD ---
+@st.cache_data(ttl=60)
+def load_kpi_data(sheet_index=3):
+    """Load KPI data from Google Sheets (sheet index 0)"""
+    credentials = load_credentials_kpi()
+    if not credentials:
+        return pd.DataFrame(), pd.DataFrame()
+    
+    try:
+        gc = gspread.authorize(credentials)
+        spreadsheet_id = "12ScL8L6Se7jRTqM2nL3hboxQkc8MLhEp7hEDlGUPKZg"
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+
+        if len(data) < 4:
+            st.warning("Not enough data in the spreadsheet")
+            return pd.DataFrame(), pd.DataFrame()
+            
+        # Extract headers (row 2), targets (row 3), and data rows (from row 4)
+        headers = data[1]  # Row 2 (0-indexed as row 1)
+        targets = data[2]  # Row 3 (0-indexed as row 2)
+        ytd = data[3]      # Row 4 (0-indexed as row 2)
+        data_rows = data[4:60]  # From row 5 onwards
+        
+        # Create DataFrame
+        df = pd.DataFrame(data_rows, columns=headers)
+        df = df.replace('', pd.NA).dropna(how='all')  # Remove completely empty rows
+        
+        # Create targets DataFrame
+        targets_df = pd.DataFrame([targets], columns=headers)
+        
+        return df, targets_df
+        
+    except Exception as e:
+        st.error(f"Error loading KPI data: {str(e)}")
+        return pd.DataFrame(), pd.DataFrame()
+
+# --- UTILITY FUNCTIONS ---
+def safe_float(value, default=0.0):
+    """Safely convert string to float"""
+    try:
+        if value == '' or value is None or pd.isna(value):
+            return default
+        # Remove % and other characters
+        clean_value = str(value).replace('%', '').replace(',', '').replace('₱', '').strip()
+        return float(clean_value)
+    except (ValueError, TypeError):
+        return default
+
+def format_kpi_value(value, kpi_type):
+    """Format KPI values based on type"""
+    try:
+        num_value = safe_float(value)
+        if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'ot']:
+            return f"{num_value:.2f}%"
+        elif kpi_type in ['currency', 'labor_cost']:
+            return f"₱{num_value:,.2f}"
+        elif kpi_type in ['count', 'manpower']:
+            return f"{int(num_value):,}"
+        else:
+            return f"{num_value:.2f}"
+    except:
+        return str(value)
+
+def get_kpi_color(current, target, kpi_type):
+    """Determine color based on KPI performance vs target"""
+    try:
+        current_val = safe_float(current)
+        target_val = safe_float(target)
+        
+        if target_val == 0:
+            return "#4f7dbd"  # Gray for no target
+            
+        # For cost-based KPIs, lower is better
+        if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+            if current_val <= target_val:
+                return "#22c55e"  # Green (good)
+            else:
+                return "#ef4444"  # Red (bad)
+        else:
+            # For performance KPIs, higher is better
+            if current_val >= target_val:
+                return "#22c55e"  # Green (good)
+            else:
+                return "#ef4444"  # Red (bad)
+    except:
+        return "#64748b"  # Gray for errors
+
+# --- DASHBOARD COMPONENTS ---
+def create_kpi_card(title, value, target, kpi_type, size="small"):
+    """Create a modern KPI card"""
+    formatted_value = format_kpi_value(value, kpi_type)
+    formatted_target = format_kpi_value(target, kpi_type)
+    color = get_kpi_color(value, target, kpi_type)
+    
+    if size == "large":
+        card_height = "200px"
+        title_size = "18px"
+        value_size = "48px"
+    else:
+        card_height = "140px"
+        title_size = "14px"
+        value_size = "32px"
+    
+    card_html = f"""
+    <div style="
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #475569;
+        border-radius: 16px;
+        padding: 20px;
+        height: {card_height};
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease;
+    ">
+        <div style="
+            color: #94a3b8;
+            font-size: {title_size};
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        ">{title}</div>
+        <div style="
+            color: {color};
+            font-size: {value_size};
+            font-weight: 700;
+            line-height: 1;
+            margin: 10px 0;
+        ">{formatted_value}</div>
+        <div style="
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 500;
+        ">Target: {formatted_target}</div>
+    </div>
+    """
+    return card_html
+
+def display_kpi_dashboard():
+    """Display the main KPI dashboard"""
+    st.markdown("""
+    <style>
+    .kpi-container {
+        background: #0f172a;
+        padding: 20px;
+        border-radius: 20px;
+        margin: 10px 0;
+    }
+    .dashboard-title {
+        color: #e2e8f0;
+        text-align: center;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+                   <style>
+    .main {
+        background-color: #0f172a;
+    }
+    .stSelectbox > div > div {
+        background-color: #000000;
+        border: 1px solid #475569;
+        border-radius: 8px;
+    }
+    .stSelectbox label {
+        color: #e2e8f0 !important;
+        font-weight: 600;
+    }
+    .stSelectbox div[data-baseweb="select"] > div {
+        color: #e2e8f0 !important;
+    }
+    div[role="listbox"] {
+        background-color: #1e293b !important;
+        color: #e2e8f0 !important;
+    }
+    div[role="option"] {
+        color: #e2e8f0 !important;
+        background-color: #1e293b !important;
+    }
+    div[role="option"]:hover {
+        background-color: #334155 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    try:
+        kpi_data, targets_data = load_kpi_data()
+        
+        if kpi_data.empty:
+            st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
+            return
+            
+        # Try to find the week column - it might not be the first column
+        week_column = None
+        
+        # Look for a column that contains week data (like "Wk 21", "Week 21", etc.)
+        for col in kpi_data.columns:
+            # Check if column name suggests it contains week data
+            col_lower = str(col).lower()
+            if any(term in col_lower for term in ['week', 'wk']):
+                week_column = col
+                break
+        
+        # If no obvious week column found, try to find it by content
+        if week_column is None:
+            for col in kpi_data.columns:
+                # Check if values in this column look like weeks
+                sample_values = kpi_data[col].dropna().head(5).astype(str)
+                if any(any(term in val.lower() for term in ['wk', 'week']) for val in sample_values):
+                    week_column = col
+                    break
+        
+        # If still not found, use the first column as fallback
+        if week_column is None:
+            week_column = kpi_data.columns[0]
+        
+        # Get available weeks for dropdown
+        weeks = kpi_data[week_column].dropna().unique()
+        weeks = [str(w).strip() for w in weeks if str(w).strip() != '']
+        
+        if not weeks:
+            st.error(f"""
+            No week data available in column '{week_column}'. This could be due to:
+            1. The spreadsheet doesn't contain week data in the expected format
+            2. The week column is empty
+            3. The data format is different than expected
+            
+            Please check the spreadsheet structure. The week data might be in a different column.
+            """)
+            return
+        
+        # Find the default week (last row with data in columns C to V)
+        default_week_index = None
+        # Assuming columns C to V correspond to columns 2 to 21 (0-indexed)
+        for i in range(len(kpi_data) - 1, -1, -1):
+            # Check if any of the columns from index 2 to 21 have data
+            if kpi_data.iloc[i, 2:22].notna().any():
+                default_week_index = i
+                break
+        
+        if default_week_index is not None:
+            default_week = kpi_data.iloc[default_week_index][week_column]
+            default_week = str(default_week).strip()
+            # Ensure the default week exists in the available weeks
+            if default_week in weeks:
+                default_index = weeks.index(default_week)
+            else:
+                default_index = len(weeks) - 1  # Fallback to last week
+        else:
+            default_index = len(weeks) - 1  # Fallback to last week
+            
+        # Week selection
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            selected_week = st.selectbox(
+                "Select Week",
+                weeks,
+                index=default_index,
+                key="week_selector"
+            )
+        
+        # Filter data for selected week
+        week_data = kpi_data[kpi_data[week_column] == selected_week]
+        if week_data.empty:
+            st.warning(f"No data available for {selected_week}")
+            return
+            
+        week_row = week_data.iloc[0]
+        target_row = targets_data.iloc[0] if not targets_data.empty else pd.Series()
+        
+        # Dashboard title
+        st.markdown(f'<div class="dashboard-title">COMMISSARY KPI DASHBOARD - {selected_week}</div>', unsafe_allow_html=True)
+        
+        # Top KPI metrics row
+        st.markdown("### Key Performance Indicators")
+        cols = st.columns(6)
+        
+        kpi_metrics = [
+            ("Spoilage vs Revenue", week_row.iloc[21] if len(week_row) > 21 else '', 
+             target_row.iloc[21] if len(target_row) > 21 else '', "percentage"),
+            ("Variance", week_row.iloc[7] if len(week_row) > 7 else '', 
+             target_row.iloc[7] if len(target_row) > 7 else '', "percentage"),
+            ("Yield", week_row.iloc[8] if len(week_row) > 8 else '', 
+             target_row.iloc[8] if len(target_row) > 8 else '', "percentage"),
+            ("Availability", week_row.iloc[12] if len(week_row) > 12 else '', 
+             target_row.iloc[12] if len(target_row) > 12 else '', "percentage"),
+            ("Efficiency", week_row.iloc[13] if len(week_row) > 13 else '', 
+             target_row.iloc[13] if len(target_row) > 13 else '', "percentage"),
+            ("Quality", week_row.iloc[14] if len(week_row) > 14 else '', 
+             target_row.iloc[14] if len(target_row) > 14 else '', "percentage"),
+        ]
+        
+        for i, (title, value, target, kpi_type) in enumerate(kpi_metrics):
+            with cols[i]:
+                st.markdown(create_kpi_card(title, value, target, kpi_type), unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Second row of KPIs
+        cols2 = st.columns(6)
+        
+        kpi_metrics_2 = [
+            ("Man-hr", week_row.iloc[16] if len(week_row) > 16 else '', 
+             target_row.iloc[16] if len(target_row) > 16 else '', "count"),
+            ("Attendance", week_row.iloc[9] if len(week_row) > 9 else '', 
+             target_row.iloc[9] if len(target_row) > 9 else '', "percentage"),
+            ("OT %", week_row.iloc[10] if len(week_row) > 10 else '', 
+             target_row.iloc[10] if len(target_row) > 10 else '', "percentage"),
+            ("Labor Cost/kg", week_row.iloc[11] if len(week_row) > 11 else '', 
+             target_row.iloc[11] if len(target_row) > 11 else '', "currency"),
+            ("KGMH", week_row.iloc[17] if len(week_row) > 17 else '', 
+             target_row.iloc[17] if len(target_row) > 17 else '', "count"),
+            ("Manpower", week_row.iloc[18] if len(week_row) > 18 else '', 
+             target_row.iloc[18] if len(target_row) > 18 else '', "count"),
+        ]
+        
+        for i, (title, value, target, kpi_type) in enumerate(kpi_metrics_2):
+            with cols2[i]:
+                st.markdown(create_kpi_card(title, value, target, kpi_type), unsafe_allow_html=True)
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
+        # Big KPI cards
+        st.markdown("### Core Performance Metrics")
+        big_cols = st.columns(4)
+        
+        big_kpis = [
+            ("Capacity Utilization", week_row.iloc[4] if len(week_row) > 4 else '', 
+             target_row.iloc[4] if len(target_row) > 4 else '', "percentage"),
+            ("Production Plan Performance", week_row.iloc[3] if len(week_row) > 3 else '', 
+             target_row.iloc[3] if len(target_row) > 3 else '', "percentage"),
+            ("OEE", week_row.iloc[15] if len(week_row) > 15 else '', 
+             target_row.iloc[15] if len(target_row) > 15 else '', "percentage"),
+            ("PPC", week_row.iloc[5] if len(week_row) > 5 else '', 
+             target_row.iloc[5] if len(target_row) > 5 else '', "percentage"),
+        ]
+        
+        for i, (title, value, target, kpi_type) in enumerate(big_kpis):
+            with big_cols[i]:
+                st.markdown(create_kpi_card(title, value, target, kpi_type, size="large"), unsafe_allow_html=True)
+                
+    except Exception as e:
+        st.error(f"Error displaying KPI dashboard: {str(e)}")
+        st.exception(e)  # Show full exception details for debugging
+
+
 # --- DATA LOADER FUNCTION ---
 @st.cache_data(ttl=60)
 def load_production_data(sheet_index=1):
     """Load production data from Google Sheets"""
-    credentials = load_credentials()
+    credentials = load_credentials_prod()
     if not credentials:
         return pd.DataFrame()
     
@@ -1895,14 +2282,12 @@ def create_navigation():
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
 
-def main_page():
-    """Main Page Content - Your existing dashboard"""
-    # Main Header (your existing style)
-    st.markdown(f"""
-    <div class="main-header">
-        <h1>Main Dashboard</h1>
-    </div>
-    """, unsafe_allow_html=True)
+def main_page():    
+    # Main title
+    st.title("Commissary KPI Dashboard")
+    
+    # Display KPI Dashboard
+    display_kpi_dashboard()
 
 def weekly_prod_schedule():
 
