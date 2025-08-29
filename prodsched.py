@@ -841,7 +841,14 @@ def display_kpi_dashboard():
         text-transform: uppercase;
         letter-spacing: 2px;
     }
-                   <style>
+    .last-updated {
+        color: #94a3b8;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 20px;
+        font-style: italic;
+    }
     .main {
         background-color: #0f172a;
     }
@@ -877,6 +884,28 @@ def display_kpi_dashboard():
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
+        
+        # Get the last updated timestamp from the last row
+        last_updated = None
+        if not kpi_data.empty:
+            # Look for a date/time column - check common column names
+            date_columns = ['date', 'timestamp', 'updated', 'last_updated', 'time']
+            for col in kpi_data.columns:
+                col_lower = str(col).lower()
+                if any(term in col_lower for term in date_columns):
+                    # Get the last non-null value in this column
+                    last_row_with_date = kpi_data[col].last_valid_index()
+                    if last_row_with_date is not None:
+                        last_updated = kpi_data.loc[last_row_with_date, col]
+                        break
+            
+            # If no date column found, use the index of the last row with data
+            if last_updated is None:
+                # Find the last row that has data in any column
+                for i in range(len(kpi_data) - 1, -1, -1):
+                    if kpi_data.iloc[i].notna().any():
+                        last_updated = f"Row {i+1}"  # Use row number as fallback
+                        break
             
         # Try to find the week column - it might not be the first column
         week_column = None
@@ -958,6 +987,18 @@ def display_kpi_dashboard():
         
         # Dashboard title
         st.markdown(f'<div class="dashboard-title">COMMISSARY KPI DASHBOARD - {selected_week}</div>', unsafe_allow_html=True)
+        
+        # Last updated timestamp
+        if last_updated:
+            try:
+                # Try to format if it's a datetime object
+                if hasattr(last_updated, 'strftime'):
+                    formatted_date = last_updated.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    formatted_date = str(last_updated)
+                st.markdown(f'<div class="last-updated">Date and time updated: {formatted_date}</div>', unsafe_allow_html=True)
+            except:
+                st.markdown(f'<div class="last-updated">Last updated: {last_updated}</div>', unsafe_allow_html=True)
         
         # Top KPI metrics row
         st.markdown("### Key Performance Indicators")
