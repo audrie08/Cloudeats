@@ -2386,8 +2386,8 @@ def create_navigation():
 def main_page():    
     st.markdown("""
     <div class="main-header">
-        <h1><b>Commissary Production Scheduler</b></h1>
-        <p><b>2025 Commissary KPI Dashboard</b></p>
+        <h1><b>2025 Commissary KPI Dashboard</b></h1>
+        <p><b></b></p>
     </div>
     """, unsafe_allow_html=True)
     
