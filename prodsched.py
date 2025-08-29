@@ -689,23 +689,60 @@ def get_kpi_color(current, target, kpi_type):
     """Determine color based on KPI performance vs target"""
     try:
         current_val = safe_float(current)
-        target_val = safe_float(target)
+        target_str = str(target).strip()
         
-        if target_val == 0:
-            return "#4f7dbd"  # Gray for no target
-            
-        # For cost-based KPIs, lower is better
-        if kpi_type in ['spoilage', 'variance', 'labor_cost']:
-            if current_val <= target_val:
-                return "#22c55e"  # Green (good)
+        # Handle symbolic targets (>, <)
+        if target_str.startswith('>'):
+            # Target is "greater than" value
+            target_val = safe_float(target_str[1:])
+            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+                # For cost-based KPIs with > target: current should be LESS than target
+                if current_val < target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
             else:
-                return "#ef4444"  # Red (bad)
+                # For performance KPIs with > target: current should be GREATER than target
+                if current_val > target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
+                    
+        elif target_str.startswith('<'):
+            # Target is "less than" value
+            target_val = safe_float(target_str[1:])
+            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+                # For cost-based KPIs with < target: current should be LESS than target
+                if current_val < target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
+            else:
+                # For performance KPIs with < target: current should be LESS than target
+                if current_val < target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
+                    
         else:
-            # For performance KPIs, higher is better
-            if current_val >= target_val:
-                return "#22c55e"  # Green (good)
+            # Regular numeric target (no symbols)
+            target_val = safe_float(target_str)
+            if target_val == 0:
+                return "#4f7dbd"  # Gray for no target
+                
+            # For cost-based KPIs, lower is better
+            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+                if current_val <= target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
             else:
-                return "#ef4444"  # Red (bad)
+                # For performance KPIs, higher is better
+                if current_val >= target_val:
+                    return "#22c55e"  # Green (good)
+                else:
+                    return "#ef4444"  # Red (bad)
+                    
     except:
         return "#64748b"  # Gray for errors
 
