@@ -797,6 +797,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         justify-content: space-between;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         transition: transform 0.2s ease;
+        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
     ">
         <div style="
             color: #94a3b8;
@@ -840,6 +841,7 @@ def display_kpi_dashboard():
         margin-bottom: 30px;
         text-transform: uppercase;
         letter-spacing: 2px;
+        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
     }
     .last-updated {
         color: #94a3b8;
@@ -860,6 +862,7 @@ def display_kpi_dashboard():
     .stSelectbox label {
         color: #000000 !important;
         font-weight: 600;
+        
     }
     .stSelectbox div[data-baseweb="select"] > div {
         color: #000000 !important;
