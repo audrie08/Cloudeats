@@ -833,7 +833,7 @@ def display_kpi_dashboard():
         margin: 10px 0;
     }
     .dashboard-title {
-        color: #e2e8f0;
+        color: #000000;
         text-align: center;
         font-size: 32px;
         font-weight: 700;
@@ -858,18 +858,18 @@ def display_kpi_dashboard():
         border-radius: 8px;
     }
     .stSelectbox label {
-        color: #e2e8f0 !important;
+        color: #000000 !important;
         font-weight: 600;
     }
     .stSelectbox div[data-baseweb="select"] > div {
-        color: #e2e8f0 !important;
+        color: #000000 !important;
     }
     div[role="listbox"] {
         background-color: #1e293b !important;
-        color: #e2e8f0 !important;
+        color: #000000 !important;
     }
     div[role="option"] {
-        color: #e2e8f0 !important;
+        color: #000000 !important;
         background-color: #1e293b !important;
     }
     div[role="option"]:hover {
@@ -986,7 +986,7 @@ def display_kpi_dashboard():
         target_row = targets_data.iloc[0] if not targets_data.empty else pd.Series()
         
         # Dashboard title
-        st.markdown(f'<div class="dashboard-title">COMMISSARY KPI DASHBOARD - {selected_week}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="dashboard-title">Key Performance Metrics - {selected_week}</div>', unsafe_allow_html=True)
         
         # Last updated timestamp
         if last_updated:
