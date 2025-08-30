@@ -1014,7 +1014,7 @@ def display_kpi_dashboard():
             formatted_time = "Unknown time"
         
         # Display the week-specific update time
-        st.markdown(f'<div class="last-updated">{selected_week} updated: {formatted_time}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="last-updated">Last updated: {formatted_time}</div>', unsafe_allow_html=True)
 
         
         # Top KPI metrics row
