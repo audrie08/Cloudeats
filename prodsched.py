@@ -849,8 +849,6 @@ def display_kpi_dashboard():
         st.write(f"❌ Timezone error: {e}")
         ph_timezone = None
     
-can u please nit make the hover light yellow when its being hovered, 
-
     st.markdown("""
         <style>
         .kpi-card {
