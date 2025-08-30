@@ -830,7 +830,7 @@ def display_kpi_dashboard():
     if 'week_update_times' not in st.session_state:
         st.session_state.week_update_times = {}
     if 'previous_data_hash' not in st.session_state:
-    st.session_state.previous_data_hash = None
+        st.session_state.previous_data_hash = None
     
     # Get Philippines timezone
     try:
