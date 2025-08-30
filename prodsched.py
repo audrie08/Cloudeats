@@ -864,6 +864,7 @@ def display_kpi_dashboard():
             position: relative;
             overflow: hidden;
             font-family: 'Segoe UI', sans-serif;
+            text-align: left;
         }
         
         .kpi-card::before {
