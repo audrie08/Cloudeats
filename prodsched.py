@@ -873,7 +873,7 @@ def display_kpi_dashboard():
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(45deg, rgba(244, 214, 2, 0.1), rgba(247, 212, 44, 0.05));
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
             opacity: 0;
             transition: opacity 0.3s ease;
             z-index: 1;
@@ -882,9 +882,9 @@ def display_kpi_dashboard():
         .kpi-card:hover {
             transform: scale(1.05) translateY(-8px) rotateY(5deg);
             box-shadow: 
-                0 25px 50px rgba(244, 214, 2, 0.3),
-                0 0 30px rgba(247, 212, 44, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 25px 50px rgba(255, 255, 255, 0.2),
+                0 0 30px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
         
         .kpi-card:hover::before {
