@@ -849,109 +849,109 @@ def display_kpi_dashboard():
         st.write(f"❌ Timezone error: {e}")
         ph_timezone = None
     
-   st.markdown("""
-    <style>
-    .kpi-card {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border: 1px solid #475569;
-        border-radius: 16px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        font-family: 'Segoe UI', sans-serif;
-    }
+    st.markdown("""
+        <style>
+        .kpi-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(244, 214, 2, 0.1), rgba(247, 212, 44, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        
+        .kpi-card:hover {
+            transform: scale(1.05) translateY(-8px) rotateY(5deg);
+            box-shadow: 
+                0 25px 50px rgba(244, 214, 2, 0.3),
+                0 0 30px rgba(247, 212, 44, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+        
+        .kpi-number {
+            transition: transform 0.3s ease;
+        }
+        
+        .kpi-card:hover .kpi-number {
+            transform: scale(1.1);
+        }
     
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, rgba(244, 214, 2, 0.1), rgba(247, 212, 44, 0.05));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 1;
-    }
-    
-    .kpi-card:hover {
-        transform: scale(1.05) translateY(-8px) rotateY(5deg);
-        box-shadow: 
-            0 25px 50px rgba(244, 214, 2, 0.3),
-            0 0 30px rgba(247, 212, 44, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-    
-    .kpi-card:hover::before {
-        opacity: 1;
-    }
-    
-    .kpi-number {
-        transition: transform 0.3s ease;
-    }
-    
-    .kpi-card:hover .kpi-number {
-        transform: scale(1.1);
-    }
-
-    /* Your existing CSS styles below - KEEP THESE */
-    .kpi-container {
-        background: #0f172a;
-        padding: 20px;
-        border-radius: 20px;
-        margin: 10px 0;
-    }
-    .dashboard-title {
-        color: #000000;
-        text-align: center;
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 30px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
-    }
-    .last-updated {
-        color: #94a3b8;
-        text-align: center;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 20px;
-        font-style: italic;
-    }
-    .main {
-        background-color: #0f172a;
-    }
-    .stSelectbox > div > div {
-        background-color: #000000;
-        border: 1px solid #475569;
-        border-radius: 8px;
-    }
-    .stSelectbox label {
-        color: #000000 !important;
-        font-weight: 600;
-    }
-    .stSelectbox div[data-baseweb="select"] > div {
-        color: #000000 !important;
-    }
-    div[role="listbox"] {
-        background-color: #1e293b !important;
-        color: #000000 !important;
-    }
-    div[role="option"] {
-        color: #000000 !important;
-        background-color: #1e293b !important;
-    }
-    div[role="option"]:hover {
-        background-color: #334155 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+        /* Your existing CSS styles below - KEEP THESE */
+        .kpi-container {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 10px 0;
+        }
+        .dashboard-title {
+            color: #000000;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
+        }
+        .last-updated {
+            color: #94a3b8;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .main {
+            background-color: #0f172a;
+        }
+        .stSelectbox > div > div {
+            background-color: #000000;
+            border: 1px solid #475569;
+            border-radius: 8px;
+        }
+        .stSelectbox label {
+            color: #000000 !important;
+            font-weight: 600;
+        }
+        .stSelectbox div[data-baseweb="select"] > div {
+            color: #000000 !important;
+        }
+        div[role="listbox"] {
+            background-color: #1e293b !important;
+            color: #000000 !important;
+        }
+        div[role="option"] {
+            color: #000000 !important;
+            background-color: #1e293b !important;
+        }
+        div[role="option"]:hover {
+            background-color: #334155 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
     
     try:
         # Load data WITH last modified time
