@@ -888,9 +888,29 @@ def display_kpi_dashboard():
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
         
+        # Try to find the week column - it might not be the first column
+        week_column = None
+        
+        # Look for a column that contains week data (like "Wk 21", "Week 21", etc.)
+        for col in kpi_data.columns:
+            # Check if column name suggests it contains week data
+            col_lower = str(col).lower()
+            if any(term in col_lower for term in ['week', 'wk']):
+                week_column = col
+                break
+        
+        # If no obvious week column found, try to find it by content
+        if week_column is None:
+            for col in kpi_data.columns:
+                # Check if values in this column look like weeks
+                sample_values = kpi_data[col].dropna().head(5).astype(str)
+                if any(any(term in val.lower() for term in ['wk', 'week']) for val in sample_values):
+                    week_column = col
+                    break
+        
         # If still not found, use the first column as fallback
         if week_column is None:
-            week_column = kpi_data.columns[1]
+            week_column = kpi_data.columns[0]
         
         # Get available weeks for dropdown
         weeks = kpi_data[week_column].dropna().unique()
