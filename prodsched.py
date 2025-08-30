@@ -644,7 +644,6 @@ def load_kpi_data(sheet_index=3):
             drive_service = build('drive', 'v3', credentials=credentials)
             file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
             last_modified_time = file_metadata.get('modifiedTime')
-            st.write("✅ Got modifiedTime from Drive API")
         except Exception as e:
             st.write(f"❌ Drive API method failed: {e}")
         
@@ -653,14 +652,12 @@ def load_kpi_data(sheet_index=3):
             try:
                 spreadsheet_metadata = sh.fetch_sheet_metadata()
                 last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
-                st.write("✅ Got modifiedTime from Sheets metadata")
             except Exception as e:
                 st.write(f"❌ Sheets metadata method failed: {e}")
         
         # Method 3: If still None, use current time as fallback
         if last_modified_time is None:
             last_modified_time = datetime.now().isoformat() + 'Z'
-            st.write("⚠️ Using current time as fallback")
         
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
@@ -858,7 +855,6 @@ def display_kpi_dashboard():
     # Get Philippines timezone
     try:
         ph_timezone = pytz.timezone('Asia/Manila')
-        st.write("✅ Philippines timezone loaded successfully")
     except Exception as e:
         st.write(f"❌ Timezone error: {e}")
         ph_timezone = None
@@ -921,13 +917,6 @@ def display_kpi_dashboard():
     try:
         # Load data WITH last modified time
         kpi_data, targets_data, last_modified_time = load_kpi_data()
-        
-        # DEBUG: Show what we got from load_kpi_data
-        st.write("🔍 DATA FROM load_kpi_data:")
-        st.write(f"KPI data shape: {kpi_data.shape if not kpi_data.empty else 'Empty'}")
-        st.write(f"Targets data shape: {targets_data.shape if not targets_data.empty else 'Empty'}")
-        st.write(f"Last modified time: {last_modified_time}")
-        st.write(f"Type of last_modified_time: {type(last_modified_time)}")
         
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
@@ -1002,32 +991,22 @@ def display_kpi_dashboard():
         # Format the last modified time in Philippines time
         if last_modified_time:
             try:
-                # DEBUG: Show raw timestamp before processing
-                st.write("🔍 RAW TIMESTAMP BEFORE PROCESSING:", last_modified_time)
                 
                 # Convert to datetime object
                 dt = pd.to_datetime(last_modified_time)
-                st.write(f"🔍 AFTER pd.to_datetime: {dt}")
-                st.write(f"🔍 TIMEZONE INFO: {dt.tzinfo}")
-                
+
                 # Adjust to Philippines time
                 if ph_timezone:
                     if dt.tzinfo is not None:
-                        st.write("✅ Converting existing timezone to PH time")
                         dt = dt.astimezone(ph_timezone)
                     else:
-                        st.write("✅ Assuming UTC and converting to PH time")
                         dt = dt.replace(tzinfo=pytz.UTC).astimezone(ph_timezone)
                 
-                st.write(f"🔍 FINAL DATETIME: {dt}")
                 formatted_time = dt.strftime("%b %d, %Y %I:%M %p")
-                st.write(f"🔍 FORMATTED TIME: {formatted_time}")
                 
             except Exception as e:
-                st.write(f"❌ TIME CONVERSION ERROR: {e}")
                 formatted_time = str(last_modified_time)
         else:
-            st.write("❌ NO LAST MODIFIED TIME AVAILABLE")
             formatted_time = "Unknown time"
         
         # Display the actual spreadsheet last modified time
