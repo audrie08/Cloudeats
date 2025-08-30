@@ -16,6 +16,7 @@ from PIL import Image
 import warnings
 import json
 import pytz
+import numpy as np
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 warnings.filterwarnings('ignore')
@@ -908,11 +909,35 @@ def display_kpi_dashboard():
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
         
-        # Create a hash of the current data to detect changes
+        # Create a stable hash of the current data (excluding any timestamp columns)
         try:
-            current_data_hash = hash(kpi_data.to_string())
-        except:
-            current_data_hash = str(kpi_data.shape) + str(kpi_data.iloc[-5:].to_dict())
+            # Exclude potential timestamp columns from hash calculation
+            timestamp_cols = ['timestamp', 'last_updated', 'date_updated', 'modified', 'edit_time']
+            data_to_hash = kpi_data.copy()
+            for col in timestamp_cols:
+                if col in data_to_hash.columns:
+                    data_to_hash = data_to_hash.drop(columns=[col])
+            
+            current_data_hash = hash(data_to_hash.to_string())
+        except Exception as e:
+            st.write(f"Hash error: {e}")
+            current_data_hash = str(kpi_data.shape) + str(kpi_data.select_dtypes(include=[np.number]).sum().sum())
+
+        # Check if data has changed since last load (actual spreadsheet edit)
+        data_changed = False
+        if st.session_state.previous_data_hash is None:
+            # First load, initialize but don't count as change
+            st.session_state.previous_data_hash = current_data_hash
+        elif st.session_state.previous_data_hash != current_data_hash:
+            # Data has actually changed in the spreadsheet
+            data_changed = True
+            st.session_state.previous_data_hash = current_data_hash
+        
+        # DEBUG: Show what's happening with the hash
+        s.write("🔍 DEBUG INFO:")
+        st.write(f"Previous hash: {str(st.session_state.previous_data_hash)[:50]}...")
+        st.write(f"Current hash: {str(current_data_hash)[:50]}...")
+        st.write(f"Data changed: {data_changed}")
         
         # Check if data has changed since last load (actual spreadsheet edit)
         data_changed = False
@@ -976,6 +1001,8 @@ def display_kpi_dashboard():
                 index=default_index,
                 key="week_selector"
             )
+        # DEBUG: Show selected week
+        st.write(f"Selected week: {selected_week}")
         
         # Filter data for selected week
         week_data = kpi_data[kpi_data[week_column] == selected_week]
@@ -998,6 +1025,12 @@ def display_kpi_dashboard():
         
         # Get the stored update time for this week
         week_update_time = st.session_state.week_update_times.get(selected_week)
+
+        # DEBUG: Show stored time info
+        if selected_week in st.session_state.week_update_times:
+            st.write(f"Stored time: {st.session_state.week_update_times[selected_week]}")
+        else:
+            st.write("No stored time found for this week")
         
         # If no stored time exists (first time loading), use current time but don't treat as an edit
         if week_update_time is None:
@@ -1012,6 +1045,9 @@ def display_kpi_dashboard():
                 formatted_time = str(week_update_time)
         except:
             formatted_time = "Unknown time"
+
+        # DEBUG: Show what will be displayed
+        st.write(f"Displaying time: {formatted_time}")
         
         # Display the week-specific update time
         st.markdown(f'<div class="last-updated">Last updated: {formatted_time}</div>', unsafe_allow_html=True)
