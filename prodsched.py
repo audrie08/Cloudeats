@@ -905,7 +905,7 @@ def display_kpi_dashboard():
         .kpi-container {
             background: #0f172a;
             padding: 20px;
-            border-radius: 20px;
+            border-radius: 30px;
             margin: 10px 0;
         }
         .dashboard-title {
