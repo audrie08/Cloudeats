@@ -859,6 +859,7 @@ def display_kpi_dashboard():
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            align-items: flex-start;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             transition: all 0.3s ease;
             position: relative;
