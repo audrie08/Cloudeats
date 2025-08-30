@@ -934,7 +934,7 @@ def display_kpi_dashboard():
             st.session_state.previous_data_hash = current_data_hash
         
         # DEBUG: Show what's happening with the hash
-        s.write("🔍 DEBUG INFO:")
+        st.write("🔍 DEBUG INFO:")
         st.write(f"Previous hash: {str(st.session_state.previous_data_hash)[:50]}...")
         st.write(f"Current hash: {str(current_data_hash)[:50]}...")
         st.write(f"Data changed: {data_changed}")
