@@ -1036,7 +1036,7 @@ def display_kpi_dashboard():
              target_row.iloc[16] if len(target_row) > 16 else '', "count"),
             ("Attendance", week_row.iloc[9] if len(week_row) > 9 else '', 
              target_row.iloc[9] if len(target_row) > 9 else '', "percentage"),
-            ("OT %", week_row.iloc[10] if len(week_row) > 10 else '', 
+            ("OvertimeT %", week_row.iloc[10] if len(week_row) > 10 else '', 
              target_row.iloc[10] if len(target_row) > 10 else '', "percentage"),
             ("Labor Cost/kg", week_row.iloc[11] if len(week_row) > 11 else '', 
              target_row.iloc[11] if len(target_row) > 11 else '', "currency"),
@@ -1063,7 +1063,7 @@ def display_kpi_dashboard():
              target_row.iloc[3] if len(target_row) > 3 else '', "percentage"),
             ("OEE", week_row.iloc[15] if len(week_row) > 15 else '', 
              target_row.iloc[15] if len(target_row) > 15 else '', "percentage"),
-            ("PPC", week_row.iloc[5] if len(week_row) > 5 else '', 
+            ("Production Plan Compliance", week_row.iloc[5] if len(week_row) > 5 else '', 
              target_row.iloc[5] if len(target_row) > 5 else '', "percentage"),
         ]
         
