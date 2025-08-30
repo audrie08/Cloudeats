@@ -298,7 +298,7 @@ st.markdown(f"""
         background: #ff8765;
         color: #f0ebe4;
         padding: 1rem;
-        border-radius: 25px;
+        border-radius: 30px;
         text-align: center;
         margin: 0rem;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -320,7 +320,7 @@ st.markdown(f"""
         bottom: -2px;
         background: #272c2f;
         background-size: 400% 400%;
-        border-radius: 27px;
+        border-radius: 30px;
         z-index: -1;
         opacity: 0;
         transition: opacity 0.4s ease;
