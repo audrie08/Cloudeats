@@ -624,7 +624,6 @@ def safe_sum_for_day(values, index):
 
 # --- LOAD KPI DASHBOARD ---
 @st.cache_data(ttl=60)
-@st.cache_data(ttl=60)
 def load_kpi_data(sheet_index=3):
     """Load KPI data from Google Sheets (sheet index 0) with last modified time"""
     credentials = load_credentials_kpi()
@@ -636,13 +635,32 @@ def load_kpi_data(sheet_index=3):
         spreadsheet_id = "12ScL8L6Se7jRTqM2nL3hboxQkc8MLhEp7hEDlGUPKZg"
         sh = gc.open_by_key(spreadsheet_id)
         
-        # Get the spreadsheet metadata for last modified time
-        spreadsheet_metadata = sh.fetch_sheet_metadata()
-        last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+        # Get the spreadsheet metadata for last modified time - USE CORRECT METHOD
+        # Try different ways to get the modified time
+        last_modified_time = None
         
-        # DEBUG: Show raw metadata
-        st.write("🔍 RAW METADATA:", spreadsheet_metadata.get('properties', {}))
-        st.write("🔍 LAST MODIFIED TIME RAW:", last_modified_time)
+        # Method 1: Try using the drive API for file metadata
+        try:
+            drive_service = build('drive', 'v3', credentials=credentials)
+            file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
+            last_modified_time = file_metadata.get('modifiedTime')
+            st.write("✅ Got modifiedTime from Drive API")
+        except Exception as e:
+            st.write(f"❌ Drive API method failed: {e}")
+        
+        # Method 2: Try the spreadsheet metadata (fallback)
+        if last_modified_time is None:
+            try:
+                spreadsheet_metadata = sh.fetch_sheet_metadata()
+                last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+                st.write("✅ Got modifiedTime from Sheets metadata")
+            except Exception as e:
+                st.write(f"❌ Sheets metadata method failed: {e}")
+        
+        # Method 3: If still None, use current time as fallback
+        if last_modified_time is None:
+            last_modified_time = datetime.now().isoformat() + 'Z'
+            st.write("⚠️ Using current time as fallback")
         
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
