@@ -829,6 +829,8 @@ def display_kpi_dashboard():
     # Initialize session state for tracking update times
     if 'week_update_times' not in st.session_state:
         st.session_state.week_update_times = {}
+    if 'previous_data_hash' not in st.session_state:
+    st.session_state.previous_data_hash = None
     
     # Get Philippines timezone
     try:
@@ -899,26 +901,28 @@ def display_kpi_dashboard():
     """, unsafe_allow_html=True)
     
     try:
-        # Load data and check if it's different from previous load
-        current_data_hash = None
+        # Load data
         kpi_data, targets_data = load_kpi_data()
-        
-        # Create a hash of the data to detect changes
-        try:
-            current_data_hash = hash(kpi_data.to_string())
-        except:
-            current_data_hash = str(kpi_data.shape)
-        
-        # Check if data has changed since last load
-        if 'previous_data_hash' not in st.session_state:
-            st.session_state.previous_data_hash = current_data_hash
-        
-        data_changed = st.session_state.previous_data_hash != current_data_hash
-        st.session_state.previous_data_hash = current_data_hash
         
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
+        
+        # Create a hash of the current data to detect changes
+        try:
+            current_data_hash = hash(kpi_data.to_string())
+        except:
+            current_data_hash = str(kpi_data.shape) + str(kpi_data.iloc[-5:].to_dict())
+        
+        # Check if data has changed since last load (actual spreadsheet edit)
+        data_changed = False
+        if st.session_state.previous_data_hash is None:
+            # First load, initialize but don't count as change
+            st.session_state.previous_data_hash = current_data_hash
+        elif st.session_state.previous_data_hash != current_data_hash:
+            # Data has actually changed in the spreadsheet
+            data_changed = True
+            st.session_state.previous_data_hash = current_data_hash
         
         # Try to find the week column
         week_column = None
@@ -946,7 +950,7 @@ def display_kpi_dashboard():
             st.error(f"No week data available in column '{week_column}'.")
             return
         
-        # Find default week
+        # Find default week (most recent with data)
         default_week_index = None
         for i in range(len(kpi_data) - 1, -1, -1):
             if kpi_data.iloc[i, 2:22].notna().any():
@@ -985,23 +989,20 @@ def display_kpi_dashboard():
         # Dashboard title
         st.markdown(f'<div class="dashboard-title">Key Performance Metrics - {selected_week}</div>', unsafe_allow_html=True)
         
-        # Update timestamp if data has changed
+        # Update timestamp ONLY if data has actually changed in the spreadsheet
         if data_changed:
-            # Update the timestamp for all weeks since we don't know which one changed
             current_time = get_ph_time()
+            # Update timestamp for all weeks since we don't know which specific week was edited
             for week in weeks:
                 st.session_state.week_update_times[week] = current_time
-            st.rerun()  # Refresh to show updated timestamp
         
         # Get the stored update time for this week
         week_update_time = st.session_state.week_update_times.get(selected_week)
         
-        # If no stored time, use current time but don't store it (to avoid false updates)
+        # If no stored time exists (first time loading), use current time but don't treat as an edit
         if week_update_time is None:
             week_update_time = get_ph_time()
-            # Only store if we're sure this is a real update
-            if data_changed:
-                st.session_state.week_update_times[selected_week] = week_update_time
+            st.session_state.week_update_times[selected_week] = week_update_time
         
         # Format the timestamp in Philippines time
         try:
