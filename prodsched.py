@@ -933,12 +933,6 @@ def display_kpi_dashboard():
             data_changed = True
             st.session_state.previous_data_hash = current_data_hash
         
-        # DEBUG: Show what's happening with the hash
-        st.write("🔍 DEBUG INFO:")
-        st.write(f"Previous hash: {str(st.session_state.previous_data_hash)[:50]}...")
-        st.write(f"Current hash: {str(current_data_hash)[:50]}...")
-        st.write(f"Data changed: {data_changed}")
-        
         # Check if data has changed since last load (actual spreadsheet edit)
         data_changed = False
         if st.session_state.previous_data_hash is None:
@@ -1001,8 +995,6 @@ def display_kpi_dashboard():
                 index=default_index,
                 key="week_selector"
             )
-        # DEBUG: Show selected week
-        st.write(f"Selected week: {selected_week}")
         
         # Filter data for selected week
         week_data = kpi_data[kpi_data[week_column] == selected_week]
@@ -1040,9 +1032,6 @@ def display_kpi_dashboard():
                 formatted_time = str(week_update_time)
         except:
             formatted_time = "Unknown time"
-
-        # DEBUG: Show what will be displayed
-        st.write(f"Displaying time: {formatted_time}")
         
         # Display the week-specific update time
         st.markdown(f'<div class="last-updated">Last updated: {formatted_time}</div>', unsafe_allow_html=True)
