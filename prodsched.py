@@ -825,6 +825,23 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
+    # Initialize session state for tracking update times
+    if 'week_update_times' not in st.session_state:
+        st.session_state.week_update_times = {}
+    
+    # Get Philippines timezone
+    try:
+        ph_timezone = pytz.timezone('Asia/Manila')
+    except:
+        ph_timezone = None
+    
+    def get_ph_time():
+        """Get current Philippines time"""
+        if ph_timezone:
+            return datetime.now(ph_timezone)
+        else:
+            return datetime.now()
+    
     st.markdown("""
     <style>
     .kpi-container {
@@ -862,7 +879,6 @@ def display_kpi_dashboard():
     .stSelectbox label {
         color: #000000 !important;
         font-weight: 600;
-        
     }
     .stSelectbox div[data-baseweb="select"] > div {
         color: #000000 !important;
@@ -882,56 +898,56 @@ def display_kpi_dashboard():
     """, unsafe_allow_html=True)
     
     try:
+        # Load data and check if it's different from previous load
+        current_data_hash = None
         kpi_data, targets_data = load_kpi_data()
+        
+        # Create a hash of the data to detect changes
+        try:
+            current_data_hash = hash(kpi_data.to_string())
+        except:
+            current_data_hash = str(kpi_data.shape)
+        
+        # Check if data has changed since last load
+        if 'previous_data_hash' not in st.session_state:
+            st.session_state.previous_data_hash = current_data_hash
+        
+        data_changed = st.session_state.previous_data_hash != current_data_hash
+        st.session_state.previous_data_hash = current_data_hash
         
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
         
-        # Try to find the week column - it might not be the first column
+        # Try to find the week column
         week_column = None
-        
-        # Look for a column that contains week data (like "Wk 21", "Week 21", etc.)
         for col in kpi_data.columns:
-            # Check if column name suggests it contains week data
             col_lower = str(col).lower()
             if any(term in col_lower for term in ['week', 'wk']):
                 week_column = col
                 break
         
-        # If no obvious week column found, try to find it by content
         if week_column is None:
             for col in kpi_data.columns:
-                # Check if values in this column look like weeks
                 sample_values = kpi_data[col].dropna().head(5).astype(str)
                 if any(any(term in val.lower() for term in ['wk', 'week']) for val in sample_values):
                     week_column = col
                     break
         
-        # If still not found, use the first column as fallback
         if week_column is None:
-            week_column = kpi_data.columns[0]
+            week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
         
-        # Get available weeks for dropdown
+        # Get available weeks
         weeks = kpi_data[week_column].dropna().unique()
         weeks = [str(w).strip() for w in weeks if str(w).strip() != '']
         
         if not weeks:
-            st.error(f"""
-            No week data available in column '{week_column}'. This could be due to:
-            1. The spreadsheet doesn't contain week data in the expected format
-            2. The week column is empty
-            3. The data format is different than expected
-            
-            Please check the spreadsheet structure. The week data might be in a different column.
-            """)
+            st.error(f"No week data available in column '{week_column}'.")
             return
         
-        # Find the default week (last row with data in columns C to V)
+        # Find default week
         default_week_index = None
-        # Assuming columns C to V correspond to columns 2 to 21 (0-indexed)
         for i in range(len(kpi_data) - 1, -1, -1):
-            # Check if any of the columns from index 2 to 21 have data
             if kpi_data.iloc[i, 2:22].notna().any():
                 default_week_index = i
                 break
@@ -939,14 +955,13 @@ def display_kpi_dashboard():
         if default_week_index is not None:
             default_week = kpi_data.iloc[default_week_index][week_column]
             default_week = str(default_week).strip()
-            # Ensure the default week exists in the available weeks
             if default_week in weeks:
                 default_index = weeks.index(default_week)
             else:
-                default_index = len(weeks) - 1  # Fallback to last week
+                default_index = len(weeks) - 1
         else:
-            default_index = len(weeks) - 1  # Fallback to last week
-            
+            default_index = len(weeks) - 1
+        
         # Week selection
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -969,44 +984,32 @@ def display_kpi_dashboard():
         # Dashboard title
         st.markdown(f'<div class="dashboard-title">Key Performance Metrics - {selected_week}</div>', unsafe_allow_html=True)
         
-        # Get the last updated timestamp for the selected week
-        week_update_time = None
+        # Update timestamp if data has changed
+        if data_changed:
+            # Update the timestamp for all weeks since we don't know which one changed
+            current_time = get_ph_time()
+            for week in weeks:
+                st.session_state.week_update_times[week] = current_time
+            st.rerun()  # Refresh to show updated timestamp
         
-        # Look for a timestamp column in the same row as the selected week
-        timestamp_columns = ['timestamp', 'last_updated', 'date_updated', 'modified', 'edit_time']
-        for col in kpi_data.columns:
-            col_lower = str(col).lower()
-            if any(term in col_lower for term in timestamp_columns):
-                # Check if this column has a value for the selected week
-                if not pd.isna(week_row[col]):
-                    week_update_time = week_row[col]
-                    break
+        # Get the stored update time for this week
+        week_update_time = st.session_state.week_update_times.get(selected_week)
         
-        # If no timestamp column found, try to use the spreadsheet's last modified time
+        # If no stored time, use current time but don't store it (to avoid false updates)
         if week_update_time is None:
-            try:
-                # This would require additional setup to get spreadsheet metadata
-                # For now, we'll use a placeholder or current time
-                week_update_time = datetime.now().strftime("%b %d, %Y %I:%M %p")
-            except:
-                week_update_time = "Recent update"
+            week_update_time = get_ph_time()
+            # Only store if we're sure this is a real update
+            if data_changed:
+                st.session_state.week_update_times[selected_week] = week_update_time
         
-        # Format the timestamp nicely
+        # Format the timestamp in Philippines time
         try:
             if hasattr(week_update_time, 'strftime'):
-                # It's a datetime object
                 formatted_time = week_update_time.strftime("%b %d, %Y %I:%M %p")
-            elif isinstance(week_update_time, str):
-                # Try to parse string as datetime
-                try:
-                    dt = pd.to_datetime(week_update_time)
-                    formatted_time = dt.strftime("%b %d, %Y %I:%M %p")
-                except:
-                    formatted_time = week_update_time
             else:
                 formatted_time = str(week_update_time)
         except:
-            formatted_time = str(week_update_time)
+            formatted_time = "Unknown time"
         
         # Display the week-specific update time
         st.markdown(f'<div class="last-updated">{selected_week} updated: {formatted_time}</div>', unsafe_allow_html=True)
