@@ -854,7 +854,7 @@ def display_kpi_dashboard():
         .kpi-card {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             border: 1px solid #475569;
-            border-radius: 16px;
+            border-radius: 27px;
             padding: 20px;
             display: flex;
             flex-direction: column;
