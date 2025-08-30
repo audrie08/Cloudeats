@@ -775,14 +775,12 @@ def get_kpi_color(current, target, kpi_type):
 
 # --- DASHBOARD COMPONENTS ---
 def create_kpi_card(title, value, target, kpi_type, size="small"):
-    """Create a modern KPI card"""
+    """Create a modern KPI card with hover effects"""
     formatted_value = format_kpi_value(value, kpi_type)
     
     # Preserve the < and > symbols from the target
-    # Check if target already contains these symbols and preserve them
     target_str = str(target)
     if target_str.startswith(('<', '>')):
-        # Target already has symbol, format the numeric part only
         symbol = target_str[0]
         numeric_part = target_str[1:]
         try:
@@ -795,10 +793,8 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
                 formatted_numeric = f"{numeric_value:,.0f}"
             formatted_target = f"{symbol}{formatted_numeric}"
         except ValueError:
-            # If parsing fails, use the original target
             formatted_target = target_str
     else:
-        # Target doesn't have symbols, format normally
         formatted_target = format_kpi_value(target, kpi_type)
     
     color = get_kpi_color(value, target, kpi_type)
@@ -813,19 +809,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         value_size = "32px"
     
     card_html = f"""
-    <div style="
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border: 1px solid #475569;
-        border-radius: 16px;
-        padding: 20px;
-        height: {card_height};
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        transition: transform 0.2s ease;
-        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
-    ">
+    <div class="kpi-card" style="height: {card_height};">
         <div style="
             color: #94a3b8;
             font-size: {title_size};
@@ -833,18 +817,24 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            position: relative;
+            z-index: 2;
         ">{title}</div>
-        <div style="
+        <div class="kpi-number" style="
             color: {color};
             font-size: {value_size};
             font-weight: 700;
             line-height: 1;
             margin: 10px 0;
+            position: relative;
+            z-index: 2;
         ">{formatted_value}</div>
         <div style="
             color: #ffffff;
             font-size: 12px;
             font-weight: 500;
+            position: relative;
+            z-index: 2;
         ">Target: {formatted_target}</div>
     </div>
     """
@@ -859,8 +849,57 @@ def display_kpi_dashboard():
         st.write(f"❌ Timezone error: {e}")
         ph_timezone = None
     
-    st.markdown("""
+   st.markdown("""
     <style>
+    .kpi-card {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #475569;
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(244, 214, 2, 0.1), rgba(247, 212, 44, 0.05));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1;
+    }
+    
+    .kpi-card:hover {
+        transform: scale(1.05) translateY(-8px) rotateY(5deg);
+        box-shadow: 
+            0 25px 50px rgba(244, 214, 2, 0.3),
+            0 0 30px rgba(247, 212, 44, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .kpi-card:hover::before {
+        opacity: 1;
+    }
+    
+    .kpi-number {
+        transition: transform 0.3s ease;
+    }
+    
+    .kpi-card:hover .kpi-number {
+        transform: scale(1.1);
+    }
+
+    /* Your existing CSS styles below - KEEP THESE */
     .kpi-container {
         background: #0f172a;
         padding: 20px;
