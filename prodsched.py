@@ -1016,6 +1016,12 @@ def display_kpi_dashboard():
         # Dashboard title
         st.markdown(f'<div class="dashboard-title">Key Performance Metrics - {selected_week}</div>', unsafe_allow_html=True)
         
+        # Initialize timestamps for all weeks on first load if not already done
+        if not st.session_state.week_update_times:
+            current_time = get_ph_time()
+            for week in weeks:
+                st.session_state.week_update_times[week] = current_time
+        
         # Update timestamp ONLY if data has actually changed in the spreadsheet
         if data_changed:
             current_time = get_ph_time()
@@ -1024,18 +1030,7 @@ def display_kpi_dashboard():
                 st.session_state.week_update_times[week] = current_time
         
         # Get the stored update time for this week
-        week_update_time = st.session_state.week_update_times.get(selected_week)
-
-        # DEBUG: Show stored time info
-        if selected_week in st.session_state.week_update_times:
-            st.write(f"Stored time: {st.session_state.week_update_times[selected_week]}")
-        else:
-            st.write("No stored time found for this week")
-        
-        # If no stored time exists (first time loading), use current time but don't treat as an edit
-        if week_update_time is None:
-            week_update_time = get_ph_time()
-            st.session_state.week_update_times[selected_week] = week_update_time
+        week_update_time = st.session_state.week_update_times[selected_week]
         
         # Format the timestamp in Philippines time
         try:
