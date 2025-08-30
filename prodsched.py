@@ -809,7 +809,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         ">{title}</div>
         <div style="
             color: {color};
-            font-size: {value_size};
+            font-size: 25px;
             font-weight: 700;
             line-height: 1;
             margin: 10px 0;
