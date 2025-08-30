@@ -1010,7 +1010,7 @@ def display_kpi_dashboard():
             formatted_time = "Unknown time"
         
         # Display the actual spreadsheet last modified time
-        st.markdown(f'<div class="last-updated">Spreadsheet last updated: {formatted_time}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="last-updated">Last updated: {formatted_time}</div>', unsafe_allow_html=True)
 
 # ---- 
         
