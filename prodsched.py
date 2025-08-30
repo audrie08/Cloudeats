@@ -971,10 +971,15 @@ def display_kpi_dashboard():
             try:
                 # Convert to datetime object and adjust to Philippines time
                 dt = pd.to_datetime(last_modified_time)
-                if ph_timezone:
-                    dt = dt.tz_convert(ph_timezone)
+                if ph_timezone and dt.tzinfo is not None:
+                    # If datetime has timezone info, convert to PH time
+                    dt = dt.astimezone(ph_timezone)
+                elif ph_timezone:
+                    # If no timezone info, assume UTC and convert to PH time
+                    dt = dt.replace(tzinfo=pytz.UTC).astimezone(ph_timezone)
                 formatted_time = dt.strftime("%b %d, %Y %I:%M %p")
-            except:
+            except Exception as e:
+                st.write(f"Time conversion error: {e}")  # Debug info
                 formatted_time = str(last_modified_time)
         else:
             formatted_time = "Unknown time"
@@ -982,7 +987,7 @@ def display_kpi_dashboard():
         # Display the actual spreadsheet last modified time
         st.markdown(f'<div class="last-updated">Spreadsheet last updated: {formatted_time}</div>', unsafe_allow_html=True)
 
-
+# ---- 
         
         # Top KPI metrics row
         st.markdown("### Key Performance Indicators")
