@@ -782,7 +782,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         value_size = "48px"
     else:
         card_height = "140px"
-        title_size = "14px"
+        title_size = "12px"
         value_size = "32px"
     
     card_html = f"""
@@ -809,7 +809,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         ">{title}</div>
         <div style="
             color: {color};
-            font-size: 25px;
+            font-size: {value_size};
             font-weight: 700;
             line-height: 1;
             margin: 10px 0;
