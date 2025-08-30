@@ -624,6 +624,7 @@ def safe_sum_for_day(values, index):
 
 # --- LOAD KPI DASHBOARD ---
 @st.cache_data(ttl=60)
+@st.cache_data(ttl=60)
 def load_kpi_data(sheet_index=3):
     """Load KPI data from Google Sheets (sheet index 0) with last modified time"""
     credentials = load_credentials_kpi()
@@ -638,6 +639,10 @@ def load_kpi_data(sheet_index=3):
         # Get the spreadsheet metadata for last modified time
         spreadsheet_metadata = sh.fetch_sheet_metadata()
         last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+        
+        # DEBUG: Show raw metadata
+        st.write("🔍 RAW METADATA:", spreadsheet_metadata.get('properties', {}))
+        st.write("🔍 LAST MODIFIED TIME RAW:", last_modified_time)
         
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
@@ -835,7 +840,9 @@ def display_kpi_dashboard():
     # Get Philippines timezone
     try:
         ph_timezone = pytz.timezone('Asia/Manila')
-    except:
+        st.write("✅ Philippines timezone loaded successfully")
+    except Exception as e:
+        st.write(f"❌ Timezone error: {e}")
         ph_timezone = None
     
     st.markdown("""
@@ -897,9 +904,17 @@ def display_kpi_dashboard():
         # Load data WITH last modified time
         kpi_data, targets_data, last_modified_time = load_kpi_data()
         
+        # DEBUG: Show what we got from load_kpi_data
+        st.write("🔍 DATA FROM load_kpi_data:")
+        st.write(f"KPI data shape: {kpi_data.shape if not kpi_data.empty else 'Empty'}")
+        st.write(f"Targets data shape: {targets_data.shape if not targets_data.empty else 'Empty'}")
+        st.write(f"Last modified time: {last_modified_time}")
+        st.write(f"Type of last_modified_time: {type(last_modified_time)}")
+        
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
+
         
         # Try to find the week column
         week_column = None
@@ -969,19 +984,32 @@ def display_kpi_dashboard():
         # Format the last modified time in Philippines time
         if last_modified_time:
             try:
-                # Convert to datetime object and adjust to Philippines time
+                # DEBUG: Show raw timestamp before processing
+                st.write("🔍 RAW TIMESTAMP BEFORE PROCESSING:", last_modified_time)
+                
+                # Convert to datetime object
                 dt = pd.to_datetime(last_modified_time)
-                if ph_timezone and dt.tzinfo is not None:
-                    # If datetime has timezone info, convert to PH time
-                    dt = dt.astimezone(ph_timezone)
-                elif ph_timezone:
-                    # If no timezone info, assume UTC and convert to PH time
-                    dt = dt.replace(tzinfo=pytz.UTC).astimezone(ph_timezone)
+                st.write(f"🔍 AFTER pd.to_datetime: {dt}")
+                st.write(f"🔍 TIMEZONE INFO: {dt.tzinfo}")
+                
+                # Adjust to Philippines time
+                if ph_timezone:
+                    if dt.tzinfo is not None:
+                        st.write("✅ Converting existing timezone to PH time")
+                        dt = dt.astimezone(ph_timezone)
+                    else:
+                        st.write("✅ Assuming UTC and converting to PH time")
+                        dt = dt.replace(tzinfo=pytz.UTC).astimezone(ph_timezone)
+                
+                st.write(f"🔍 FINAL DATETIME: {dt}")
                 formatted_time = dt.strftime("%b %d, %Y %I:%M %p")
+                st.write(f"🔍 FORMATTED TIME: {formatted_time}")
+                
             except Exception as e:
-                st.write(f"Time conversion error: {e}")  # Debug info
+                st.write(f"❌ TIME CONVERSION ERROR: {e}")
                 formatted_time = str(last_modified_time)
         else:
+            st.write("❌ NO LAST MODIFIED TIME AVAILABLE")
             formatted_time = "Unknown time"
         
         # Display the actual spreadsheet last modified time
