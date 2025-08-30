@@ -625,21 +625,26 @@ def safe_sum_for_day(values, index):
 # --- LOAD KPI DASHBOARD ---
 @st.cache_data(ttl=60)
 def load_kpi_data(sheet_index=3):
-    """Load KPI data from Google Sheets (sheet index 0)"""
+    """Load KPI data from Google Sheets (sheet index 0) with last modified time"""
     credentials = load_credentials_kpi()
     if not credentials:
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), None
     
     try:
         gc = gspread.authorize(credentials)
         spreadsheet_id = "12ScL8L6Se7jRTqM2nL3hboxQkc8MLhEp7hEDlGUPKZg"
         sh = gc.open_by_key(spreadsheet_id)
+        
+        # Get the spreadsheet metadata for last modified time
+        spreadsheet_metadata = sh.fetch_sheet_metadata()
+        last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+        
         worksheet = sh.get_worksheet(sheet_index)
         data = worksheet.get_all_values()
 
         if len(data) < 4:
             st.warning("Not enough data in the spreadsheet")
-            return pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame(), last_modified_time
             
         # Extract headers (row 2), targets (row 3), and data rows (from row 4)
         headers = data[1]  # Row 2 (0-indexed as row 1)
@@ -654,11 +659,11 @@ def load_kpi_data(sheet_index=3):
         # Create targets DataFrame
         targets_df = pd.DataFrame([targets], columns=headers)
         
-        return df, targets_df
+        return df, targets_df, last_modified_time
         
     except Exception as e:
         st.error(f"Error loading KPI data: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), None
 
 # --- UTILITY FUNCTIONS ---
 def safe_float(value, default=0.0):
@@ -827,24 +832,11 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
-    # Initialize session state for tracking update times
-    if 'week_update_times' not in st.session_state:
-        st.session_state.week_update_times = {}
-    if 'previous_data_hash' not in st.session_state:
-        st.session_state.previous_data_hash = None
-    
     # Get Philippines timezone
     try:
         ph_timezone = pytz.timezone('Asia/Manila')
     except:
         ph_timezone = None
-    
-    def get_ph_time():
-        """Get current Philippines time"""
-        if ph_timezone:
-            return datetime.now(ph_timezone)
-        else:
-            return datetime.now()
     
     st.markdown("""
     <style>
@@ -902,46 +894,12 @@ def display_kpi_dashboard():
     """, unsafe_allow_html=True)
     
     try:
-        # Load data
-        kpi_data, targets_data = load_kpi_data()
+        # Load data WITH last modified time
+        kpi_data, targets_data, last_modified_time = load_kpi_data()
         
         if kpi_data.empty:
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
-        
-        # Create a stable hash of the current data (excluding any timestamp columns)
-        try:
-            # Exclude potential timestamp columns from hash calculation
-            timestamp_cols = ['timestamp', 'last_updated', 'date_updated', 'modified', 'edit_time']
-            data_to_hash = kpi_data.copy()
-            for col in timestamp_cols:
-                if col in data_to_hash.columns:
-                    data_to_hash = data_to_hash.drop(columns=[col])
-            
-            current_data_hash = hash(data_to_hash.to_string())
-        except Exception as e:
-            st.write(f"Hash error: {e}")
-            current_data_hash = str(kpi_data.shape) + str(kpi_data.select_dtypes(include=[np.number]).sum().sum())
-
-        # Check if data has changed since last load (actual spreadsheet edit)
-        data_changed = False
-        if st.session_state.previous_data_hash is None:
-            # First load, initialize but don't count as change
-            st.session_state.previous_data_hash = current_data_hash
-        elif st.session_state.previous_data_hash != current_data_hash:
-            # Data has actually changed in the spreadsheet
-            data_changed = True
-            st.session_state.previous_data_hash = current_data_hash
-        
-        # Check if data has changed since last load (actual spreadsheet edit)
-        data_changed = False
-        if st.session_state.previous_data_hash is None:
-            # First load, initialize but don't count as change
-            st.session_state.previous_data_hash = current_data_hash
-        elif st.session_state.previous_data_hash != current_data_hash:
-            # Data has actually changed in the spreadsheet
-            data_changed = True
-            st.session_state.previous_data_hash = current_data_hash
         
         # Try to find the week column
         week_column = None
@@ -1008,33 +966,22 @@ def display_kpi_dashboard():
         # Dashboard title
         st.markdown(f'<div class="dashboard-title">Key Performance Metrics - {selected_week}</div>', unsafe_allow_html=True)
         
-        # Initialize timestamps for all weeks on first load if not already done
-        if not st.session_state.week_update_times:
-            current_time = get_ph_time()
-            for week in weeks:
-                st.session_state.week_update_times[week] = current_time
-        
-        # Update timestamp ONLY if data has actually changed in the spreadsheet
-        if data_changed:
-            current_time = get_ph_time()
-            # Update timestamp for all weeks since we don't know which specific week was edited
-            for week in weeks:
-                st.session_state.week_update_times[week] = current_time
-        
-        # Get the stored update time for this week
-        week_update_time = st.session_state.week_update_times[selected_week]
-        
-        # Format the timestamp in Philippines time
-        try:
-            if hasattr(week_update_time, 'strftime'):
-                formatted_time = week_update_time.strftime("%b %d, %Y %I:%M %p")
-            else:
-                formatted_time = str(week_update_time)
-        except:
+        # Format the last modified time in Philippines time
+        if last_modified_time:
+            try:
+                # Convert to datetime object and adjust to Philippines time
+                dt = pd.to_datetime(last_modified_time)
+                if ph_timezone:
+                    dt = dt.tz_convert(ph_timezone)
+                formatted_time = dt.strftime("%b %d, %Y %I:%M %p")
+            except:
+                formatted_time = str(last_modified_time)
+        else:
             formatted_time = "Unknown time"
         
-        # Display the week-specific update time
-        st.markdown(f'<div class="last-updated">Last updated: {formatted_time}</div>', unsafe_allow_html=True)
+        # Display the actual spreadsheet last modified time
+        st.markdown(f'<div class="last-updated">Spreadsheet last updated: {formatted_time}</div>', unsafe_allow_html=True)
+
 
         
         # Top KPI metrics row
