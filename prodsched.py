@@ -807,6 +807,16 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         card_height = "140px"
         title_size = "12px"
         value_size = "32px"
+
+    target_html = ""
+    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none']:
+        target_html = f"""<div style="
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 500;
+            position: relative;
+            z-index: 2;
+        ">Target: {formatted_target}</div>"""
     
     card_html = f"""
     <div style="
