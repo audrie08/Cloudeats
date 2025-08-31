@@ -818,21 +818,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         ">Target: {formatted_target}</div>"""
     
     card_html = f"""
-    <div style="
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border: 1px solid #475569;
-        border-radius: 16px;
-        padding: 20px;
-        height: {card_height};
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: flex-start;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        transition: transform 0.2s ease;
-        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
-        text-align: left; 
-    ">
+    <div class="kpi-card" style="height: {card_height};">
         <div style="
             color: #94a3b8;
             font-size: {title_size};
@@ -841,7 +827,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             text-transform: uppercase;
             letter-spacing: 0.5px;
         ">{title}</div>
-        <div style="
+        <div class="kpi-number" style="
             color: {color};
             font-size: {value_size};
             font-weight: 700;
