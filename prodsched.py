@@ -808,36 +808,36 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         title_size = "12px"
         value_size = "32px"
     
-    card_html = f"""
-    <div class="kpi-card" style="height: {card_height};">
-        <div style="
-            color: #94a3b8;
-            font-size: {title_size};
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-            z-index: 2;
-        ">{title}</div>
-        <div class="kpi-number" style="
-            color: {color};
-            font-size: {value_size};
-            font-weight: 700;
-            line-height: 1;
-            margin: 10px 0;
-            position: relative;
-            z-index: 2;
-        ">{formatted_value}</div>
-        <div style="
-            color: #ffffff;
-            font-size: 12px;
-            font-weight: 500;
-            position: relative;
-            z-index: 2;
-        ">Target: {formatted_target}</div>
-    </div>
-    """
+        card_html = f"""
+        <div class="kpi-card" style="height: {card_height};">
+            <div style="
+                color: #94a3b8;
+                font-size: {title_size};
+                font-weight: 600;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                position: relative;
+                z-index: 2;
+            ">{title}</div>
+            <div class="kpi-number" style="
+                color: {color};
+                font-size: {value_size};
+                font-weight: 700;
+                line-height: 1;
+                margin: 10px 0;
+                position: relative;
+                z-index: 2;
+            ">{formatted_value}</div>
+            <div style="
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: 500;
+                position: relative;
+                z-index: 2;
+            ">Target: {formatted_target}</div>
+        </div>
+        """
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
