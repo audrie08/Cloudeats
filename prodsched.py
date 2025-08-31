@@ -701,10 +701,10 @@ def format_kpi_value(value, kpi_type):
     """Format KPI values based on type"""
     try:
         num_value = safe_float(value)
-        if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'overtime']:
+        if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'ot']:
             return f"{num_value:.2f}%"
         elif kpi_type in ['currency', 'labor_cost']:
-            return f"₱{num_value:,.2f}"
+            return f"₱{num_value:,.2f}"  # This should already be Philippine peso
         elif kpi_type in ['count', 'manpower']:
             return f"{int(num_value):,}"
         else:
@@ -788,7 +788,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             if kpi_type == "percentage":
                 formatted_numeric = f"{numeric_value:.1f}%"
             elif kpi_type == "currency":
-                formatted_numeric = f"${numeric_value:,.2f}"
+                formatted_numeric = f"₱{numeric_value:,.2f}" if kpi_type == "currency" else f"${numeric_value:,.2f}"
             else:
                 formatted_numeric = f"{numeric_value:,.0f}"
             formatted_target = f"{symbol}{formatted_numeric}"
