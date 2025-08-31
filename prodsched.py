@@ -701,7 +701,7 @@ def format_kpi_value(value, kpi_type):
     """Format KPI values based on type"""
     try:
         num_value = safe_float(value)
-        if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'ot']:
+        if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'overtime']:
             return f"{num_value:.2f}%"
         elif kpi_type in ['currency', 'labor_cost']:
             return f"₱{num_value:,.2f}"
@@ -738,7 +738,7 @@ def get_kpi_color(current, target, kpi_type):
         elif target_str.startswith('<'):
             # Target is "less than" value
             target_val = safe_float(target_str[1:])
-            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+            if kpi_type in ['spoilage', 'variance', 'labor_cost', 'overtime']:
                 # For cost-based KPIs with < target: current should be LESS than target
                 if current_val < target_val:
                     return "#22c55e"  # Green (good)
@@ -758,7 +758,7 @@ def get_kpi_color(current, target, kpi_type):
                 return "#4f7dbd"  # Gray for no target
                 
             # For cost-based KPIs, lower is better
-            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+            if kpi_type in ['spoilage', 'variance', 'labor_cost', 'overtime']:
                 if current_val <= target_val:
                     return "#22c55e"  # Green (good)
                 else:
