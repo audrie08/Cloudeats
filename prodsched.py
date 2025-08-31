@@ -722,7 +722,7 @@ def get_kpi_color(current, target, kpi_type):
         if target_str.startswith('>'):
             # Target is "greater than" value
             target_val = safe_float(target_str[1:])
-            if kpi_type in ['spoilage', 'variance', 'labor_cost']:
+            if kpi_type in ['spoilage', 'variance', 'labor_cost', 'overtime']:
                 # For cost-based KPIs with > target: current should be LESS than target
                 if current_val < target_val:
                     return "#22c55e"  # Green (good)
@@ -1102,7 +1102,7 @@ def display_kpi_dashboard():
              target_row.iloc[16] if len(target_row) > 16 else '', "count"),
             ("Attendance", week_row.iloc[9] if len(week_row) > 9 else '', 
              target_row.iloc[9] if len(target_row) > 9 else '', "percentage"),
-            ("OvertimeT %", week_row.iloc[10] if len(week_row) > 10 else '', 
+            ("Overtime %", week_row.iloc[10] if len(week_row) > 10 else '', 
              target_row.iloc[10] if len(target_row) > 10 else '', "percentage"),
             ("Labor Cost/kg", week_row.iloc[11] if len(week_row) > 11 else '', 
              target_row.iloc[11] if len(target_row) > 11 else '', "currency"),
