@@ -1,4 +1,4 @@
-import streamlit as st
+ximport streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
@@ -808,14 +808,13 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         title_size = "12px"
         value_size = "32px"
 
+    # Check if target is empty and conditionally include target line
     target_html = ""
-    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none']:
+    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
         target_html = f"""<div style="
             color: #ffffff;
             font-size: 12px;
             font-weight: 500;
-            position: relative;
-            z-index: 2;
         ">Target: {formatted_target}</div>"""
     
     card_html = f"""
@@ -849,11 +848,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             line-height: 1;
             margin: 10px 0;
         ">{formatted_value}</div>
-        <div style="
-            color: #ffffff;
-            font-size: 12px;
-            font-weight: 500;
-        ">Target: {formatted_target}</div>
+        {target_html}
     </div>
     """
     return card_html
