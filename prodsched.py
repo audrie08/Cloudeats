@@ -818,8 +818,11 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        align-items: flex-start;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         transition: transform 0.2s ease;
+        font-family: {'TT Norms' if font_available else 'Segoe UI'}, sans-serif;
+        text-align: left; 
     ">
         <div style="
             color: #94a3b8;
@@ -837,7 +840,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             margin: 10px 0;
         ">{formatted_value}</div>
         <div style="
-            color: #64748b;
+            color: #ffffff;
             font-size: 12px;
             font-weight: 500;
         ">Target: {formatted_target}</div>
