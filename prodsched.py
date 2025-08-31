@@ -808,36 +808,43 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         title_size = "12px"
         value_size = "32px"
     
-        card_html = f"""
-        <div class="kpi-card" style="height: {card_height};">
-            <div style="
-                color: #94a3b8;
-                font-size: {title_size};
-                font-weight: 600;
-                margin-bottom: 8px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                position: relative;
-                z-index: 2;
-            ">{title}</div>
-            <div class="kpi-number" style="
-                color: {color};
-                font-size: {value_size};
-                font-weight: 700;
-                line-height: 1;
-                margin: 10px 0;
-                position: relative;
-                z-index: 2;
-            ">{formatted_value}</div>
-            <div style="
-                color: #ffffff;
-                font-size: 12px;
-                font-weight: 500;
-                position: relative;
-                z-index: 2;
-            ">Target: {formatted_target}</div>
-        </div>
-        """
+    card_html = f"""
+    <div style="
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #475569;
+        border-radius: 16px;
+        padding: 20px;
+        height: {card_height};
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease;
+    ">
+        <div style="
+            color: #94a3b8;
+            font-size: {title_size};
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        ">{title}</div>
+        <div style="
+            color: {color};
+            font-size: {value_size};
+            font-weight: 700;
+            line-height: 1;
+            margin: 10px 0;
+        ">{formatted_value}</div>
+        <div style="
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 500;
+        ">Target: {formatted_target}</div>
+    </div>
+    """
+    return card_html
+
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
