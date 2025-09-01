@@ -327,7 +327,7 @@ st.markdown(f"""
         position: relative;
     }}
     .kpi-card-ytd {{
-        background: linear-gradient(135deg, #1e293b 0%, #325d63 100%);
+        background: linear-gradient(135deg, #1f454a 0%, #325d63 100%);
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
