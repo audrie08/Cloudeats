@@ -359,7 +359,7 @@ st.markdown(f"""
     .kpi-label {{
         font-weight: 700;      /* Bold */
         text-transform: uppercase;  /* Capitalize */
-        margin-bottom: 0.9rem;
+        margin-bottom: 0.3rem;
         opacity: 1;
     }}
 
@@ -3390,7 +3390,7 @@ def weekly_prod_schedule():
         st.markdown(f"""
         <div class="kpi-card">
             <div class="kpi-number">{total_hours:,.0f}</div>
-            <div class="kpi-label>Total Hours</div>
+            <div class="kpi-label">Total Hours</div>
             <div class="kpi-unit">(hrs)</div>
         </div>
         """, unsafe_allow_html=True)
