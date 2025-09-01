@@ -299,7 +299,7 @@ st.markdown(f"""
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
-        text-align: center;
+        text-align: left;
         margin: 0rem;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s;
