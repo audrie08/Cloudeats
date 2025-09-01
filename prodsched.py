@@ -1938,95 +1938,9 @@ def display_kpi_dashboard():
         display_volume_section()
         display_multi_kpi_section()
 
-        # Add Footer Section
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        
-        # Footer with modern styling
-        st.markdown("""
-            <div style="
-                background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-                border-radius: 20px;
-                padding: 30px 40px;
-                margin-top: 40px;
-                text-align: center;
-                border: 1px solid #475569;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            ">
-                <div style="
-                    color: #e2e8f0;
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin-bottom: 15px;
-                    font-family: 'Segoe UI', sans-serif;
-                ">
-                    Production Analytics Dashboard
-                </div>
-                
-                <div style="
-                    color: #94a3b8;
-                    font-size: 12px;
-                    font-weight: 400;
-                    line-height: 1.6;
-                    margin-bottom: 20px;
-                ">
-                    Real-time KPI monitoring and analytics for operational excellence<br>
-                    Data sourced from integrated production systems
-                </div>
-                
-                <div style="
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 30px;
-                    flex-wrap: wrap;
-                    margin-bottom: 20px;
-                ">
-                    <div style="
-                        color: #64748b;
-                        font-size: 11px;
-                        font-weight: 500;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                    ">
-                        <span style="color: #22c55e;">●</span> Live Data Feed
-                    </div>
-                    <div style="
-                        color: #64748b;
-                        font-size: 11px;
-                        font-weight: 500;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                    ">
-                        <span style="color: #3b82f6;">●</span> Auto-Refresh (60s)
-                    </div>
-                    <div style="
-                        color: #64748b;
-                        font-size: 11px;
-                        font-weight: 500;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                    ">
-                        <span style="color: #f59e0b;">●</span> Target Tracking
-                    </div>
-                </div>
-                
-                <div style="
-                    border-top: 1px solid #475569;
-                    padding-top: 15px;
-                    color: #64748b;
-                    font-size: 10px;
-                    font-weight: 400;
-                ">
-                    © 2024 Production Management System | Version 1.2.0
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Add some spacing at the very bottom
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Simple Footer
+        st.markdown("---")
+        st.text("© 2025 KPI Commissary Dashboard")
         
     except Exception as e:
         st.error(f"Error displaying KPI dashboard: {str(e)}")
