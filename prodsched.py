@@ -937,30 +937,14 @@ def create_volume_chart(kpi_data, week_column):
             )
         ))
         
-        # Add trend line
-        if len(chart_df) > 1:
-            # Calculate simple moving average for trend
-            window = min(4, len(chart_df) // 2) if len(chart_df) > 4 else 2
-            chart_df['trend'] = chart_df['Volume'].rolling(window=window, center=True).mean()
-            
-            fig.add_trace(go.Scatter(
-                x=chart_df['Week'],
-                y=chart_df['trend'],
-                mode='lines',
-                name='Trend',
-                line=dict(
-                    color='rgba(239, 68, 68, 0.8)',
-                    width=3,
-                    dash='dot'
-                ),
-                hovertemplate='<b>%{x}</b><br>Trend: %{y:.1f}<br><extra></extra>'
-            ))
+
         
         # Update layout with modern styling
         fig.update_layout(
             title=dict(
                 text='<b>Weekly Volume Performance</b>',
                 x=0.5,
+                xanchor='center',
                 font=dict(
                     size=24,
                     color='white',
@@ -1009,54 +993,6 @@ def create_volume_chart(kpi_data, week_column):
             'displayModeBar': False,
             'staticPlot': False
         })
-        
-        # Add summary statistics below the chart
-        col1, col2, col3, col4 = st.columns(4)
-        
-        avg_volume = chart_df['Volume'].mean()
-        max_volume = chart_df['Volume'].max()
-        min_volume = chart_df['Volume'].min()
-        total_volume = chart_df['Volume'].sum()
-        
-        with col1:
-            st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-                           padding: 15px; border-radius: 15px; text-align: center; 
-                           border: 1px solid #475569;">
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">AVERAGE</div>
-                    <div style="color: #06b6d4; font-size: 20px; font-weight: bold;">{avg_volume:.1f}</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-                           padding: 15px; border-radius: 15px; text-align: center; 
-                           border: 1px solid #475569;">
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">MAXIMUM</div>
-                    <div style="color: #10b981; font-size: 20px; font-weight: bold;">{max_volume:.1f}</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-                           padding: 15px; border-radius: 15px; text-align: center; 
-                           border: 1px solid #475569;">
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">MINIMUM</div>
-                    <div style="color: #f59e0b; font-size: 20px; font-weight: bold;">{min_volume:.1f}</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-                           padding: 15px; border-radius: 15px; text-align: center; 
-                           border: 1px solid #475569;">
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">TOTAL</div>
-                    <div style="color: #8b5cf6; font-size: 20px; font-weight: bold;">{total_volume:.0f}</div>
-                </div>
-            """, unsafe_allow_html=True)
         
     except ImportError:
         st.error("Plotly is required for charts. Please install it: pip install plotly")
