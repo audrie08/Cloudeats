@@ -1940,7 +1940,12 @@ def display_kpi_dashboard():
 
         # Simple Footer
         st.markdown("---")
-        st.text("© 2025 KPI Commissary Dashboard")
+        st.markdown("""
+            <div style="text-align: center; padding: 20px 0; color: #666;">
+                <p style="margin: 0; font-size: 14px;">© 2025 Commissary KPI Dashboard</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #888;">KPI Dashboard v1</p>
+            </div>
+        """, unsafe_allow_html=True)
         
     except Exception as e:
         st.error(f"Error displaying KPI dashboard: {str(e)}")
