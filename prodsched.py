@@ -925,7 +925,7 @@ def create_volume_chart(kpi_data, week_column):
             text=[f'{v:.1f}' for v in chart_df['Volume']],
             textposition='outside',
             textfont=dict(
-                color='white',
+                color='black',
                 size=10,
                 family='Segoe UI'
             ),
