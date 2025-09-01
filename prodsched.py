@@ -311,7 +311,7 @@ st.markdown(f"""
         position: relative;
     }}
         .kpi-card-mu {{
-        background: #4b49ac;
+        background: #5e5cbd;
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
@@ -327,7 +327,7 @@ st.markdown(f"""
         position: relative;
     }}
         .kpi-card-ytd {{
-        background: #17a2b8;
+        background: #238594;
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
