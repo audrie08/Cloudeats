@@ -968,16 +968,14 @@ def create_volume_chart(kpi_data, week_column):
                 )
             ),
             xaxis=dict(
-                title='Week',
-                titlefont=dict(size=14, color='#94a3b8', family='Segoe UI'),
+                title=dict(text='Week', font=dict(size=14, color='#94a3b8', family='Segoe UI')),
                 tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
                 gridcolor='rgba(148, 163, 184, 0.1)',
                 zeroline=False,
                 tickangle=-45
             ),
             yaxis=dict(
-                title='Volume',
-                titlefont=dict(size=14, color='#94a3b8', family='Segoe UI'),
+                title=dict(text='Volume', font=dict(size=14, color='#94a3b8', family='Segoe UI')),
                 tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
                 gridcolor='rgba(148, 163, 184, 0.1)',
                 zeroline=False
