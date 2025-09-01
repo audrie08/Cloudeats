@@ -1020,6 +1020,8 @@ def display_volume_section():
         
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
         
         # Create and display the volume chart
         create_volume_chart(kpi_data, week_column)
