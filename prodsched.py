@@ -1552,7 +1552,7 @@ def create_kpi_scatter_chart(kpi_data, week_column):
                 font=dict(
                     size=20,
                     color='#2c3e50',
-                    family='Segoe UI'
+                    family='TT Norms'
                 )
             ),
             xaxis=dict(
