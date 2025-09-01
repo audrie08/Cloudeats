@@ -306,7 +306,7 @@ st.markdown(f"""
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: flex-start;
+        align-items: center;
         min-height: 170px;
         position: relative;
     }}
