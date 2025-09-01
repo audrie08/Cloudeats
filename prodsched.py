@@ -965,7 +965,7 @@ def create_volume_chart(kpi_data, week_column):
                 zeroline=False
             ),
             plot_bgcolor='#ffffff',
-            paper_bgcolor='#878583',
+            paper_bgcolor='#ffffff',
             font=dict(family='Segoe UI'),
             showlegend=True,
             legend=dict(
