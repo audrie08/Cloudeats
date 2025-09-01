@@ -311,7 +311,7 @@ st.markdown(f"""
         position: relative;
     }}
     .kpi-card-mu {{
-        background: linear-gradient(135deg, #6130a1 0%, #a473e6 100%);
+        background: linear-gradient(135deg, #504fab 0%, #8786eb 100%);
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
@@ -327,8 +327,7 @@ st.markdown(f"""
         position: relative;
     }}
     .kpi-card-ytd {{
-        background: linear-gradient(135deg, #504fab 0%, #8786eb 100%);
-        linear-gradient(135deg, #1e293b 0%, #325d63 100%);
+        background: linear-gradient(135deg, #1e293b 0%, #325d63 100%);
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
