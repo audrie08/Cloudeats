@@ -359,7 +359,7 @@ st.markdown(f"""
     .kpi-label {{
         font-weight: 700;      /* Bold */
         text-transform: uppercase;  /* Capitalize */
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.1rem;
         opacity: 1;
     }}
 
