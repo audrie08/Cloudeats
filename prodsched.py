@@ -948,7 +948,7 @@ def create_volume_chart(kpi_data, week_column):
                 font=dict(
                     size=24,
                     color='#2c3e50',
-                    family='Segoe UI'
+                    family='TT Norms'
                 )
             ),
             xaxis=dict(
@@ -1124,7 +1124,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 font=dict(
                     size=24,
                     color='#2c3e50',
-                    family='Segoe UI'
+                    family='TT Norms'
                 )
             ),
             xaxis=dict(
@@ -1326,7 +1326,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 font=dict(
                     size=24,
                     color='#2c3e50',
-                    family='Segoe UI'
+                    family='TT Norms'
                 )
             ),
             xaxis=dict(
@@ -1524,7 +1524,7 @@ def create_kpi_scatter_chart(kpi_data, week_column):
             hoverlabel=dict(
                 bgcolor='rgba(248, 246, 240, 0.95)',
                 bordercolor='rgba(160, 174, 192, 0.4)',
-                font=dict(color='#4a5568', family='Segoe UI')
+                font=dict(color='#4a5568', family='TT Norms')
             )
         ))
         
