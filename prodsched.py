@@ -296,7 +296,7 @@ st.markdown(f"""
     /* === KPI CARDS === */
     .kpi-card {{
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border: 1px solid #475569;
+        border: 1px solid #d7dbe0;
         border-radius: 27px;
         padding: 20px;
         display: flex;
@@ -310,7 +310,7 @@ st.markdown(f"""
         font-family: 'TT Norms', sans-serif;
         text-align: left;
     }}
-        .kpi-card-mu {{
+    .kpi-card-mu {{
         background: #a473e6;
         color: #f0ebe4;
         padding: 1rem;
@@ -326,7 +326,7 @@ st.markdown(f"""
         min-height: 170px;
         position: relative;
     }}
-        .kpi-card-ytd {{
+    .kpi-card-ytd {{
         background: #325d63;
         color: #f0ebe4;
         padding: 1rem;
