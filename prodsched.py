@@ -931,9 +931,9 @@ def create_volume_chart(kpi_data, week_column):
             ),
             hovertemplate='<b>%{x}</b><br>Volume: %{y:.1f}<br><extra></extra>',
             hoverlabel=dict(
-                bgcolor='rgba(30, 41, 59, 0.9)',
-                bordercolor='rgba(255,255,255,0.2)',
-                font=dict(color='white', family='Segoe UI')
+                bgcolor='rgba(248, 246, 240, 0.95)',
+                bordercolor='rgba(160, 174, 192, 0.4)',
+                font=dict(color='#4a5568', family='Segoe UI')
             )
         ))
         
@@ -947,34 +947,34 @@ def create_volume_chart(kpi_data, week_column):
                 xanchor='center',
                 font=dict(
                     size=24,
-                    color='white',
+                    color='#2c3e50',
                     family='Segoe UI'
                 )
             ),
             xaxis=dict(
-                title=dict(text='Week', font=dict(size=14, color='#94a3b8', family='Segoe UI')),
-                tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
-                gridcolor='rgba(148, 163, 184, 0.1)',
+                title=dict(text='Week', font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
                 zeroline=False,
                 tickangle=-45
             ),
             yaxis=dict(
-                title=dict(text='Volume', font=dict(size=14, color='#94a3b8', family='Segoe UI')),
-                tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
-                gridcolor='rgba(148, 163, 184, 0.1)',
+                title=dict(text='Volume', font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
                 zeroline=False
             ),
-            plot_bgcolor='rgba(15, 23, 42, 0.8)',
-            paper_bgcolor='rgba(15, 23, 42, 0.9)',
+            plot_bgcolor='#f8f6f0',
+            paper_bgcolor='#faf8f2',
             font=dict(family='Segoe UI'),
             showlegend=True,
             legend=dict(
                 x=0.02,
                 y=0.98,
-                bgcolor='rgba(30, 41, 59, 0.8)',
-                bordercolor='rgba(255,255,255,0.1)',
+                bgcolor='rgba(248, 246, 240, 0.9)',
+                bordercolor='rgba(160, 174, 192, 0.4)',
                 borderwidth=1,
-                font=dict(color='white', size=11)
+                font=dict(color='#4a5568', size=11)
             ),
             margin=dict(l=60, r=40, t=80, b=100),
             height=450,
@@ -993,6 +993,22 @@ def create_volume_chart(kpi_data, week_column):
             'displayModeBar': False,
             'staticPlot': False
         })
+        
+        # Custom CSS for rounded corners
+        st.markdown("""
+            <style>
+            .js-plotly-plot .plotly .modebar {
+                display: none;
+            }
+            .js-plotly-plot .plotly {
+                border-radius: 25px !important;
+                overflow: hidden;
+            }
+            .js-plotly-plot .plotly .main-svg {
+                border-radius: 25px !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
         
     except ImportError:
         st.error("Plotly is required for charts. Please install it: pip install plotly")
@@ -1020,7 +1036,8 @@ def display_volume_section():
         
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
-
+        
+        # Add section header with modern styling
         st.markdown("<br><br>", unsafe_allow_html=True)
         
         # Create and display the volume chart
