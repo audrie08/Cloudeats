@@ -1342,8 +1342,8 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 gridcolor='rgba(160, 174, 192, 0.3)',
                 zeroline=False
             ),
-            plot_bgcolor='#f8f6f0',
-            paper_bgcolor='#faf8f2',
+            plot_bgcolor='#ffffff',
+            paper_bgcolor='#ffffff',
             font=dict(family='Segoe UI'),
             showlegend=False,
             margin=dict(l=60, r=40, t=80, b=100),
@@ -1624,9 +1624,6 @@ def display_multi_kpi_section():
         
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
-        
-        # Add section header
-        st.markdown("<br><br>", unsafe_allow_html=True)
         
         # Create side-by-side layout
         col1, col2 = st.columns(2)
