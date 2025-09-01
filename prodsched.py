@@ -1140,8 +1140,8 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 gridcolor='rgba(160, 174, 192, 0.3)',
                 zeroline=False
             ),
-            plot_bgcolor='#f8f6f0',
-            paper_bgcolor='#faf8f2',
+            plot_bgcolor='#ffffff',
+            paper_bgcolor='#ffffff',
             font=dict(family='Segoe UI'),
             showlegend=False,
             margin=dict(l=60, r=40, t=80, b=100),
@@ -1200,15 +1200,6 @@ def display_volume_section():
         
         # Add section header with modern styling
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("""
-            <div style="text-align: center; margin: 40px 0 30px 0;">
-                <h2 style="color: white; font-size: 28px; font-weight: 700; 
-                          text-transform: uppercase; letter-spacing: 1px; 
-                          margin-bottom: 10px;">Volume Analytics</h2>
-                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4); 
-                           margin: 0 auto; border-radius: 2px;"></div>
-            </div>
-        """, unsafe_allow_html=True)
         
         # Create and display the volume chart
         create_volume_chart(kpi_data, week_column)
@@ -1240,15 +1231,6 @@ def display_multi_kpi_section():
         
         # Add section header
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("""
-            <div style="text-align: center; margin: 40px 0 30px 0;">
-                <h2 style="color: white; font-size: 28px; font-weight: 700; 
-                          text-transform: uppercase; letter-spacing: 1px; 
-                          margin-bottom: 10px;">KPI Trend Analysis</h2>
-                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #f59e0b, #d97706); 
-                           margin: 0 auto; border-radius: 2px;"></div>
-            </div>
-        """, unsafe_allow_html=True)
         
         # Create and display the multi-KPI chart
         create_multi_kpi_chart(kpi_data, week_column)
