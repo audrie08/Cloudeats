@@ -357,8 +357,8 @@ st.markdown(f"""
     }}
 
     .kpi-label {{
-        font-size: 0.8em;
-        font-weight: 620;
+        font-weight: 700;      /* Bold */
+        text-transform: uppercase;  /* Capitalize */
         margin-bottom: 0.9rem;
         opacity: 1;
     }}
