@@ -789,13 +789,22 @@ def get_kpi_color(current, target, kpi_type):
 # --- DASHBOARD COMPONENTS ---
 def create_kpi_card(title, value, target, kpi_type, size="small"):
     """Create a modern KPI card with hover effects"""
-    # Check if value is empty and show N/A
-    if value == '' or value is None or pd.isna(value) or str(value).strip() == '':
+    # Check if value is empty and show N/A - FIXED: Handle pd.NA properly
+    if value is None or (isinstance(value, (int, float, str)) and value == '') or pd.isna(value):
         formatted_value = "N/A"
         color = "#64748b"  # Gray for empty data
     else:
-        formatted_value = format_kpi_value(value, kpi_type)
-        color = get_kpi_color(value, target, kpi_type)  # ← This sets the color correctly
+        # Also handle string representations of empty values
+        try:
+            if str(value).strip() == '':
+                formatted_value = "N/A"
+                color = "#64748b"
+            else:
+                formatted_value = format_kpi_value(value, kpi_type)
+                color = get_kpi_color(value, target, kpi_type)
+        except:
+            formatted_value = "N/A"
+            color = "#64748b"
     
     # Preserve the < and > symbols from the target
     target_str = str(target)
