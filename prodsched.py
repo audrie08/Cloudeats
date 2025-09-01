@@ -1402,15 +1402,6 @@ def display_volume_section():
         
         # Add section header with modern styling
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("""
-            <div style="text-align: center; margin: 40px 0 30px 0;">
-                <h2 style="color: white; font-size: 28px; font-weight: 700; 
-                          text-transform: uppercase; letter-spacing: 1px; 
-                          margin-bottom: 10px;">Volume Analytics</h2>
-                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4); 
-                           margin: 0 auto; border-radius: 2px;"></div>
-            </div>
-        """, unsafe_allow_html=True)
         
         # Create and display the volume chart
         create_volume_chart(kpi_data, week_column)
