@@ -1541,6 +1541,7 @@ def display_kpi_dashboard():
 
         # Volume Chart Section
         display_volume_section()
+        display_multi_kpi_section()
     
     except Exception as e:
         st.error(f"Error displaying KPI dashboard: {str(e)}")
