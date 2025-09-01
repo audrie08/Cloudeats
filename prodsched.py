@@ -295,20 +295,20 @@ st.markdown(f"""
 
     /* === KPI CARDS === */
     .kpi-card {{
-        background: #ff8765;
-        color: #f0ebe4;
-        padding: 1rem;
-        border-radius: 30px;
-        text-align: left;
-        margin: 0rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #475569;
+        border-radius: 27px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 170px;
+        justify-content: space-between;
+        align-items: flex-start;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
         position: relative;
+        overflow: hidden;
+        font-family: 'TT Norms', sans-serif;
+        text-align: left;
     }}
         .kpi-card-mu {{
         background: #a473e6;
