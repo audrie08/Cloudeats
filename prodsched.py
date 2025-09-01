@@ -865,6 +865,245 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
     """
     return card_html
 
+def create_volume_chart(kpi_data, week_column):
+    """Create a modern volume chart using Plotly"""
+    try:
+        import plotly.graph_objects as go
+        import plotly.express as px
+        from plotly.subplots import make_subplots
+        
+        # Find the volume column (assuming it's one of the first few columns after week)
+        volume_column = None
+        for col in kpi_data.columns[2:6]:  # Check columns 2-5 for volume data
+            if any(term in str(col).lower() for term in ['volume', 'vol', 'production', 'output']):
+                volume_column = col
+                break
+        
+        # If not found by name, use the first data column after week
+        if volume_column is None:
+            volume_column = kpi_data.columns[2] if len(kpi_data.columns) > 2 else kpi_data.columns[1]
+        
+        # Prepare data
+        chart_data = []
+        for _, row in kpi_data.iterrows():
+            week = str(row[week_column]).strip()
+            volume = safe_float(row[volume_column]) if volume_column in row.index else 0
+            
+            # Skip empty weeks or zero volumes
+            if week and week.lower() not in ['', 'nan', 'none'] and volume > 0:
+                chart_data.append({
+                    'Week': week,
+                    'Volume': volume
+                })
+        
+        if not chart_data:
+            st.warning("No volume data available for charting.")
+            return
+        
+        # Convert to DataFrame for easier handling
+        chart_df = pd.DataFrame(chart_data)
+        
+        # Create the modern chart
+        fig = go.Figure()
+        
+        # Add the main bar chart with gradient colors
+        fig.add_trace(go.Bar(
+            x=chart_df['Week'],
+            y=chart_df['Volume'],
+            name='Volume',
+            marker=dict(
+                color=chart_df['Volume'],
+                colorscale=[
+                    [0, '#1e293b'],      # Dark slate
+                    [0.3, '#3b82f6'],    # Blue
+                    [0.6, '#06b6d4'],    # Cyan  
+                    [1, '#10b981']       # Emerald
+                ],
+                line=dict(color='rgba(255,255,255,0.2)', width=1),
+                opacity=0.9
+            ),
+            text=[f'{v:.1f}' for v in chart_df['Volume']],
+            textposition='outside',
+            textfont=dict(
+                color='white',
+                size=10,
+                family='Segoe UI'
+            ),
+            hovertemplate='<b>%{x}</b><br>Volume: %{y:.1f}<br><extra></extra>',
+            hoverlabel=dict(
+                bgcolor='rgba(30, 41, 59, 0.9)',
+                bordercolor='rgba(255,255,255,0.2)',
+                font=dict(color='white', family='Segoe UI')
+            )
+        ))
+        
+        # Add trend line
+        if len(chart_df) > 1:
+            # Calculate simple moving average for trend
+            window = min(4, len(chart_df) // 2) if len(chart_df) > 4 else 2
+            chart_df['trend'] = chart_df['Volume'].rolling(window=window, center=True).mean()
+            
+            fig.add_trace(go.Scatter(
+                x=chart_df['Week'],
+                y=chart_df['trend'],
+                mode='lines',
+                name='Trend',
+                line=dict(
+                    color='rgba(239, 68, 68, 0.8)',
+                    width=3,
+                    dash='dot'
+                ),
+                hovertemplate='<b>%{x}</b><br>Trend: %{y:.1f}<br><extra></extra>'
+            ))
+        
+        # Update layout with modern styling
+        fig.update_layout(
+            title=dict(
+                text='<b>Weekly Volume Performance</b>',
+                x=0.5,
+                font=dict(
+                    size=24,
+                    color='white',
+                    family='Segoe UI'
+                )
+            ),
+            xaxis=dict(
+                title='Week',
+                titlefont=dict(size=14, color='#94a3b8', family='Segoe UI'),
+                tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
+                gridcolor='rgba(148, 163, 184, 0.1)',
+                zeroline=False,
+                tickangle=-45
+            ),
+            yaxis=dict(
+                title='Volume',
+                titlefont=dict(size=14, color='#94a3b8', family='Segoe UI'),
+                tickfont=dict(size=11, color='#cbd5e1', family='Segoe UI'),
+                gridcolor='rgba(148, 163, 184, 0.1)',
+                zeroline=False
+            ),
+            plot_bgcolor='rgba(15, 23, 42, 0.8)',
+            paper_bgcolor='rgba(15, 23, 42, 0.9)',
+            font=dict(family='Segoe UI'),
+            showlegend=True,
+            legend=dict(
+                x=0.02,
+                y=0.98,
+                bgcolor='rgba(30, 41, 59, 0.8)',
+                bordercolor='rgba(255,255,255,0.1)',
+                borderwidth=1,
+                font=dict(color='white', size=11)
+            ),
+            margin=dict(l=60, r=40, t=80, b=100),
+            height=450,
+            hovermode='x unified'
+        )
+        
+        # Add subtle animations
+        fig.update_traces(
+            marker=dict(
+                line=dict(width=1.5)
+            )
+        )
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True, config={
+            'displayModeBar': False,
+            'staticPlot': False
+        })
+        
+        # Add summary statistics below the chart
+        col1, col2, col3, col4 = st.columns(4)
+        
+        avg_volume = chart_df['Volume'].mean()
+        max_volume = chart_df['Volume'].max()
+        min_volume = chart_df['Volume'].min()
+        total_volume = chart_df['Volume'].sum()
+        
+        with col1:
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                           padding: 15px; border-radius: 15px; text-align: center; 
+                           border: 1px solid #475569;">
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">AVERAGE</div>
+                    <div style="color: #06b6d4; font-size: 20px; font-weight: bold;">{avg_volume:.1f}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                           padding: 15px; border-radius: 15px; text-align: center; 
+                           border: 1px solid #475569;">
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">MAXIMUM</div>
+                    <div style="color: #10b981; font-size: 20px; font-weight: bold;">{max_volume:.1f}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                           padding: 15px; border-radius: 15px; text-align: center; 
+                           border: 1px solid #475569;">
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">MINIMUM</div>
+                    <div style="color: #f59e0b; font-size: 20px; font-weight: bold;">{min_volume:.1f}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+                           padding: 15px; border-radius: 15px; text-align: center; 
+                           border: 1px solid #475569;">
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">TOTAL</div>
+                    <div style="color: #8b5cf6; font-size: 20px; font-weight: bold;">{total_volume:.0f}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+    except ImportError:
+        st.error("Plotly is required for charts. Please install it: pip install plotly")
+    except Exception as e:
+        st.error(f"Error creating volume chart: {str(e)}")
+
+
+def display_volume_section():
+    """Display the volume chart section in your KPI dashboard"""
+    try:
+        # Load data
+        kpi_data, targets_data, last_modified_time = load_kpi_data()
+        
+        if kpi_data.empty:
+            st.warning("No data available for volume chart.")
+            return
+        
+        # Find week column (same logic as your main dashboard)
+        week_column = None
+        for col in kpi_data.columns:
+            col_lower = str(col).lower()
+            if any(term in col_lower for term in ['week', 'wk']):
+                week_column = col
+                break
+        
+        if week_column is None:
+            week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
+        
+        # Add section header with modern styling
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin: 40px 0 30px 0;">
+                <h2 style="color: white; font-size: 28px; font-weight: 700; 
+                          text-transform: uppercase; letter-spacing: 1px; 
+                          margin-bottom: 10px;">Volume Analytics</h2>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4); 
+                           margin: 0 auto; border-radius: 2px;"></div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create and display the volume chart
+        create_volume_chart(kpi_data, week_column)
+        
+    except Exception as e:
+        st.error(f"Error displaying volume section: {str(e)}")
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
@@ -1148,7 +1387,10 @@ def display_kpi_dashboard():
         for i, (title, value, target, kpi_type) in enumerate(big_kpis):
             with big_cols[i]:
                 st.markdown(create_kpi_card(title, value, target, kpi_type, size="large"), unsafe_allow_html=True)
-                
+
+        # Volume Chart Section
+        display_volume_section()
+    
     except Exception as e:
         st.error(f"Error displaying KPI dashboard: {str(e)}")
         st.exception(e)  # Show full exception details for debugging
