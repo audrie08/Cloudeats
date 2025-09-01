@@ -311,7 +311,7 @@ st.markdown(f"""
         position: relative;
     }}
     .kpi-card-mu {{
-        background: #a473e6;
+        background: linear-gradient(135deg, #6130a1 0%, #a473e6 100%);
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
