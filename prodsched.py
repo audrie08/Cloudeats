@@ -795,7 +795,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         color = "#64748b"  # Gray for empty data
     else:
         formatted_value = format_kpi_value(value, kpi_type)
-        color = get_kpi_color(value, target, kpi_type)
+        color = get_kpi_color(value, target, kpi_type)  # ← This sets the color correctly
     
     # Preserve the < and > symbols from the target
     target_str = str(target)
@@ -815,9 +815,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
             formatted_target = target_str
     else:
         formatted_target = format_kpi_value(target, kpi_type)
-    
-    color = get_kpi_color(value, target, kpi_type)
-    
+        
     if size == "large":
         card_height = "200px"
         title_size = "18px"
