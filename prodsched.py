@@ -1122,7 +1122,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 x=0.5,
                 xanchor='center',
                 font=dict(
-                    size=24,
+                    size=23,
                     color='#2c3e50',
                     family='TT Norms'
                 )
