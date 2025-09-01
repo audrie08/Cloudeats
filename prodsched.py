@@ -1016,6 +1016,167 @@ def create_volume_chart(kpi_data, week_column):
         st.error(f"Error creating volume chart: {str(e)}")
 
 
+def create_multi_kpi_chart(kpi_data, week_column):
+    """Create a multi-KPI line chart with dropdown selector"""
+    try:
+        import plotly.graph_objects as go
+        
+        # Define KPI mappings (display name -> column index, format type)
+        kpi_mappings = {
+            "Volume": (2, "count"),
+            "Production Plan Performance": (3, "percentage"),
+            "Capacity Utilization": (4, "percentage"),
+            "Production Plan Compliance": (5, "percentage"),
+            "Spoilage": (6, "percentage"),
+            "Variance": (7, "percentage"),
+            "Yield": (8, "percentage"),
+            "Attendance": (9, "percentage"),
+            "Overtime": (10, "percentage"),
+            "Labor cost per kilo (₱)": (11, "currency"),
+            "Availability": (12, "percentage"),
+            "Efficiency": (13, "percentage"),
+            "Quality": (14, "percentage"),
+            "OEE": (15, "percentage"),
+            "Man-hr": (16, "count"),
+            "KGMH": (17, "count"),
+            "Manpower": (18, "count"),
+            "Revenue": (19, "currency"),
+            "Spoilage Cost%": (20, "percentage"),
+            "Spoilage vs Revenue": (21, "percentage")
+        }
+        
+        # KPI selector
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            selected_kpi = st.selectbox(
+                "Select KPI to View",
+                list(kpi_mappings.keys()),
+                index=0,
+                key="kpi_selector"
+            )
+        
+        # Get selected KPI details
+        column_index, format_type = kpi_mappings[selected_kpi]
+        
+        # Prepare data for the selected KPI
+        chart_data = []
+        for _, row in kpi_data.iterrows():
+            week = str(row[week_column]).strip()
+            if column_index < len(row):
+                value = safe_float(row.iloc[column_index]) if row.iloc[column_index] != '' else None
+            else:
+                value = None
+            
+            # Skip empty weeks but include weeks with zero values for KPIs
+            if week and week.lower() not in ['', 'nan', 'none'] and value is not None:
+                chart_data.append({
+                    'Week': week,
+                    'Value': value
+                })
+        
+        if not chart_data:
+            st.warning(f"No {selected_kpi} data available for charting.")
+            return
+        
+        # Convert to DataFrame
+        chart_df = pd.DataFrame(chart_data)
+        
+        # Create the line chart
+        fig = go.Figure()
+        
+        # Add the line trace with markers
+        fig.add_trace(go.Scatter(
+            x=chart_df['Week'],
+            y=chart_df['Value'],
+            mode='lines+markers',
+            name=selected_kpi,
+            line=dict(
+                color='#f59e0b',  # Golden color for the line
+                width=3
+            ),
+            marker=dict(
+                color='#f59e0b',
+                size=8,
+                line=dict(color='#d97706', width=2)
+            ),
+            hovertemplate=f'<b>%{{x}}</b><br>{selected_kpi}: %{{y:.1f}}<br><extra></extra>',
+            hoverlabel=dict(
+                bgcolor='rgba(248, 246, 240, 0.95)',
+                bordercolor='rgba(160, 174, 192, 0.4)',
+                font=dict(color='#4a5568', family='Segoe UI')
+            )
+        ))
+        
+        # Format y-axis title based on KPI type
+        if format_type == "percentage":
+            y_title = f"{selected_kpi} (%)"
+        elif format_type == "currency":
+            y_title = f"{selected_kpi} (₱)"
+        else:
+            y_title = selected_kpi
+        
+        # Update layout
+        fig.update_layout(
+            title=dict(
+                text=f'<b>{selected_kpi} Trend</b>',
+                x=0.5,
+                xanchor='center',
+                font=dict(
+                    size=24,
+                    color='#2c3e50',
+                    family='Segoe UI'
+                )
+            ),
+            xaxis=dict(
+                title=dict(text='Week', font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
+                zeroline=False,
+                tickangle=-45
+            ),
+            yaxis=dict(
+                title=dict(text=y_title, font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
+                zeroline=False
+            ),
+            plot_bgcolor='#f8f6f0',
+            paper_bgcolor='#faf8f2',
+            font=dict(family='Segoe UI'),
+            showlegend=False,
+            margin=dict(l=60, r=40, t=80, b=100),
+            height=450,
+            hovermode='x unified'
+        )
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True, config={
+            'displayModeBar': False,
+            'staticPlot': False
+        })
+        
+        # Custom CSS for rounded corners
+        st.markdown("""
+            <style>
+            .js-plotly-plot .plotly .modebar {
+                display: none;
+            }
+            .js-plotly-plot .plotly {
+                border-radius: 25px !important;
+                overflow: hidden;
+            }
+            .js-plotly-plot .plotly .main-svg {
+                border-radius: 25px !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+    except ImportError:
+        st.error("Plotly is required for charts. Please install it: pip install plotly")
+    except Exception as e:
+        st.error(f"Error creating multi-KPI chart: {str(e)}")
+
+
 def display_volume_section():
     """Display the volume chart section in your KPI dashboard"""
     try:
@@ -1039,12 +1200,61 @@ def display_volume_section():
         
         # Add section header with modern styling
         st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin: 40px 0 30px 0;">
+                <h2 style="color: white; font-size: 28px; font-weight: 700; 
+                          text-transform: uppercase; letter-spacing: 1px; 
+                          margin-bottom: 10px;">Volume Analytics</h2>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4); 
+                           margin: 0 auto; border-radius: 2px;"></div>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Create and display the volume chart
         create_volume_chart(kpi_data, week_column)
         
     except Exception as e:
         st.error(f"Error displaying volume section: {str(e)}")
+
+
+def display_multi_kpi_section():
+    """Display the multi-KPI chart section"""
+    try:
+        # Load data
+        kpi_data, targets_data, last_modified_time = load_kpi_data()
+        
+        if kpi_data.empty:
+            st.warning("No data available for KPI chart.")
+            return
+        
+        # Find week column
+        week_column = None
+        for col in kpi_data.columns:
+            col_lower = str(col).lower()
+            if any(term in col_lower for term in ['week', 'wk']):
+                week_column = col
+                break
+        
+        if week_column is None:
+            week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
+        
+        # Add section header
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin: 40px 0 30px 0;">
+                <h2 style="color: white; font-size: 28px; font-weight: 700; 
+                          text-transform: uppercase; letter-spacing: 1px; 
+                          margin-bottom: 10px;">KPI Trend Analysis</h2>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #f59e0b, #d97706); 
+                           margin: 0 auto; border-radius: 2px;"></div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create and display the multi-KPI chart
+        create_multi_kpi_chart(kpi_data, week_column)
+        
+    except Exception as e:
+        st.error(f"Error displaying multi-KPI section: {str(e)}")
 
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
