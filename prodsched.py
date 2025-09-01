@@ -3416,6 +3416,14 @@ def weekly_prod_schedule():
     # FIXED: SKU Table with day filter and days parameters
     render_sku_table(filtered_skus, day_filter, days)
 
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 Weekly Production Schedule</p>
+        </div>
+    """, unsafe_allow_html=True)
+
 def machine_utilization():
 
     # --- Header ---
@@ -3523,6 +3531,13 @@ def machine_utilization():
     # --- Call the render function ---
     render_machine_table(machines, day_filter, day_options)
 
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 Machine Utilization</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 def ytd_production():
     """YTD Production Schedule Page"""
@@ -3649,6 +3664,14 @@ def ytd_production():
 
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
+
+        # Simple Footer
+        st.markdown("---")
+        st.markdown("""
+            <div style="text-align: center; padding: 20px 0; color: #666;">
+                <p style="margin: 0; font-size: 14px;">© 2025 YTD Production Schedule</p>
+            </div>
+        """, unsafe_allow_html=True)
         
 def main():
     """Main application function"""
