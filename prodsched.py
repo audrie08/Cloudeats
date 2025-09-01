@@ -698,23 +698,36 @@ def safe_float(value, default=0.0):
         return default
 
 def format_kpi_value(value, kpi_type):
-    """Format KPI values based on type"""
+    """Format KPI values based on type - return N/A for empty values"""
     try:
+        # Check if value is empty, None, or NaN
+        if value == '' or value is None or pd.isna(value) or str(value).strip() == '':
+            return "N/A"
+            
         num_value = safe_float(value)
+        
+        # Check if the numeric value is 0 (which might indicate empty data)
+        if num_value == 0 and str(value).strip() in ['', '0', '0.0', '0.00']:
+            return "N/A"
+            
         if kpi_type in ['percentage', 'yield', 'efficiency', 'quality', 'attendance', 'ot']:
             return f"{num_value:.2f}%"
         elif kpi_type in ['currency', 'labor_cost']:
-            return f"₱{num_value:,.2f}"  # This should already be Philippine peso
+            return f"₱{num_value:,.2f}"
         elif kpi_type in ['count', 'manpower']:
             return f"{int(num_value):,}"
         else:
             return f"{num_value:.2f}"
     except:
-        return str(value)
+        return "N/A"
 
 def get_kpi_color(current, target, kpi_type):
     """Determine color based on KPI performance vs target"""
     try:
+        # Return gray for empty/NA values
+        if current == '' or current is None or pd.isna(current) or str(current).strip() == '':
+            return "#64748b"  # Gray for empty data
+            
         current_val = safe_float(current)
         target_str = str(target).strip()
         
@@ -776,7 +789,13 @@ def get_kpi_color(current, target, kpi_type):
 # --- DASHBOARD COMPONENTS ---
 def create_kpi_card(title, value, target, kpi_type, size="small"):
     """Create a modern KPI card with hover effects"""
-    formatted_value = format_kpi_value(value, kpi_type)
+    # Check if value is empty and show N/A
+    if value == '' or value is None or pd.isna(value) or str(value).strip() == '':
+        formatted_value = "N/A"
+        color = "#64748b"  # Gray for empty data
+    else:
+        formatted_value = format_kpi_value(value, kpi_type)
+        color = get_kpi_color(value, target, kpi_type)
     
     # Preserve the < and > symbols from the target
     target_str = str(target)
