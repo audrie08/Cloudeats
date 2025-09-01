@@ -3665,13 +3665,13 @@ def ytd_production():
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
 
-        # Simple Footer
-        st.markdown("---")
-        st.markdown("""
-            <div style="text-align: center; padding: 20px 0; color: #666;">
-                <p style="margin: 0; font-size: 14px;">© 2025 YTD Production Schedule</p>
-            </div>
-        """, unsafe_allow_html=True)
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 YTD Production Schedule</p>
+        </div>
+    """, unsafe_allow_html=True)
         
 def main():
     """Main application function"""
