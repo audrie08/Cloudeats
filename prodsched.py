@@ -295,7 +295,7 @@ st.markdown(f"""
 
     /* === KPI CARDS === */
     .kpi-card {{
-        background: linear-gradient(135deg, #bd593c 0%, #ff8765 100%);
+        background: linear-gradient(135deg, #bd593c 0%, #f28261 100%);
         color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
