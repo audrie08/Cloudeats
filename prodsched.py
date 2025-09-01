@@ -1342,8 +1342,8 @@ def create_multi_kpi_chart(kpi_data, week_column):
                 gridcolor='rgba(160, 174, 192, 0.3)',
                 zeroline=False
             ),
-            plot_bgcolor='#ffffff',
-            paper_bgcolor='#ffffff',
+            plot_bgcolor='#f8f6f0',
+            paper_bgcolor='#faf8f2',
             font=dict(family='Segoe UI'),
             showlegend=False,
             margin=dict(l=60, r=40, t=80, b=100),
@@ -1402,6 +1402,15 @@ def display_volume_section():
         
         # Add section header with modern styling
         st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin: 40px 0 30px 0;">
+                <h2 style="color: white; font-size: 28px; font-weight: 700; 
+                          text-transform: uppercase; letter-spacing: 1px; 
+                          margin-bottom: 10px;">Volume Analytics</h2>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #3b82f6, #06b6d4); 
+                           margin: 0 auto; border-radius: 2px;"></div>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Create and display the volume chart
         create_volume_chart(kpi_data, week_column)
@@ -1410,14 +1419,208 @@ def display_volume_section():
         st.error(f"Error displaying volume section: {str(e)}")
 
 
+def create_kpi_scatter_chart(kpi_data, week_column):
+    """Create a scatter plot with dual KPI selection for X and Y axes"""
+    try:
+        import plotly.graph_objects as go
+        
+        # Define KPI mappings (display name -> column index, format type)
+        kpi_mappings = {
+            "Volume": (2, "count"),
+            "Production Plan Performance": (3, "percentage"),
+            "Capacity Utilization": (4, "percentage"),
+            "Production Plan Compliance": (5, "percentage"),
+            "Spoilage": (6, "percentage"),
+            "Variance": (7, "percentage"),
+            "Yield": (8, "percentage"),
+            "Attendance": (9, "percentage"),
+            "Overtime": (10, "percentage"),
+            "Labor cost per kilo (₱)": (11, "currency"),
+            "Availability": (12, "percentage"),
+            "Efficiency": (13, "percentage"),
+            "Quality": (14, "percentage"),
+            "OEE": (15, "percentage"),
+            "Man-hr": (16, "count"),
+            "KGMH": (17, "count"),
+            "Manpower": (18, "count"),
+            "Revenue": (19, "currency"),
+            "Spoilage Cost%": (20, "percentage"),
+            "Spoilage vs Revenue": (21, "percentage")
+        }
+        
+        # KPI selectors for X and Y axes
+        col1, col2 = st.columns(2)
+        with col1:
+            x_kpi = st.selectbox(
+                "X-Axis KPI",
+                list(kpi_mappings.keys()),
+                index=10,  # Default to "Labor cost per kilo (₱)"
+                key="x_kpi_selector"
+            )
+        with col2:
+            y_kpi = st.selectbox(
+                "Y-Axis KPI",
+                list(kpi_mappings.keys()),
+                index=0,   # Default to "Volume"
+                key="y_kpi_selector"
+            )
+        
+        # Get selected KPI details
+        x_column_index, x_format_type = kpi_mappings[x_kpi]
+        y_column_index, y_format_type = kpi_mappings[y_kpi]
+        
+        # Prepare data for the scatter plot
+        scatter_data = []
+        for _, row in kpi_data.iterrows():
+            week = str(row[week_column]).strip()
+            
+            # Extract X value
+            if x_column_index < len(row):
+                raw_x = row.iloc[x_column_index]
+                if pd.isna(raw_x) or raw_x == '' or raw_x is None:
+                    x_value = None
+                else:
+                    x_value = safe_float(raw_x)
+            else:
+                x_value = None
+            
+            # Extract Y value
+            if y_column_index < len(row):
+                raw_y = row.iloc[y_column_index]
+                if pd.isna(raw_y) or raw_y == '' or raw_y is None:
+                    y_value = None
+                else:
+                    y_value = safe_float(raw_y)
+            else:
+                y_value = None
+            
+            # Only include points where both X and Y have values
+            week_valid = week and str(week).lower() not in ['', 'nan', 'none']
+            x_valid = x_value is not None and not pd.isna(x_value)
+            y_valid = y_value is not None and not pd.isna(y_value)
+            
+            if week_valid and x_valid and y_valid:
+                scatter_data.append({
+                    'Week': week,
+                    'X': x_value,
+                    'Y': y_value
+                })
+        
+        if not scatter_data:
+            st.warning(f"No data available for {x_kpi} vs {y_kpi} scatter plot.")
+            return
+        
+        # Convert to DataFrame
+        scatter_df = pd.DataFrame(scatter_data)
+        
+        # Create the scatter plot
+        fig = go.Figure()
+        
+        # Add scatter trace
+        fig.add_trace(go.Scatter(
+            x=scatter_df['X'],
+            y=scatter_df['Y'],
+            mode='markers',
+            name=f'{y_kpi} vs {x_kpi}',
+            marker=dict(
+                color='#3b82f6',  # Blue color for markers
+                size=10,
+                line=dict(color='#1e40af', width=2),
+                opacity=0.8
+            ),
+            text=scatter_df['Week'],
+            hovertemplate=f'<b>%{{text}}</b><br>{x_kpi}: %{{x:.1f}}<br>{y_kpi}: %{{y:.1f}}<br><extra></extra>',
+            hoverlabel=dict(
+                bgcolor='rgba(248, 246, 240, 0.95)',
+                bordercolor='rgba(160, 174, 192, 0.4)',
+                font=dict(color='#4a5568', family='Segoe UI')
+            )
+        ))
+        
+        # Format axis titles based on KPI types
+        if x_format_type == "percentage":
+            x_title = f"{x_kpi} (%)"
+        elif x_format_type == "currency":
+            x_title = f"{x_kpi} (₱)"
+        else:
+            x_title = x_kpi
+            
+        if y_format_type == "percentage":
+            y_title = f"{y_kpi} (%)"
+        elif y_format_type == "currency":
+            y_title = f"{y_kpi} (₱)"
+        else:
+            y_title = y_kpi
+        
+        # Update layout
+        fig.update_layout(
+            title=dict(
+                text=f'<b>{y_kpi} vs {x_kpi}</b>',
+                x=0.5,
+                xanchor='center',
+                font=dict(
+                    size=20,
+                    color='#2c3e50',
+                    family='Segoe UI'
+                )
+            ),
+            xaxis=dict(
+                title=dict(text=x_title, font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
+                zeroline=False
+            ),
+            yaxis=dict(
+                title=dict(text=y_title, font=dict(size=14, color='#5a6c7d', family='Segoe UI')),
+                tickfont=dict(size=11, color='#4a5568', family='Segoe UI'),
+                gridcolor='rgba(160, 174, 192, 0.3)',
+                zeroline=False
+            ),
+            plot_bgcolor='#f8f6f0',
+            paper_bgcolor='#faf8f2',
+            font=dict(family='Segoe UI'),
+            showlegend=False,
+            margin=dict(l=60, r=40, t=80, b=60),
+            height=450,
+            hovermode='closest'
+        )
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True, config={
+            'displayModeBar': False,
+            'staticPlot': False
+        })
+        
+        # Custom CSS for rounded corners
+        st.markdown("""
+            <style>
+            .js-plotly-plot .plotly .modebar {
+                display: none;
+            }
+            .js-plotly-plot .plotly {
+                border-radius: 25px !important;
+                overflow: hidden;
+            }
+            .js-plotly-plot .plotly .main-svg {
+                border-radius: 25px !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+    except ImportError:
+        st.error("Plotly is required for charts. Please install it: pip install plotly")
+    except Exception as e:
+        st.error(f"Error creating scatter chart: {str(e)}")
+
+
 def display_multi_kpi_section():
-    """Display the multi-KPI chart section"""
+    """Display the multi-KPI chart section with line and scatter charts side by side"""
     try:
         # Load data
         kpi_data, targets_data, last_modified_time = load_kpi_data()
         
         if kpi_data.empty:
-            st.warning("No data available for KPI chart.")
+            st.warning("No data available for KPI charts.")
             return
         
         # Find week column
@@ -1431,11 +1634,44 @@ def display_multi_kpi_section():
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
         
-        # Create and display the multi-KPI chart
-        create_multi_kpi_chart(kpi_data, week_column)
+        # Add section header
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin: 40px 0 30px 0;">
+                <h2 style="color: white; font-size: 28px; font-weight: 700; 
+                          text-transform: uppercase; letter-spacing: 1px; 
+                          margin-bottom: 10px;">KPI Analysis Dashboard</h2>
+                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #f59e0b, #d97706); 
+                           margin: 0 auto; border-radius: 2px;"></div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create side-by-side layout
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+                <div style="text-align: center; margin: 20px 0 15px 0;">
+                    <h3 style="color: #2c3e50; font-size: 18px; font-weight: 600;">
+                        Trend Analysis
+                    </h3>
+                </div>
+            """, unsafe_allow_html=True)
+            create_multi_kpi_chart(kpi_data, week_column)
+        
+        with col2:
+            st.markdown("""
+                <div style="text-align: center; margin: 20px 0 15px 0;">
+                    <h3 style="color: #2c3e50; font-size: 18px; font-weight: 600;">
+                        Correlation Analysis
+                    </h3>
+                </div>
+            """, unsafe_allow_html=True)
+            create_kpi_scatter_chart(kpi_data, week_column)
         
     except Exception as e:
         st.error(f"Error displaying multi-KPI section: {str(e)}")
+        
 def display_kpi_dashboard():
     """Display the main KPI dashboard"""
     # Get Philippines timezone
