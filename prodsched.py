@@ -310,6 +310,38 @@ st.markdown(f"""
         min-height: 170px;
         position: relative;
     }}
+        .kpi-card-mu {{
+        background: #4b49ac;
+        color: #f0ebe4;
+        padding: 1rem;
+        border-radius: 30px;
+        text-align: left;
+        margin: 0rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 170px;
+        position: relative;
+    }}
+        .kpi-card-ytd {{
+        background: #17a2b8;
+        color: #f0ebe4;
+        padding: 1rem;
+        border-radius: 30px;
+        text-align: left;
+        margin: 0rem;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 170px;
+        position: relative;
+    }}
     
     .kpi-card::before {{
         content: '';
@@ -3485,7 +3517,7 @@ def machine_utilization():
     
     with colA:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card-mu">
             <div class="kpi-number">{total_machines:,.0f}</div>
             <div class="kpi-label">Total Machines</div>
             <div class="kpi-unit">(no.)</div>
@@ -3494,7 +3526,7 @@ def machine_utilization():
     
     with colB:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card-mu">
             <div class="kpi-number">{total_needed_hrs:,.0f}</div>
             <div class="kpi-label">Needed Run Hours</div>
             <div class="kpi-unit">(hrs)</div>
@@ -3503,7 +3535,7 @@ def machine_utilization():
     
     with colC:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card-mu">
             <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
             <div class="kpi-label">Remaining Available Hours</div>
             <div class="kpi-unit">(hrs)</div>
@@ -3512,7 +3544,7 @@ def machine_utilization():
     
     with colD:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card-mu">
             <div class="kpi-number">{total_machine_needed:,.0f}</div>
             <div class="kpi-label">Additional Machines Needed</div>
             <div class="kpi-unit">(no.)</div>
@@ -3521,7 +3553,7 @@ def machine_utilization():
     
     with colE:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card-mu">
             <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
             <div class="kpi-label">Capacity Utilization</div>
             <div class="kpi-unit">(%)</div>
@@ -3630,7 +3662,7 @@ def ytd_production():
        
         with col_kpi1:
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card-ytd">
                 <div class="kpi-number">{filtered_skus:,.0f}</div>
                 <div class="kpi-label">Total SKUs</div>
                 <div class="kpi-unit">(no.)</div>
@@ -3639,7 +3671,7 @@ def ytd_production():
        
         with col_kpi2:
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card-ytd">
                 <div class="kpi-number">{filtered_batches:,.0f}</div>
                 <div class="kpi-label">Total Batches</div>
                 <div class="kpi-unit">(no.)</div>
