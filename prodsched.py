@@ -3560,11 +3560,17 @@ def summary_page():
     # --- Load Summary Data ---
     try:
         # Load the summary sheet
-        df_summary = load_production_data(sheet_index=0)
+        df_full = load_production_data(sheet_index=0)
         
-        if df_summary.empty:
+        if df_full.empty:
             st.error("Failed to load summary data")
             return
+        
+        # REMOVE ROWS 12-18 (index 12-18) - Total Staff Count and extra data
+        df_summary = df_full.iloc[:12, :]  # Keep only rows 0-11 (index 0-11)
+        
+        # Also limit to columns A-L only (index 0-11)
+        df_summary = df_summary.iloc[:, :12]
             
         # Initialize Google Sheets client for dropdown control
         client = init_google_sheets()
