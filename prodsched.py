@@ -3358,12 +3358,7 @@ class SummaryDataExtractor:
             import traceback
             st.error(f"Full error: {traceback.format_exc()}")
             return pd.DataFrame()
-            
-        except Exception as e:
-            st.error(f"Error creating production dataframe: {str(e)}")
-            import traceback
-            st.error(f"Full error: {traceback.format_exc()}")
-            return pd.DataFrame()
+
     
     def _find_days_row(self):
         """Find the row index that contains the day names"""
@@ -3374,7 +3369,7 @@ class SummaryDataExtractor:
                     return row_idx
         return None
     
-    def _find_metric_rows(self):
+     def _find_metric_rows(self):
         """Find the row indices for each metric"""
         # Based on your debug data structure:
         # Rows 4-10 contain the daily data for each metric
