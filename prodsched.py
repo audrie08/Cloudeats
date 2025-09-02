@@ -3417,68 +3417,6 @@ def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
         st.error(f"Failed to get cell value: {e}")
         return None
 
-
-# --- Update your main() function to include the Summary page ---
-def main():
-    """Main application function - UPDATED VERSION"""
-    
-    # Create modern navigation header
-    create_navigation()
-
-    # Display KPI Dashboard
-    display_kpi_dashboard()
-    
-    # Initialize session state for navigation
-    if 'main_tab' not in st.session_state:
-        st.session_state.main_tab = "KPI Dashboard"
-    if 'sub_tab' not in st.session_state:
-        st.session_state.sub_tab = "Summary"  # Default to Summary page
-    
-    # Main navigation with smaller, centered buttons
-    main_page_selection = option_menu(
-        menu_title=None,
-        options=["KPI Dashboard", "Production Details"],
-        icons=["house-fill", "clipboard-data-fill"],
-        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else 1,
-        orientation="horizontal",
-        key="main_navigation",
-        styles={
-            "container": {
-                "max-width": "350px",
-                "text-align": "center",
-                "border-radius": "20px", 
-                "color": "#ffffff",
-            },
-            "icon": {
-                "color": "#ffe712",
-                "font-size": "12px",
-                "margin-right": "4px"
-            },
-            "nav-link": {
-                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                "font-size": "11px",
-                "font-weight": "500",
-                "text-align": "center",
-                "color": "#543559",
-                "margin": "0.1rem",
-                "padding": "0.4rem 0.6rem",
-                "border-radius": "17px",
-                "transition": "all 0.3s ease",
-                "border": "1px solid transparent",
-                "background": "rgba(248, 249, 250, 0.5)",
-                "white-space": "nowrap"
-            },
-            "nav-link-selected": {
-                "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
-                "color": "#ffffff",
-                "font-weight": "600",
-                "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
-                "border": "2px solid rgba(255,255,255,0.1)",
-                "transform": "translateY(-1px)"
-            }
-        }
-    )
-
 def summary_page():
     """Summary page showing weekly KPI data with Google Sheets dropdown control"""
     
@@ -4131,17 +4069,21 @@ def ytd_production():
         </div>
     """, unsafe_allow_html=True)
         
+# --- Update your main() function to include the Summary page ---
 def main():
-    """Main application function"""
+    """Main application function - UPDATED VERSION"""
     
     # Create modern navigation header
     create_navigation()
+
+    # Display KPI Dashboard
+    display_kpi_dashboard()
     
     # Initialize session state for navigation
     if 'main_tab' not in st.session_state:
         st.session_state.main_tab = "KPI Dashboard"
     if 'sub_tab' not in st.session_state:
-        st.session_state.sub_tab = "Weekly Production Schedule"
+        st.session_state.sub_tab = "Summary"  # Default to Summary page
     
     # Main navigation with smaller, centered buttons
     main_page_selection = option_menu(
