@@ -1825,15 +1825,16 @@ def display_kpi_dashboard():
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
         
-        # Get available weeks
+        # Get available weeks - FIXED: Create week_options here
         weeks = kpi_data[week_column].dropna().unique()
         weeks = [str(w).strip() for w in weeks if str(w).strip() != '']
+        week_options = weeks  # This was missing!
         
         if not weeks:
             st.error(f"No week data available in column '{week_column}'.")
             return
         
-        # Find default week (most recent with data)
+        # Find default week (most recent with data) - FIXED: Create current_week here
         default_week_index = None
         for i in range(len(kpi_data) - 1, -1, -1):
             if kpi_data.iloc[i, 2:22].notna().any():
@@ -1841,24 +1842,26 @@ def display_kpi_dashboard():
                 break
         
         if default_week_index is not None:
-            default_week = kpi_data.iloc[default_week_index][week_column]
-            default_week = str(default_week).strip()
-            if default_week in weeks:
-                default_index = weeks.index(default_week)
+            current_week = kpi_data.iloc[default_week_index][week_column]
+            current_week = str(current_week).strip()
+            if current_week in weeks:
+                default_index = weeks.index(current_week)
             else:
                 default_index = len(weeks) - 1
+                current_week = weeks[default_index] if weeks else ""
         else:
             default_index = len(weeks) - 1
+            current_week = weeks[default_index] if weeks else ""
         
-        # Week selection
+        # Week selection - FIXED: Now using the correctly defined variables
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             selected_week = st.selectbox(
                 "Select Week",
                 options=week_options,
                 index=week_options.index(current_week) if current_week in week_options else 0,
-                key="kpi_week_selector",  # <- Unique key for KPI dashboard
-                help="This will update the Google Sheets dropdown and refresh the data"
+                key="kpi_week_selector",  # Unique key for KPI dashboard
+                help="Select week to view KPI data"
             )
         
         # Filter data for selected week
@@ -1983,9 +1986,6 @@ def display_kpi_dashboard():
     except Exception as e:
         st.error(f"Error displaying KPI dashboard: {str(e)}")
         st.exception(e)  # Show full exception details for debugging
-
-    display_kpi_dashboard()
-
 
 # --- DATA LOADER FUNCTION ---
 @st.cache_data(ttl=60)
