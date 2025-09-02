@@ -3402,7 +3402,7 @@ class SummaryDataExtractor:
         
         for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
             # Check if this is the WTD row
-            for col_idx in range(min(5, len(self.ddf.columns))):
+            for col_idx in range(min(5, len(self.df.columns))):
                 cell_value = self.df.iloc[row_idx, col_idx]
                 if cell_value and "wtd" in str(cell_value).lower():
                     wtd_row = row_idx
