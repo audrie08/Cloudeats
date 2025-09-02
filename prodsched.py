@@ -4185,7 +4185,7 @@ def main():
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "KPI Dashboard":
         # FIXED: Call the existing main_page() function instead of display_kpi_dashboard()
-        main_page()
+        display_kpi_dashboard()
     else:
         # UPDATED: Added Summary page routing
         if st.session_state.sub_tab == "Summary":
