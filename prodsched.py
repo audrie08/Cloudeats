@@ -3298,7 +3298,6 @@ def create_navigation():
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
 # --- Add the SummaryDataExtractor class if not already present ---
-# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
@@ -3375,7 +3374,7 @@ class SummaryDataExtractor:
         except Exception as e:
             st.error(f"Error extracting daily data: {str(e)}")
             return None
-
+            
 @st.cache_resource
 def init_google_sheets():
     """Initialize Google Sheets connection"""
@@ -3424,6 +3423,7 @@ def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
     except Exception as e:
         st.error(f"Failed to get cell value: {e}")
         return None
+
 
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
