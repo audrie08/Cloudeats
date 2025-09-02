@@ -3475,7 +3475,7 @@ def summary_page():
         return
     
     # Initialize data extractor (you'll need to provide your spreadsheet ID)
-    SPREADSHEET_ID = "your_spreadsheet_id_here"  # Replace with actual spreadsheet ID
+    SPREADSHEET_ID = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # Replace with actual spreadsheet ID
     
     try:
         extractor = SummaryDataExtractor(sheets_client, SPREADSHEET_ID)
