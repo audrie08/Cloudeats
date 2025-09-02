@@ -3298,6 +3298,7 @@ def create_navigation():
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
 # --- Add the SummaryDataExtractor class if not already present ---
+# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
@@ -3424,9 +3425,9 @@ def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
         st.error(f"Failed to get cell value: {e}")
         return None
 
-# --- Updated Summary Page with Better Error Handling ---
+# --- Updated Summary Page - DataFrame Only ---
 def summary_page():
-    """Summary page showing weekly KPI data with Google Sheets dropdown control"""
+    """Summary page showing weekly production data as DataFrame"""
     
     # --- Header ---
     st.markdown("""
@@ -3438,7 +3439,7 @@ def summary_page():
     
     # --- Load Summary Data ---
     try:
-        # Load the summary sheet (assuming it's at index 0 based on your image)
+        # Load the summary sheet
         df_summary = load_production_data(sheet_index=0)
         
         if df_summary.empty:
@@ -3457,235 +3458,83 @@ def summary_page():
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col2:
-            st.markdown("### 📅 Week Selection")
+            st.markdown("### Week Selection")
             
             # Get current dropdown value from Google Sheets
             current_week = None
             if client:
                 try:
                     current_week = get_current_dropdown_value(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL)
-                    st.info(f"Current Google Sheets value: {current_week}")  # Debug info
                 except Exception as e:
                     st.warning(f"Could not read from Google Sheets: {e}")
             
-            # Set default if we couldn't get current value
             if not current_week:
-                current_week = "35"  # Default fallback
+                current_week = "35"
                 
-            # Week options - FIXED: Use just numbers
-            week_options = [
-                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-                "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-                "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
-                "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
-                "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
-                "51", "52", "53"
-            ]
+            # Week options
+            week_options = [str(i) for i in range(1, 54)]
             
             # Find current index safely
             try:
-                current_index = week_options.index(str(current_week)) if current_week in week_options else week_options.index("35")
+                current_index = week_options.index(str(current_week))
             except ValueError:
-                current_index = week_options.index("35")  # Default to week 35
+                current_index = week_options.index("35")
             
             # Streamlit week selector
             selected_week = st.selectbox(
                 "Select Week",
                 options=week_options,
                 index=current_index,
-                key="summary_week_selector",
-                help="This will update the Google Sheets dropdown and refresh the data"
+                key="summary_week_selector"
             )
             
-            # Show current selection
-            st.success(f"Selected Week: {selected_week}")
-            
-            # Manual update button to avoid constant updates
-            if st.button("📤 Update Google Sheets", type="primary"):
+            # Manual update button
+            if st.button("Update Google Sheets", type="primary"):
                 if client:
                     with st.spinner("Updating Google Sheets..."):
                         success = update_dropdown_cell(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL, selected_week)
                         if success:
-                            st.success(f"✅ Successfully updated to Week {selected_week}")
-                            # Clear cache to get fresh data
+                            st.success(f"Successfully updated to Week {selected_week}")
                             st.cache_data.clear()
-                            time.sleep(2)  # Give Google Sheets time to recalculate
+                            time.sleep(2)
                             st.rerun()
                         else:
-                            st.error("❌ Failed to update Google Sheets")
+                            st.error("Failed to update Google Sheets")
                 else:
-                    st.error("❌ Google Sheets client not available")
+                    st.error("Google Sheets client not available")
             
             # Refresh button
-            if st.button("🔄 Refresh Data", help="Reload data from Google Sheets"):
+            if st.button("Refresh Data"):
                 st.cache_data.clear()
                 st.rerun()
         
-        # --- Extract Summary Data ---
-        summary_extractor = SummaryDataExtractor(df_summary)
-        summary_data = summary_extractor.extract_summary_metrics()
+        # --- Create Production Summary DataFrame ---
+        st.markdown("### Production Summary")
         
-        st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
+        # Create the exact dataframe matching your sheet structure
+        summary_extractor = SummaryDataExtractor(df_summary)
+        production_df = summary_extractor.create_production_dataframe()
+        
+        if not production_df.empty:
+            st.dataframe(production_df, use_container_width=True, hide_index=True)
+        else:
+            st.error("No production data available")
         
         # --- Display Debug Info ---
-        with st.expander("🔧 Debug Information"):
+        with st.expander("Debug Information"):
             st.json({
                 "Current Week": current_week,
                 "Selected Week": selected_week,
-                "Summary Data Keys": list(summary_data.keys()),
-                "Data Shape": df_summary.shape if not df_summary.empty else "Empty"
+                "Data Shape": df_summary.shape,
+                "First few rows": df_summary.head(10).to_dict() if not df_summary.empty else "Empty"
             })
-        
-        # --- KPI Cards ---
-        st.markdown("### Summary")
-        
-        # Row 1: Basic Production Metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('total_batches', 0):,.0f}</div>
-                <div class="kpi-label">Total Batches</div>
-                <div class="kpi-unit">(no.)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('total_volume', 0):,.0f}</div>
-                <div class="kpi-label">Total Volume</div>
-                <div class="kpi-unit">(kgs)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('total_run_hours', 0):,.0f}</div>
-                <div class="kpi-label">Total Run Hours</div>
-                <div class="kpi-unit">(hrs)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('total_manpower', 0):,.0f}</div>
-                <div class="kpi-label">Total Manpower</div>
-                <div class="kpi-unit">(count)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Row 2: Staff Metrics
-        col5, col6, col7, col8 = st.columns(4)
-        
-        with col5:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('total_staff_count', 0):,.0f}</div>
-                <div class="kpi-label">Total Staff Count</div>
-                <div class="kpi-unit">(count)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col6:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('production_staff', 0):,.0f}</div>
-                <div class="kpi-label">Production Staff</div>
-                <div class="kpi-unit">(count)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col7:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('support_staff', 0):,.0f}</div>
-                <div class="kpi-label">Support Staff</div>
-                <div class="kpi-unit">(count)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col8:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{summary_data.get('overtime_percentage', 0):.1f}%</div>
-                <div class="kpi-label">Overtime</div>
-                <div class="kpi-unit">(%)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Row 3: Capacity Utilization
-        col9, col10 = st.columns(2)
-        
-        with col9:
-            capacity_util = summary_data.get('capacity_utilization', 0)
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{capacity_util:.1f}%</div>
-                <div class="kpi-label">Capacity Utilization</div>
-                <div class="kpi-unit">(%)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col10:
-            # Status indicator
-            if capacity_util >= 90:
-                status_color = "#e74c3c"
-                status_text = "High Utilization"
-            elif capacity_util >= 70:
-                status_color = "#f39c12"
-                status_text = "Moderate Utilization"
+            
+        # --- Raw Data View ---
+        with st.expander("Raw Sheet Data"):
+            if not df_summary.empty:
+                st.dataframe(df_summary, use_container_width=True)
             else:
-                status_color = "#27ae60"
-                status_text = "Low Utilization"
-                
-            st.markdown(f"""
-            <div class="kpi-card" style="background: linear-gradient(135deg, {status_color}15, {status_color}25);">
-                <div class="kpi-label" style="color: {status_color}; font-weight: bold; font-size: 16px;">
-                    {status_text}
-                </div>
-                <div class="kpi-unit">Capacity Status</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # --- Daily Chart ---
-        st.markdown("### 📈 Daily Production Volume")
-        daily_data = summary_extractor.get_daily_breakdown()
-        if daily_data and daily_data['dates']:
-            chart_df = pd.DataFrame({
-                'Date': daily_data['dates'],
-                'Volume (kg)': daily_data['volumes']
-            })
-            st.line_chart(chart_df.set_index('Date'), use_container_width=True)
-        else:
-            st.info("Daily breakdown data not available")
-        
-        # --- Summary Table ---
-        st.markdown("### 📋 Detailed Summary Table")
-        summary_table_data = {
-            'Metric': [
-                'Total Batches', 'Total Volume (kg)', 'Total Run Hours',
-                'Total Manpower Required', 'Total Staff Count', 'Production Staff',
-                'Support Staff', 'Overtime Percentage (%)', 'Capacity Utilization (%)'
-            ],
-            'Value': [
-                f"{summary_data.get('total_batches', 0):,.0f}",
-                f"{summary_data.get('total_volume', 0):,.0f}",
-                f"{summary_data.get('total_run_hours', 0):,.0f}",
-                f"{summary_data.get('total_manpower', 0):,.0f}",
-                f"{summary_data.get('total_staff_count', 0):,.0f}",
-                f"{summary_data.get('production_staff', 0):,.0f}",
-                f"{summary_data.get('support_staff', 0):,.0f}",
-                f"{summary_data.get('overtime_percentage', 0):.1f}%",
-                f"{summary_data.get('capacity_utilization', 0):.1f}%"
-            ]
-        }
-        
-        summary_df = pd.DataFrame(summary_table_data)
-        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                st.error("No raw data available")
         
     except Exception as e:
         st.error(f"Error loading summary data: {str(e)}")
