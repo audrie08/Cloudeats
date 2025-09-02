@@ -1855,9 +1855,10 @@ def display_kpi_dashboard():
         with col2:
             selected_week = st.selectbox(
                 "Select Week",
-                weeks,
-                index=default_index,
-                key="week_selector"
+                options=week_options,
+                index=week_options.index(current_week) if current_week in week_options else 0,
+                key="kpi_week_selector",  # <- Unique key for KPI dashboard
+                help="This will update the Google Sheets dropdown and refresh the data"
             )
         
         # Filter data for selected week
@@ -3479,7 +3480,7 @@ def summary_page():
                 "Select Week",
                 options=week_options,
                 index=week_options.index(current_week) if current_week in week_options else 0,
-                key="week_selector",
+                key="summary_week_selector",  # <- Unique key for summary page
                 help="This will update the Google Sheets dropdown and refresh the data"
             )
             
