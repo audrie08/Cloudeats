@@ -3300,223 +3300,122 @@ def create_navigation():
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
-    def __init__(self, df):
-        self.df = df
-    
-    def create_production_dataframe(self):
-        """Create the production summary dataframe with dynamic day columns"""
+    def __init__(self, client, sheet_name="Weekly Production Schedule"):
+        """Initialize with Google Sheets client and sheet name"""
+        self.client = client
+        self.sheet_name = sheet_name
+        self.sheet = None
+        
+    def connect_to_sheet(self):
+        """Connect to the specific Google Sheet"""
         try:
-            # Find the header row that contains the days
-            days_row_idx = self._find_days_row()
-            if days_row_idx is None:
-                st.error("Could not find days row in the data")
-                return pd.DataFrame()
-            
-            # Extract the day columns (skip empty cells)
-            day_columns = []
-            for col_idx in range(len(self.df.columns)):
-                day_value = self.df.iloc[days_row_idx, col_idx]
-                if day_value and str(day_value).strip() and str(day_value).strip() not in ['', 'Category', 'UOM', 'Standard', 'WTD']:
-                    day_columns.append((col_idx, str(day_value).strip()))
-            
-            # Find the metric rows including WTD
-            metric_rows = self._find_metric_rows()
-            if not metric_rows:
-                st.error("Could not find metric rows in the data")
-                return pd.DataFrame()
-            
-            # Get WTD row if available
-            wtd_row = metric_rows.get("_wtd_row")
-            
-            # Create the production dataframe with dynamic day columns
-            production_data = {"Metric": []}
-            
-            # Add day columns to the dataframe structure
-            for _, day_name in day_columns:
-                production_data[day_name] = []
-            
-            # Add WTO column
-            production_data["WTO"] = []
-            
-            # Extract data for each metric
-            for metric_name, metric_key in [("Total Batches", "batches"), 
-                                          ("Total Volume (kg)", "volume"),
-                                          ("Total Run Hours", "run"), 
-                                          ("Total Manpower", "manpower"),
-                                          ("Overtime %", "ot"), 
-                                          ("Capacity Utilization %", "capacity")]:
-                
-                if metric_name in metric_rows:
-                    row_idx = metric_rows[metric_name]
-                    production_data["Metric"].append(metric_name)
-                    
-                    # Extract values for each day
-                    for col_idx, day_name in day_columns:
-                        value = self._safe_extract_number(row_idx, col_idx)
-                        production_data[day_name].append(value)
-                    
-                    # Extract WTO value from WTD row if available
-                    wto_value = 0
-                    if wtd_row is not None:
-                        # Map metric to the correct column in WTD row
-                        wtd_columns = {
-                            "batches": 3, "volume": 4, "run": 5, 
-                            "manpower": 6, "ot": 8, "capacity": 9
-                        }
-                        if metric_key in wtd_columns:
-                            col_idx = wtd_columns[metric_key]
-                            wto_value = self._safe_extract_number(wtd_row, col_idx)
-                    
-                    production_data["WTO"].append(wto_value)
-            
-            return pd.DataFrame(production_data)
-            
+            spreadsheet = self.client.open(self.sheet_name)
+            self.sheet = spreadsheet.sheet1  # Assuming first sheet
+            return True
         except Exception as e:
-            st.error(f"Error creating production dataframe: {str(e)}")
-            import traceback
-            st.error(f"Full error: {traceback.format_exc()}")
+            st.error(f"Failed to connect to sheet '{self.sheet_name}': {e}")
+            return False
+    
+    def extract_header_row(self):
+        """Extract header row from B3 to L3"""
+        try:
+            # Get range B3:L3
+            header_range = self.sheet.range('B3:L3')
+            headers = [cell.value for cell in header_range]
+            return headers
+        except Exception as e:
+            st.error(f"Failed to extract header row: {e}")
+            return []
+    
+    def extract_summary_data(self):
+        """Extract summary data based on the specified structure"""
+        try:
+            # Get the main data range (assuming rows 2-9 for the categories)
+            data_range = self.sheet.range('A2:L9')
+            
+            # Convert to list of lists for easier processing
+            rows = []
+            for i in range(0, len(data_range), 12):  # 12 columns (A to L)
+                row = [cell.value for cell in data_range[i:i+12]]
+                rows.append(row)
+            
+            # Filter rows based on your specified indices
+            categories = [
+                rows[2] if len(rows) > 2 else [],  # Category - index 2
+                rows[3] if len(rows) > 3 else [],  # Batches - index 3
+                rows[4] if len(rows) > 4 else [],  # Volume - index 4
+                rows[5] if len(rows) > 5 else [],  # Total Run Mhrs - index 5
+                rows[6] if len(rows) > 6 else [],  # Total Manpower Required - index 6
+                rows[7] if len(rows) > 7 else [],  # Total OT Manhrs - index 7
+                rows[8] if len(rows) > 8 else [],  # %OT - index 8
+                rows[9] if len(rows) > 9 else []   # Capacity Utilization - index 9 (if exists)
+            ]
+            
+            return categories
+        except Exception as e:
+            st.error(f"Failed to extract summary data: {e}")
+            return []
+    
+    def extract_staff_metrics(self):
+        """Extract staff count metrics from N4, N6, N8"""
+        try:
+            total_staff = self.sheet.acell('N4').value
+            production_staff = self.sheet.acell('N6').value
+            support_staff = self.sheet.acell('N8').value
+            
+            return {
+                'total_staff': total_staff,
+                'production_staff': production_staff,
+                'support_staff': support_staff
+            }
+        except Exception as e:
+            st.error(f"Failed to extract staff metrics: {e}")
+            return {
+                'total_staff': 0,
+                'production_staff': 0,
+                'support_staff': 0
+            }
+    
+    def create_summary_dataframe(self):
+        """Create DataFrame from extracted data"""
+        headers = self.extract_header_row()
+        data_rows = self.extract_summary_data()
+        
+        if not headers or not data_rows:
             return pd.DataFrame()
-
-    
-    def _find_days_row(self):
-        """Find the row index that contains the day names"""
-        for row_idx in range(min(10, len(self.df))):  # Check first 10 rows
-            for col_idx in range(min(15, len(self.df.columns))):  # Check first 15 columns
-                cell_value = self.df.iloc[row_idx, col_idx]
-                if cell_value and any(day in str(cell_value).lower() for day in ['aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul']):
-                    st.write(f"DEBUG: Found days row at row {row_idx}, col {col_idx}: '{cell_value}'")
-                    return row_idx
-        st.write("DEBUG: Could not find days row")
-        return None
-    
-    def _find_metric_rows(self):
-        """Find the row indices for each metric including WTD"""
-        metrics = {
-            "Total Batches": "batches",
-            "Total Volume (kg)": "volume",
-            "Total Run Hours": "run",
-            "Total Manpower": "manpower",
-            "Overtime %": "ot",
-            "Capacity Utilization %": "capacity"
-        }
         
-        metric_rows = {}
-        wtd_row = None
+        # Create row labels
+        row_labels = [
+            "Category",
+            "Batches", 
+            "Volume",
+            "Total Run Mhrs",
+            "Total Manpower Required",
+            "Total OT Manhrs",
+            "%OT",
+            "Capacity Utilization"
+        ]
         
-        for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
-            # Check if this is the WTD row
-            for col_idx in range(min(5, len(self.ddf.columns))):
-                cell_value = self.df.iloc[row_idx, col_idx]
-                if cell_value and "wtd" in str(cell_value).lower():
-                    wtd_row = row_idx
-                    break
-            
-            # Check for regular metrics
-            for metric_display, metric_key in metrics.items():
-                for col_idx in range(min(5, len(self.df.columns))):
-                    cell_value = self.df.iloc[row_idx, col_idx]
-                    if cell_value and metric_key in str(cell_value).lower():
-                        metric_rows[metric_display] = row_idx
-                        break
+        # Create DataFrame
+        df_data = {}
         
-        # Store WTD row for later use
-        if wtd_row is not None:
-            metric_rows["_wtd_row"] = wtd_row
+        # Use headers as column names, handling the B3:L3 range
+        for i, header in enumerate(headers):
+            if i < len(data_rows[0]):  # Make sure we have data for this column
+                column_data = []
+                for row in data_rows:
+                    if i < len(row):
+                        column_data.append(row[i])
+                    else:
+                        column_data.append("")
+                df_data[header if header else f"Column_{i}"] = column_data
         
-        return metric_rows
-
+        # Create DataFrame with row labels as index
+        df = pd.DataFrame(df_data)
+        df.index = row_labels[:len(df)]
+        
+        return df
     
-    def _safe_extract_number(self, row_idx, col_idx):
-        """Safely extract a number from the dataframe"""
-        try:
-            if row_idx < len(self.df) and abs(col_idx) < len(self.df.columns):
-                value = self.df.iloc[row_idx, col_idx]
-                if isinstance(value, str):
-                    # Remove commas, percentage signs, and any quotes
-                    value = value.replace(',', '').replace('%', '').strip("'\"")
-                    # Handle empty strings
-                    if value == '':
-                        return 0
-                return float(value) if value else 0
-        except Exception as e:
-            return 0
-        return 0
-    
-    def _safe_extract_percentage(self, row_idx, col_idx):
-        """Safely extract a percentage value"""
-        try:
-            if row_idx < len(self.df) and abs(col_idx) < len(self.df.columns):
-                value = self.df.iloc[row_idx, col_idx]
-                if isinstance(value, str):
-                    value = value.replace('%', '').replace(',', '').strip("'\"")
-                    if value == '':
-                        return 0
-                return float(value) if value else 0
-        except:
-            return 0
-        return 0
-    
-    def extract_summary_metrics(self):
-        """Extract key metrics from the summary sheet"""
-        try:
-            metrics = {}
-            
-            if len(self.df) > 10:
-                # Extract from WTD column (usually the last data column before staff info)
-                metrics['total_batches'] = self._safe_extract_number(1, -2)
-                metrics['total_volume'] = self._safe_extract_number(2, -2)
-                metrics['total_run_hours'] = self._safe_extract_number(3, -2)
-                metrics['total_manpower'] = self._safe_extract_number(4, -2)
-                
-                # Percentages
-                metrics['overtime_percentage'] = self._safe_extract_percentage(6, -2)
-                metrics['capacity_utilization'] = self._safe_extract_percentage(7, -2)
-                
-            return metrics
-            
-        except Exception as e:
-            st.error(f"Error extracting metrics: {str(e)}")
-            return {}
-    
-    def get_daily_breakdown(self):
-        """Extract daily breakdown data for charting"""
-        try:
-            daily_data = {'dates': [], 'volumes': []}
-            
-            # Find the days row
-            days_row_idx = self._find_days_row()
-            if days_row_idx is None:
-                return None
-            
-            # Find the volume row
-            volume_row_idx = None
-            for row_idx in range(min(15, len(self.df))):
-                for col_idx in range(min(5, len(self.df.columns))):
-                    cell_value = self.df.iloc[row_idx, col_idx]
-                    if cell_value and 'volume' in str(cell_value).lower():
-                        volume_row_idx = row_idx
-                        break
-                if volume_row_idx:
-                    break
-            
-            if volume_row_idx is None:
-                return None
-            
-            # Extract daily volumes
-            for col_idx in range(len(self.df.columns)):
-                date = self.df.iloc[days_row_idx, col_idx]
-                if date and str(date).strip() and any(month in str(date).lower() for month in 
-                                                    ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                                                     'jul', 'aug', 'sep', 'oct', 'nov', 'dec']):
-                    volume = self._safe_extract_number(volume_row_idx, col_idx)
-                    daily_data['dates'].append(str(date))
-                    daily_data['volumes'].append(volume)
-            
-            return daily_data if daily_data['dates'] else None
-            
-        except Exception as e:
-            st.error(f"Error extracting daily data: {str(e)}")
-            return None
             
 @st.cache_resource
 def init_google_sheets():
@@ -3530,180 +3429,122 @@ def init_google_sheets():
         st.error(f"Failed to connect to Google Sheets: {e}")
         return None
 
-def update_dropdown_cell(client, spreadsheet_id, worksheet_name, cell, value):
-    """Update a specific cell in Google Sheets with proper value formatting"""
-    try:
-        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
-        
-        # FIXED: Ensure the value is sent as a number, not text
-        # Remove any potential quotes or text formatting
-        clean_value = str(value).strip("'\"")
-        
-        # Try to convert to number if it's numeric
-        try:
-            numeric_value = int(clean_value)
-            sheet.update(cell, numeric_value, value_input_option='USER_ENTERED')
-        except ValueError:
-            # If not numeric, send as raw value
-            sheet.update(cell, clean_value, value_input_option='RAW')
-        
-        return True
-    except Exception as e:
-        st.error(f"Failed to update cell: {e}")
-        return False
+def display_staff_metrics(staff_data):
+    """Display staff metrics in metric cards"""
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="Total Staff Count",
+            value=staff_data['total_staff'] if staff_data['total_staff'] else "N/A"
+        )
+    
+    with col2:
+        st.metric(
+            label="Production Staff",
+            value=staff_data['production_staff'] if staff_data['production_staff'] else "N/A"
+        )
+    
+    with col3:
+        st.metric(
+            label="Support Staff", 
+            value=staff_data['support_staff'] if staff_data['support_staff'] else "N/A"
+        )
 
-def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
-    """Get current value from dropdown cell"""
-    try:
-        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
-        value = sheet.acell(cell).value
-        
-        # FIXED: Clean the returned value of any quotes
-        if value:
-            clean_value = str(value).strip("'\"")
-            return clean_value
-        return None
-    except Exception as e:
-        st.error(f"Failed to get cell value: {e}")
-        return None
-
-def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
-    """Get current value from dropdown cell"""
-    try:
-        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
-        value = sheet.acell(cell).value
-        
-        # FIXED: Clean the returned value of any quotes
-        if value:
-            clean_value = str(value).strip("'\"")
-            return clean_value
-        return None
-    except Exception as e:
-        st.error(f"Failed to get cell value: {e}")
-        return None
 
 
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
+    st.title("📊 Production Summary")
     
-    # --- Header ---
-    st.markdown("""
-    <div class="main-header">
-        <h1><b>Summary Dashboard</b></h1>
-        <p><b>Production Summary with Week Selection</b></p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Initialize Google Sheets connection
+    client = init_google_sheets()
     
-    # --- Load Summary Data ---
+    if not client:
+        st.error("Unable to connect to Google Sheets. Please check your credentials.")
+        return
+    
+    # Create data extractor
+    extractor = SummaryDataExtractor(client)
+    
+    # Connect to sheet
+    if not extractor.connect_to_sheet():
+        st.error("Unable to connect to the Weekly Production Schedule sheet.")
+        return
+    
     try:
-        # Load the summary sheet
-        df_full = load_production_data(sheet_index=0)
+        # Add week toggle (you can customize this based on your needs)
+        st.subheader("📅 Week Selection")
+        current_week = datetime.now().strftime("%Y-W%U")
+        selected_week = st.selectbox(
+            "Select Week:",
+            options=[current_week],  # You can expand this with more week options
+            index=0
+        )
         
-        if df_full.empty:
-            st.error("Failed to load summary data")
-            return
+        # Display staff metrics in cards
+        st.subheader("👥 Staff Metrics")
+        staff_data = extractor.extract_staff_metrics()
+        display_staff_metrics(staff_data)
         
-        # REMOVE ROWS 12-18 (index 12-18) - Total Staff Count and extra data
-        df_summary = df_full.iloc[:12, :]  # Keep only rows 0-11 (index 0-11)
+        st.divider()
         
-        # Also limit to columns A-L only (index 0-11)
-        df_summary = df_summary.iloc[:, :12]
+        # Display summary DataFrame
+        st.subheader("📈 Production Summary Data")
+        
+        with st.spinner("Loading summary data..."):
+            df = extractor.create_summary_dataframe()
             
-        # Initialize Google Sheets client for dropdown control
-        client = init_google_sheets()
-        
-        # Configuration
-        SPREADSHEET_ID = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
-        WORKSHEET_NAME = "MAIN"
-        DROPDOWN_CELL = "C1"
-        
-        # --- Week Selection with Google Sheets Integration ---
-        col1, col2, col3 = st.columns([1, 2, 1])
-        
-        with col2:
-            st.markdown("### Week Selection")
+            if df.empty:
+                st.warning("No summary data available.")
+                return
             
-            # Get current dropdown value from Google Sheets
-            current_week = None
-            if client:
-                try:
-                    current_week = get_current_dropdown_value(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL)
-                except Exception as e:
-                    st.warning(f"Could not read from Google Sheets: {e}")
-            
-            if not current_week:
-                current_week = "35"
-                
-            # Week options
-            week_options = [str(i) for i in range(1, 54)]
-            
-            # Find current index safely
-            try:
-                current_index = week_options.index(str(current_week))
-            except ValueError:
-                current_index = week_options.index("35")
-            
-            # Streamlit week selector
-            selected_week = st.selectbox(
-                "Select Week",
-                options=week_options,
-                index=current_index,
-                key="summary_week_selector"
-            )
-            
-            # Manual update button
-            if st.button("Update Google Sheets", type="primary"):
-                if client:
-                    with st.spinner("Updating Google Sheets..."):
-                        success = update_dropdown_cell(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL, selected_week)
-                        if success:
-                            st.success(f"Successfully updated to Week {selected_week}")
-                            st.cache_data.clear()
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            st.error("Failed to update Google Sheets")
-                else:
-                    st.error("Google Sheets client not available")
-            
-            # Refresh button
-            if st.button("Refresh Data"):
-                st.cache_data.clear()
-                st.rerun()
-        
-        # --- Create Production Summary DataFrame ---
-        st.markdown("### Production Summary")
-        
-        # Create the exact dataframe matching your sheet structure
-        summary_extractor = SummaryDataExtractor(df_summary)
-        production_df = summary_extractor.create_production_dataframe()
-        
-        if not production_df.empty:
-            st.dataframe(production_df, width='stretch', hide_index=True)
-        else:
-            st.error("No production data available")
-        
-        # --- Display Debug Info ---
-        with st.expander("Debug Information"):
-            st.json({
-                "Current Week": current_week,
-                "Selected Week": selected_week,
-                "Data Shape": df_summary.shape,
-                "First few rows": df_summary.head(10).to_dict() if not df_summary.empty else "Empty"
+            # Style the DataFrame for better presentation
+            styled_df = df.style.format({
+                col: lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) and col in [
+                    "Volume", "Total Run Mhrs", "Total Manpower Required", "Total OT Manhrs"
+                ] else str(x)
+                for col in df.columns
+            }).format({
+                col: lambda x: f"{x:.1f}%" if isinstance(x, (int, float)) and "%" in col else x
+                for col in df.columns if "%" in col
             })
             
-        # --- Raw Data View ---
-        with st.expander("Raw Sheet Data"):
-            if not df_summary.empty:
-                st.dataframe(df_summary, width='stretch')
-            else:
-                st.error("No raw data available")
-        
+            # Display the DataFrame
+            st.dataframe(
+                styled_df,
+                use_container_width=True,
+                height=400
+            )
+            
+            # Add download button
+            csv = df.to_csv()
+            st.download_button(
+                label="📥 Download Summary Data as CSV",
+                data=csv,
+                file_name=f"production_summary_{selected_week}.csv",
+                mime="text/csv"
+            )
+            
     except Exception as e:
-        st.error(f"Error loading summary data: {str(e)}")
-        import traceback
-        st.error(f"Full error: {traceback.format_exc()}")
+        st.error(f"An error occurred while loading summary data: {e}")
+        st.info("Please check your Google Sheets connection and data format.")
+
+# Additional helper function for formatting
+def format_dataframe_display(df):
+    """Apply custom formatting to the DataFrame for better display"""
+    # Apply different formatting based on row content
+    def highlight_percentage_rows(row):
+        if '%' in row.name:
+            return ['background-color: #e8f4fd' for _ in row]
+        elif 'Utilization' in row.name:
+            return ['background-color: #fff2cc' for _ in row]
+        else:
+            return ['' for _ in row]
+    
+    styled = df.style.apply(highlight_percentage_rows, axis=1)
+    return styled
 
 def weekly_prod_schedule():
 
