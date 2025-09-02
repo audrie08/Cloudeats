@@ -3293,18 +3293,444 @@ def create_navigation():
         
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
-
-def main_page():    
-    st.markdown("""
-    <div class="main-header">
-        <h1><b>2025 Commissary KPI Dashboard</b></h1>
-        <p><b>Weekly Performance Metrics</b></p>
-    </div>
-    """, unsafe_allow_html=True)
-
+# --- Summary Data Extractor Class ---
+class SummaryDataExtractor:
+    """Class to extract and process summary data from the Google Sheets"""
     
+    def __init__(self, df):
+        self.df = df
+    
+    def extract_summary_metrics(self):
+        """Extract key metrics from the summary sheet"""
+        try:
+            metrics = {}
+            
+            # Find the data rows based on your sheet structure
+            # Assuming the data starts from row 4 (index 3) based on your image
+            if len(self.df) > 10:  # Ensure we have enough data
+                
+                # Extract data from specific rows (adjust indices based on your sheet)
+                metrics['total_batches'] = self._safe_extract_number(1, -2)  # WTD column for Batches
+                metrics['total_volume'] = self._safe_extract_number(2, -2)   # WTD column for Volume
+                metrics['total_run_hours'] = self._safe_extract_number(3, -2)  # WTD column for Total Run Hours
+                metrics['total_manpower'] = self._safe_extract_number(4, -2)   # WTD column for Total Manpower
+                
+                # Staff counts from the right side
+                metrics['total_staff_count'] = self._safe_extract_number(1, -1)  # Total Staff Count
+                metrics['production_staff'] = self._safe_extract_number(2, -1)   # Production Staff
+                metrics['support_staff'] = self._safe_extract_number(3, -1)     # Support Staff
+                
+                # Percentages
+                metrics['overtime_percentage'] = self._safe_extract_percentage(6, -2)  # %OT row
+                metrics['capacity_utilization'] = self._safe_extract_percentage(7, -2)  # Capacity Utilization row
+                
+            return metrics
+            
+        except Exception as e:
+            st.error(f"Error extracting metrics: {str(e)}")
+            return {}
+    
+    def _safe_extract_number(self, row_idx, col_idx):
+        """Safely extract a number from the dataframe"""
+        try:
+            if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
+                value = self.df.iloc[row_idx, col_idx]
+                # Clean the value and convert to number
+                if isinstance(value, str):
+                    value = value.replace(',', '').replace('%', '')
+                return float(value) if value and value != '' else 0
+        except:
+            return 0
+        return 0
+    
+    def _safe_extract_percentage(self, row_idx, col_idx):
+        """Safely extract a percentage value"""
+        try:
+            if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
+                value = self.df.iloc[row_idx, col_idx]
+                if isinstance(value, str):
+                    value = value.replace('%', '').replace(',', '')
+                return float(value) if value and value != '' else 0
+        except:
+            return 0
+        return 0
+    
+    def get_daily_breakdown(self):
+        """Extract daily breakdown data for charting"""
+        try:
+            # Extract daily data from columns D to J (25Aug to 31Aug)
+            daily_data = {
+                'dates': [],
+                'volumes': []
+            }
+            
+            # Get the date row (assuming it's in row 0 or 1)
+            date_row = 0  # Adjust based on your sheet structure
+            volume_row = 2  # Volume row
+            
+            # Extract dates and volumes for daily columns (D to J)
+            for col_idx in range(3, 10):  # Columns D to J
+                if col_idx < len(self.df.columns):
+                    date = self.df.iloc[date_row, col_idx]
+                    volume = self._safe_extract_number(volume_row, col_idx)
+                    
+                    if date:
+                        daily_data['dates'].append(date)
+                        daily_data['volumes'].append(volume)
+            
+            return daily_data if daily_data['dates'] else None
+            
+        except Exception as e:
+            st.error(f"Error extracting daily data: {str(e)}")
+            return None
+
+@st.cache_resource
+def init_google_sheets():
+    """Initialize Google Sheets connection"""
+    try:
+        credentials = load_credentials_prod()
+        if credentials:
+            import gspread
+            client = gspread.authorize(credentials)
+            return client
+    except Exception as e:
+        st.error(f"Failed to connect to Google Sheets: {e}")
+        return None
+
+def update_dropdown_cell(client, spreadsheet_id, worksheet_name, cell, value):
+    """Update a specific cell in Google Sheets"""
+    try:
+        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
+        sheet.update(cell, value)
+        return True
+    except Exception as e:
+        st.error(f"Failed to update cell: {e}")
+        return False
+
+def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
+    """Get current value from dropdown cell"""
+    try:
+        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
+        value = sheet.acell(cell).value
+        return value
+    except Exception as e:
+        st.error(f"Failed to get cell value: {e}")
+        return None
+
+
+# --- Update your main() function to include the Summary page ---
+def main():
+    """Main application function - UPDATED VERSION"""
+    
+    # Create modern navigation header
+    create_navigation()
+
     # Display KPI Dashboard
     display_kpi_dashboard()
+    
+    # Initialize session state for navigation
+    if 'main_tab' not in st.session_state:
+        st.session_state.main_tab = "KPI Dashboard"
+    if 'sub_tab' not in st.session_state:
+        st.session_state.sub_tab = "Summary"  # Default to Summary page
+    
+    # Main navigation with smaller, centered buttons
+    main_page_selection = option_menu(
+        menu_title=None,
+        options=["KPI Dashboard", "Production Details"],
+        icons=["house-fill", "clipboard-data-fill"],
+        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else 1,
+        orientation="horizontal",
+        key="main_navigation",
+        styles={
+            "container": {
+                "max-width": "350px",
+                "text-align": "center",
+                "border-radius": "20px", 
+                "color": "#ffffff",
+            },
+            "icon": {
+                "color": "#ffe712",
+                "font-size": "12px",
+                "margin-right": "4px"
+            },
+            "nav-link": {
+                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                "font-size": "11px",
+                "font-weight": "500",
+                "text-align": "center",
+                "color": "#543559",
+                "margin": "0.1rem",
+                "padding": "0.4rem 0.6rem",
+                "border-radius": "17px",
+                "transition": "all 0.3s ease",
+                "border": "1px solid transparent",
+                "background": "rgba(248, 249, 250, 0.5)",
+                "white-space": "nowrap"
+            },
+            "nav-link-selected": {
+                "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
+                "color": "#ffffff",
+                "font-weight": "600",
+                "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                "border": "2px solid rgba(255,255,255,0.1)",
+                "transform": "translateY(-1px)"
+            }
+        }
+    )
+
+def summary_page():
+    """Summary page showing weekly KPI data with Google Sheets dropdown control"""
+    
+    # --- Header ---
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>Summary Dashboard</b></h1>
+        <p><b>Production Summary with Week Selection</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # --- Load Summary Data ---
+    try:
+        # Load the summary sheet (assuming it's at index 0 based on your image)
+        df_summary = load_production_data(sheet_index=0)
+        
+        if df_summary.empty:
+            st.error("Failed to load summary data")
+            return
+            
+        # Initialize Google Sheets client for dropdown control
+        client = init_google_sheets()
+        
+        # Configuration
+        SPREADSHEET_ID = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # Your spreadsheet ID
+        WORKSHEET_NAME = "MAIN"  # Adjust based on your sheet name
+        DROPDOWN_CELL = "C1"  # The week dropdown cell
+        
+        # --- Week Selection with Google Sheets Integration ---
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
+            st.markdown("### 📅 Week Selection")
+            
+            # Get current dropdown value from Google Sheets
+            if client:
+                current_week = get_current_dropdown_value(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL)
+                if not current_week:
+                    current_week = "Week 35"  # Default fallback
+            else:
+                current_week = "Week 35"
+                
+            # Week options (customize based on your needs)
+            week_options = [
+                "Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6",
+                "Week 7", "Week 8", "Week 9", "Week 10", "Week 11", "Week 12",
+                "Week 13", "Week 14", "Week 15", "Week 16", "Week 17", "Week 18",
+                "Week 19", "Week 20", "Week 21", "Week 22", "Week 23", "Week 24",
+                "Week 25", "Week 26", "Week 27", "Week 28", "Week 29", "Week 30",
+                "Week 31", "Week 32", "Week 33", "Week 34", "Week 35", "Week 36",
+                "Week 37", "Week 38", "Week 39", "Week 40", "Week 41", "Week 42",
+                "Week 43", "Week 44", "Week 45", "Week 46", "Week 47", "Week 48",
+                "Week 49", "Week 50", "Week 51", "Week 52", "Week 53"
+            ]
+            
+            # Streamlit week selector
+            selected_week = st.selectbox(
+                "Select Week",
+                options=week_options,
+                index=week_options.index(current_week) if current_week in week_options else 0,
+                key="week_selector",
+                help="This will update the Google Sheets dropdown and refresh the data"
+            )
+            
+            # Update Google Sheets if week changed
+            if client and selected_week != current_week:
+                with st.spinner("Updating Google Sheets..."):
+                    success = update_dropdown_cell(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL, selected_week)
+                    if success:
+                        st.success(f"✅ Updated to {selected_week}")
+                        time.sleep(2)  # Give Google Sheets time to recalculate
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to update Google Sheets")
+            
+            # Refresh button
+            if st.button("🔄 Refresh Data", help="Reload data from Google Sheets"):
+                st.cache_data.clear()
+                st.rerun()
+        
+        # --- Extract Summary Data ---
+        summary_extractor = SummaryDataExtractor(df_summary)
+        summary_data = summary_extractor.extract_summary_metrics()
+        
+        st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
+        
+        # --- KPI Cards ---
+        st.markdown("### 📊 Weekly Summary Metrics")
+        
+        # Create 3 rows of KPI cards
+        # Row 1: Basic Production Metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('total_batches', 0):,.0f}</div>
+                <div class="kpi-label">Total Batches</div>
+                <div class="kpi-unit">(no.)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('total_volume', 0):,.0f}</div>
+                <div class="kpi-label">Total Volume</div>
+                <div class="kpi-unit">(kgs)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('total_run_hours', 0):,.0f}</div>
+                <div class="kpi-label">Total Run Hours</div>
+                <div class="kpi-unit">(hrs)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('total_manpower', 0):,.0f}</div>
+                <div class="kpi-label">Total Manpower</div>
+                <div class="kpi-unit">(count)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Row 2: Staff and Overtime Metrics
+        col5, col6, col7, col8 = st.columns(4)
+        
+        with col5:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('total_staff_count', 0):,.0f}</div>
+                <div class="kpi-label">Total Staff Count</div>
+                <div class="kpi-unit">(count)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col6:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('production_staff', 0):,.0f}</div>
+                <div class="kpi-label">Production Staff</div>
+                <div class="kpi-unit">(count)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col7:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('support_staff', 0):,.0f}</div>
+                <div class="kpi-label">Support Staff</div>
+                <div class="kpi-unit">(count)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col8:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{summary_data.get('overtime_percentage', 0):.1f}%</div>
+                <div class="kpi-label">Overtime</div>
+                <div class="kpi-unit">(%)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Row 3: Utilization Metrics
+        col9, col10 = st.columns([1, 1])
+        
+        with col9:
+            capacity_util = summary_data.get('capacity_utilization', 0)
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-number">{capacity_util:.1f}%</div>
+                <div class="kpi-label">Capacity Utilization</div>
+                <div class="kpi-unit">(%)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col10:
+            # Add a status indicator
+            if capacity_util >= 90:
+                status_color = "#e74c3c"  # Red for high utilization
+                status_text = "High Utilization"
+            elif capacity_util >= 70:
+                status_color = "#f39c12"  # Orange for moderate utilization
+                status_text = "Moderate Utilization"
+            else:
+                status_color = "#27ae60"  # Green for low utilization
+                status_text = "Low Utilization"
+                
+            st.markdown(f"""
+            <div class="kpi-card" style="background: linear-gradient(135deg, {status_color}15, {status_color}25);">
+                <div class="kpi-label" style="color: {status_color}; font-weight: bold; font-size: 16px;">
+                    {status_text}
+                </div>
+                <div class="kpi-unit">Capacity Status</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # --- Daily Breakdown Chart ---
+        st.markdown("### 📈 Daily Production Volume")
+        
+        daily_data = summary_extractor.get_daily_breakdown()
+        if daily_data:
+            # Create the chart using Streamlit's native charting
+            chart_df = pd.DataFrame({
+                'Date': daily_data['dates'],
+                'Volume (kg)': daily_data['volumes']
+            })
+            
+            st.line_chart(chart_df.set_index('Date'), use_container_width=True)
+        else:
+            st.info("Daily breakdown data not available")
+        
+        # --- Detailed Data Table ---
+        st.markdown("### 📋 Detailed Summary Table")
+        
+        # Create a summary table
+        summary_table_data = {
+            'Metric': [
+                'Total Batches',
+                'Total Volume (kg)',
+                'Total Run Hours',
+                'Total Manpower Required',
+                'Total Staff Count',
+                'Production Staff',
+                'Support Staff',
+                'Overtime Percentage (%)',
+                'Capacity Utilization (%)'
+            ],
+            'Value': [
+                f"{summary_data.get('total_batches', 0):,.0f}",
+                f"{summary_data.get('total_volume', 0):,.0f}",
+                f"{summary_data.get('total_run_hours', 0):,.0f}",
+                f"{summary_data.get('total_manpower', 0):,.0f}",
+                f"{summary_data.get('total_staff_count', 0):,.0f}",
+                f"{summary_data.get('production_staff', 0):,.0f}",
+                f"{summary_data.get('support_staff', 0):,.0f}",
+                f"{summary_data.get('overtime_percentage', 0):.1f}%",
+                f"{summary_data.get('capacity_utilization', 0):.1f}%"
+            ]
+        }
+        
+        summary_df = pd.DataFrame(summary_table_data)
+        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+        
+    except Exception as e:
+        st.error(f"Error loading summary data: {str(e)}")
+        st.info("Please check your Google Sheets connection and data format.")
 
 def weekly_prod_schedule():
 
@@ -3762,26 +4188,26 @@ def main():
         }
     )
     
-    # Store the main page selection in session state
+   # Store the main page selection in session state
     st.session_state.main_tab = main_page_selection
     
     # Show sub-navigation only if Production Details is selected
     if main_page_selection == "Production Details":
         
+        # UPDATED: Added Summary to the sub-navigation options
         sub_page_selection = option_menu(
             menu_title=None,
-            options=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
-            icons=["calendar-week-fill", "gear-fill", "graph-up"],
-            default_index=["Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
+            options=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
+            icons=["bar-chart-fill", "calendar-week-fill", "gear-fill", "graph-up"],
+            default_index=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"].index(st.session_state.sub_tab),
             orientation="horizontal",
             key="sub_navigation",
             styles={
                 "container": {
-                    "max-width": "600px",
+                    "max-width": "800px",  # Increased width for 4 options
                     "text-align": "center",
                     "border-radius": "20px",
                     "color": "#ffffff"
-
                 },
                 "icon": {
                     "color": "#ffe712",
@@ -3820,7 +4246,10 @@ def main():
     if st.session_state.main_tab == "KPI Dashboard":
         main_page()
     else:
-        if st.session_state.sub_tab == "Weekly Production Schedule":
+        # UPDATED: Added Summary page routing
+        if st.session_state.sub_tab == "Summary":
+            summary_page()
+        elif st.session_state.sub_tab == "Weekly Production Schedule":
             weekly_prod_schedule()
         elif st.session_state.sub_tab == "Machine Utilization":
             machine_utilization()
