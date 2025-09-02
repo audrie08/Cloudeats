@@ -3308,6 +3308,7 @@ class SummaryDataExtractor:
         try:
             # Find the header row that contains the days
             days_row_idx = self._find_days_row()
+            st.write(f"DEBUG: Days row index: {days_row_idx}")
             if days_row_idx is None:
                 st.error("Could not find days row in the data")
                 return pd.DataFrame()
@@ -3319,8 +3320,11 @@ class SummaryDataExtractor:
                 if day_value and str(day_value).strip() and str(day_value).strip() not in ['', 'Category', 'UOM', 'Standard', 'WTD']:
                     day_columns.append((col_idx, str(day_value).strip()))
             
+            st.write(f"DEBUG: Day columns found: {day_columns}")
+            
             # Find the metric rows
             metric_rows = self._find_metric_rows()
+            st.write(f"DEBUG: Metric rows found: {metric_rows}")
             if not metric_rows:
                 st.error("Could not find metric rows in the data")
                 return pd.DataFrame()
@@ -3346,10 +3350,12 @@ class SummaryDataExtractor:
                 for col_idx, day_name in day_columns:
                     value = self._safe_extract_number(row_idx, col_idx)
                     production_data[day_name].append(value)
+                    st.write(f"DEBUG: {metric_name} - {day_name}: {value} (row {row_idx}, col {col_idx})")
                 
                 # Extract WTD value from COLUMN 11 (index 11)
                 wtd_value = self._safe_extract_number(row_idx, 11)
                 production_data["WTD"].append(wtd_value)
+                st.write(f"DEBUG: {metric_name} - WTD: {wtd_value} (row {row_idx}, col 11)")
             
             return pd.DataFrame(production_data)
             
@@ -3366,10 +3372,12 @@ class SummaryDataExtractor:
             for col_idx in range(min(15, len(self.df.columns))):  # Check first 15 columns
                 cell_value = self.df.iloc[row_idx, col_idx]
                 if cell_value and any(day in str(cell_value).lower() for day in ['aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul']):
+                    st.write(f"DEBUG: Found days row at row {row_idx}, col {col_idx}: '{cell_value}'")
                     return row_idx
+        st.write("DEBUG: Could not find days row")
         return None
     
-     def _find_metric_rows(self):
+    def _find_metric_rows(self):
         """Find the row indices for each metric"""
         # Based on your debug data structure:
         # Rows 4-10 contain the daily data for each metric
@@ -3377,11 +3385,18 @@ class SummaryDataExtractor:
         
         metric_rows = {}
         
+        # Debug: Print the first few rows to understand the data structure
+        st.write("DEBUG: First few rows of data:")
+        for i in range(min(12, len(self.df))):
+            st.write(f"Row {i}: {self.df.iloc[i].tolist()}")
+        
         # Find which row contains which metric by checking column 2 (the day names)
         for row_idx in range(4, 11):  # Rows 4-10 (index 4-10)
             if row_idx < len(self.df):
                 # Check if this row has a day name in column 2
                 day_value = self.df.iloc[row_idx, 2] if len(self.df.columns) > 2 else ""
+                st.write(f"DEBUG: Row {row_idx}, Col 2 = '{day_value}'")
+                
                 if day_value and any(day in str(day_value).lower() for day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'aug', 'sep', 'oct']):
                     # This is a data row, map it to metrics based on position
                     metric_mapping = {
@@ -3395,8 +3410,11 @@ class SummaryDataExtractor:
                     }
                     if row_idx in metric_mapping:
                         metric_rows[metric_mapping[row_idx]] = row_idx
+                        st.write(f"DEBUG: Found metric '{metric_mapping[row_idx]}' at row {row_idx}")
         
+        st.write(f"DEBUG: Found metric rows: {metric_rows}")
         return metric_rows
+
     
     def _safe_extract_number(self, row_idx, col_idx):
         """Safely extract a number from the dataframe"""
