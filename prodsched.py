@@ -3297,12 +3297,126 @@ def create_navigation():
         
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
-# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
     def __init__(self, df):
         self.df = df
+    
+    def create_production_dataframe(self):
+        """Create the production summary dataframe with dynamic day columns"""
+        try:
+            # Find the header row that contains the days
+            days_row_idx = self._find_days_row()
+            if days_row_idx is None:
+                st.error("Could not find days row in the data")
+                return pd.DataFrame()
+            
+            # Extract the day columns (skip empty cells)
+            day_columns = []
+            for col_idx in range(len(self.df.columns)):
+                day_value = self.df.iloc[days_row_idx, col_idx]
+                if day_value and str(day_value).strip() and str(day_value).strip() not in ['', 'Category', 'UOM', 'Standard', 'WTD']:
+                    day_columns.append((col_idx, str(day_value).strip()))
+            
+            # Find the metric rows
+            metric_rows = self._find_metric_rows()
+            if not metric_rows:
+                st.error("Could not find metric rows in the data")
+                return pd.DataFrame()
+            
+            # Create the production dataframe with dynamic day columns
+            production_data = {"Metric": []}
+            
+            # Add day columns to the dataframe structure
+            for _, day_name in day_columns:
+                production_data[day_name] = []
+            
+            # Add WTO column
+            production_data["WTO"] = []
+            
+            # Extract data for each metric
+            for metric_name, row_idx in metric_rows.items():
+                production_data["Metric"].append(metric_name)
+                
+                # Extract values for each day
+                for col_idx, day_name in day_columns:
+                    value = self._safe_extract_number(row_idx, col_idx)
+                    production_data[day_name].append(value)
+                
+                # Extract WTO value (usually the last column before staff info)
+                wto_value = self._safe_extract_number(row_idx, -2)  # Second last column
+                production_data["WTO"].append(wto_value)
+            
+            return pd.DataFrame(production_data)
+            
+        except Exception as e:
+            st.error(f"Error creating production dataframe: {str(e)}")
+            import traceback
+            st.error(f"Full error: {traceback.format_exc()}")
+            return pd.DataFrame()
+    
+    def _find_days_row(self):
+        """Find the row index that contains the day names"""
+        for row_idx in range(min(10, len(self.df))):  # Check first 10 rows
+            for col_idx in range(min(15, len(self.df.columns))):  # Check first 15 columns
+                cell_value = self.df.iloc[row_idx, col_idx]
+                if cell_value and any(day in str(cell_value).lower() for day in ['aug', 'sep', 'oct', 'nov', 'dec', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul']):
+                    return row_idx
+        return None
+    
+    def _find_metric_rows(self):
+        """Find the row indices for each metric"""
+        metrics = {
+            "Total Batches": "batches",
+            "Total Volume (kg)": "volume",
+            "Total Run Hours": "run",
+            "Total Manpower": "manpower",
+            "Overtime %": "ot",
+            "Capacity Utilization %": "capacity"
+        }
+        
+        metric_rows = {}
+        
+        for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
+            for metric_display, metric_key in metrics.items():
+                for col_idx in range(min(5, len(self.df.columns))):  # Check first 5 columns
+                    cell_value = self.df.iloc[row_idx, col_idx]
+                    if cell_value and metric_key in str(cell_value).lower():
+                        metric_rows[metric_display] = row_idx
+                        break
+        
+        return metric_rows
+    
+    def _safe_extract_number(self, row_idx, col_idx):
+        """Safely extract a number from the dataframe"""
+        try:
+            if row_idx < len(self.df) and abs(col_idx) < len(self.df.columns):
+                value = self.df.iloc[row_idx, col_idx]
+                if isinstance(value, str):
+                    # Remove commas, percentage signs, and any quotes
+                    value = value.replace(',', '').replace('%', '').strip("'\"")
+                    # Handle empty strings
+                    if value == '':
+                        return 0
+                return float(value) if value else 0
+        except Exception as e:
+            return 0
+        return 0
+    
+    def _safe_extract_percentage(self, row_idx, col_idx):
+        """Safely extract a percentage value"""
+        try:
+            if row_idx < len(self.df) and abs(col_idx) < len(self.df.columns):
+                value = self.df.iloc[row_idx, col_idx]
+                if isinstance(value, str):
+                    value = value.replace('%', '').replace(',', '').strip("'\"")
+                    if value == '':
+                        return 0
+                return float(value) if value else 0
+        except:
+            return 0
+        return 0
     
     def extract_summary_metrics(self):
         """Extract key metrics from the summary sheet"""
@@ -3331,122 +3445,37 @@ class SummaryDataExtractor:
             st.error(f"Error extracting metrics: {str(e)}")
             return {}
     
-    def create_production_dataframe(self):
-        """Create a structured production summary DataFrame"""
-        try:
-            # Initialize the production data structure
-            production_data = {
-                'Metric': [],
-                'Monday': [],
-                'Tuesday': [],
-                'Wednesday': [],
-                'Thursday': [],
-                'Friday': [],
-                'Saturday': [],
-                'Sunday': [],
-                'WTD': []
-            }
-            
-            # Define the metrics we want to extract (adjust indices based on your sheet structure)
-            metrics_config = [
-                {'name': 'Total Batches', 'row_idx': 1},
-                {'name': 'Total Volume (kg)', 'row_idx': 2},
-                {'name': 'Total Run Hours', 'row_idx': 3},
-                {'name': 'Total Manpower', 'row_idx': 4},
-                {'name': 'Overtime %', 'row_idx': 6, 'is_percentage': True},
-                {'name': 'Capacity Utilization %', 'row_idx': 7, 'is_percentage': True}
-            ]
-            
-            # Extract data for each metric
-            for metric in metrics_config:
-                production_data['Metric'].append(metric['name'])
-                
-                # Extract daily values (assuming columns 3-9 are Mon-Sun, column 10 is WTD)
-                for col_idx in range(3, 10):  # Mon-Sun (columns 3-9)
-                    if metric.get('is_percentage', False):
-                        value = self._safe_extract_percentage(metric['row_idx'], col_idx)
-                        production_data[list(production_data.keys())[col_idx-2]].append(f"{value:.1f}%")
-                    else:
-                        value = self._safe_extract_number(metric['row_idx'], col_idx)
-                        production_data[list(production_data.keys())[col_idx-2]].append(f"{value:,.0f}")
-                
-                # Extract WTD value (column 10 or -2 from end)
-                if metric.get('is_percentage', False):
-                    wtd_value = self._safe_extract_percentage(metric['row_idx'], -2)
-                    production_data['WTD'].append(f"{wtd_value:.1f}%")
-                else:
-                    wtd_value = self._safe_extract_number(metric['row_idx'], -2)
-                    production_data['WTD'].append(f"{wtd_value:,.0f}")
-            
-            # Create DataFrame
-            production_df = pd.DataFrame(production_data)
-            
-            # If no data was extracted, return an empty dataframe with proper structure
-            if production_df.empty or all(production_df['Monday'].str.contains('0', na=True)):
-                production_df = pd.DataFrame({
-                    'Metric': ['Total Batches', 'Total Volume (kg)', 'Total Run Hours', 'Total Manpower', 'Overtime %', 'Capacity Utilization %'],
-                    'Monday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Tuesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Wednesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Thursday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Friday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Saturday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'Sunday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                    'WTD': ['0', '0', '0', '0', '0.0%', '0.0%']
-                })
-            
-            return production_df
-            
-        except Exception as e:
-            st.error(f"Error creating production dataframe: {str(e)}")
-            # Return empty dataframe with proper structure on error
-            return pd.DataFrame({
-                'Metric': ['Total Batches', 'Total Volume (kg)', 'Total Run Hours', 'Total Manpower', 'Overtime %', 'Capacity Utilization %'],
-                'Monday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Tuesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Wednesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Thursday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Friday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Saturday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'Sunday': ['0', '0', '0', '0', '0.0%', '0.0%'],
-                'WTD': ['0', '0', '0', '0', '0.0%', '0.0%']
-            })
-    
-    def _safe_extract_number(self, row_idx, col_idx):
-        """Safely extract a number from the dataframe"""
-        try:
-            if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
-                value = self.df.iloc[row_idx, col_idx]
-                if isinstance(value, str):
-                    value = value.replace(',', '').replace('%', '').strip("'\"")
-                return float(value) if value and value != '' else 0
-        except:
-            return 0
-        return 0
-    
-    def _safe_extract_percentage(self, row_idx, col_idx):
-        """Safely extract a percentage value"""
-        try:
-            if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
-                value = self.df.iloc[row_idx, col_idx]
-                if isinstance(value, str):
-                    value = value.replace('%', '').replace(',', '').strip("'\"")
-                return float(value) if value and value != '' else 0
-        except:
-            return 0
-        return 0
-    
     def get_daily_breakdown(self):
         """Extract daily breakdown data for charting"""
         try:
             daily_data = {'dates': [], 'volumes': []}
             
-            # Extract from daily columns (adjust indices based on your sheet)
-            for col_idx in range(3, min(10, len(self.df.columns))):
-                date = self.df.iloc[0, col_idx] if len(self.df) > 0 else ""
-                volume = self._safe_extract_number(2, col_idx)  # Volume row
-                
-                if date and str(date).strip():
+            # Find the days row
+            days_row_idx = self._find_days_row()
+            if days_row_idx is None:
+                return None
+            
+            # Find the volume row
+            volume_row_idx = None
+            for row_idx in range(min(15, len(self.df))):
+                for col_idx in range(min(5, len(self.df.columns))):
+                    cell_value = self.df.iloc[row_idx, col_idx]
+                    if cell_value and 'volume' in str(cell_value).lower():
+                        volume_row_idx = row_idx
+                        break
+                if volume_row_idx:
+                    break
+            
+            if volume_row_idx is None:
+                return None
+            
+            # Extract daily volumes
+            for col_idx in range(len(self.df.columns)):
+                date = self.df.iloc[days_row_idx, col_idx]
+                if date and str(date).strip() and any(month in str(date).lower() for month in 
+                                                    ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                                                     'jul', 'aug', 'sep', 'oct', 'nov', 'dec']):
+                    volume = self._safe_extract_number(volume_row_idx, col_idx)
                     daily_data['dates'].append(str(date))
                     daily_data['volumes'].append(volume)
             
