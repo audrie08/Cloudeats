@@ -3652,7 +3652,7 @@ def summary_page():
         production_df = summary_extractor.create_production_dataframe()
         
         if not production_df.empty:
-            st.dataframe(production_df, use_container_width=True, hide_index=True)
+            st.dataframe(production_df, width='stretch', hide_index=True)
         else:
             st.error("No production data available")
         
@@ -3668,7 +3668,7 @@ def summary_page():
         # --- Raw Data View ---
         with st.expander("Raw Sheet Data"):
             if not df_summary.empty:
-                st.dataframe(df_summary, use_container_width=True)
+                st.dataframe(df_summary, width='stretch')
             else:
                 st.error("No raw data available")
         
@@ -4057,7 +4057,7 @@ def ytd_production():
             production_df['Batches'] = production_df['Batches'].apply(lambda x: f"{x:,.0f}")
            
             # Display the dataframe
-            st.dataframe(production_df, use_container_width=True, hide_index=True)
+            st.dataframe(production_df, width='stretch', hide_index=True)
        
         else:
             st.warning("No production data matches the selected filters")
