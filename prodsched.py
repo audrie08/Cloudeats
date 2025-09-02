@@ -3566,7 +3566,7 @@ def summary_page():
         st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
         
         # --- KPI Cards ---
-        st.markdown("### 📊 Weekly Summary Metrics")
+        st.markdown("### Summary")
         
         # Create 3 rows of KPI cards
         # Row 1: Basic Production Metrics
