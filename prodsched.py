@@ -3333,7 +3333,7 @@ class SummaryDataExtractor:
                 production_data[day_name] = []
             
             # Add WTO column
-            production_data["WTO"] = []
+            production_data["WTD"] = []
             
             # Extract data for each metric
             for metric_name, row_idx in metric_rows.items():
@@ -3346,7 +3346,7 @@ class SummaryDataExtractor:
                 
                 # Extract WTO value (usually the last column before staff info)
                 wto_value = self._safe_extract_number(row_idx, -2)  # Second last column
-                production_data["WTO"].append(wto_value)
+                production_data["WTD"].append(wto_value)
             
             return pd.DataFrame(production_data)
             
@@ -3368,10 +3368,10 @@ class SummaryDataExtractor:
     def _find_metric_rows(self):
         """Find the row indices for each metric"""
         metrics = {
-            "Total Batches": "batches",
+            "Total Batches (no.)": "batches",
             "Total Volume (kg)": "volume",
-            "Total Run Hours": "run",
-            "Total Manpower": "manpower",
+            "Total Run Hours (hrs)": "run",
+            "Total Manpower (count)": "manpower",
             "Overtime %": "ot",
             "Capacity Utilization %": "capacity"
         }
@@ -3429,11 +3429,6 @@ class SummaryDataExtractor:
                 metrics['total_volume'] = self._safe_extract_number(2, -2)
                 metrics['total_run_hours'] = self._safe_extract_number(3, -2)
                 metrics['total_manpower'] = self._safe_extract_number(4, -2)
-                
-                # Staff counts from rightmost columns
-                metrics['total_staff_count'] = self._safe_extract_number(1, -1)
-                metrics['production_staff'] = self._safe_extract_number(2, -1)
-                metrics['support_staff'] = self._safe_extract_number(3, -1)
                 
                 # Percentages
                 metrics['overtime_percentage'] = self._safe_extract_percentage(6, -2)
@@ -3665,6 +3660,7 @@ def summary_page():
         st.error(f"Error loading summary data: {str(e)}")
         import traceback
         st.error(f"Full error: {traceback.format_exc()}")
+
 def weekly_prod_schedule():
 
     st.markdown("""
