@@ -3298,7 +3298,6 @@ def create_navigation():
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
 # --- Add the SummaryDataExtractor class if not already present ---
-# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
@@ -3331,6 +3330,87 @@ class SummaryDataExtractor:
         except Exception as e:
             st.error(f"Error extracting metrics: {str(e)}")
             return {}
+    
+    def create_production_dataframe(self):
+        """Create a structured production summary DataFrame"""
+        try:
+            # Initialize the production data structure
+            production_data = {
+                'Metric': [],
+                'Monday': [],
+                'Tuesday': [],
+                'Wednesday': [],
+                'Thursday': [],
+                'Friday': [],
+                'Saturday': [],
+                'Sunday': [],
+                'WTD': []
+            }
+            
+            # Define the metrics we want to extract (adjust indices based on your sheet structure)
+            metrics_config = [
+                {'name': 'Total Batches', 'row_idx': 1},
+                {'name': 'Total Volume (kg)', 'row_idx': 2},
+                {'name': 'Total Run Hours', 'row_idx': 3},
+                {'name': 'Total Manpower', 'row_idx': 4},
+                {'name': 'Overtime %', 'row_idx': 6, 'is_percentage': True},
+                {'name': 'Capacity Utilization %', 'row_idx': 7, 'is_percentage': True}
+            ]
+            
+            # Extract data for each metric
+            for metric in metrics_config:
+                production_data['Metric'].append(metric['name'])
+                
+                # Extract daily values (assuming columns 3-9 are Mon-Sun, column 10 is WTD)
+                for col_idx in range(3, 10):  # Mon-Sun (columns 3-9)
+                    if metric.get('is_percentage', False):
+                        value = self._safe_extract_percentage(metric['row_idx'], col_idx)
+                        production_data[list(production_data.keys())[col_idx-2]].append(f"{value:.1f}%")
+                    else:
+                        value = self._safe_extract_number(metric['row_idx'], col_idx)
+                        production_data[list(production_data.keys())[col_idx-2]].append(f"{value:,.0f}")
+                
+                # Extract WTD value (column 10 or -2 from end)
+                if metric.get('is_percentage', False):
+                    wtd_value = self._safe_extract_percentage(metric['row_idx'], -2)
+                    production_data['WTD'].append(f"{wtd_value:.1f}%")
+                else:
+                    wtd_value = self._safe_extract_number(metric['row_idx'], -2)
+                    production_data['WTD'].append(f"{wtd_value:,.0f}")
+            
+            # Create DataFrame
+            production_df = pd.DataFrame(production_data)
+            
+            # If no data was extracted, return an empty dataframe with proper structure
+            if production_df.empty or all(production_df['Monday'].str.contains('0', na=True)):
+                production_df = pd.DataFrame({
+                    'Metric': ['Total Batches', 'Total Volume (kg)', 'Total Run Hours', 'Total Manpower', 'Overtime %', 'Capacity Utilization %'],
+                    'Monday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Tuesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Wednesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Thursday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Friday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Saturday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'Sunday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                    'WTD': ['0', '0', '0', '0', '0.0%', '0.0%']
+                })
+            
+            return production_df
+            
+        except Exception as e:
+            st.error(f"Error creating production dataframe: {str(e)}")
+            # Return empty dataframe with proper structure on error
+            return pd.DataFrame({
+                'Metric': ['Total Batches', 'Total Volume (kg)', 'Total Run Hours', 'Total Manpower', 'Overtime %', 'Capacity Utilization %'],
+                'Monday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Tuesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Wednesday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Thursday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Friday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Saturday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'Sunday': ['0', '0', '0', '0', '0.0%', '0.0%'],
+                'WTD': ['0', '0', '0', '0', '0.0%', '0.0%']
+            })
     
     def _safe_extract_number(self, row_idx, col_idx):
         """Safely extract a number from the dataframe"""
