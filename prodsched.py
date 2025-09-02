@@ -3335,8 +3335,8 @@ class SummaryDataExtractor:
             for _, day_name in day_columns:
                 production_data[day_name] = []
             
-            # Add WTO column
-            production_data["WTO"] = []
+            # Add WTD column
+            production_data["WTD"] = []
             
             # Extract data for each metric
             for metric_name, metric_key in [("Total Batches", "batches"), 
@@ -3355,8 +3355,8 @@ class SummaryDataExtractor:
                         value = self._safe_extract_number(row_idx, col_idx)
                         production_data[day_name].append(value)
                     
-                    # Extract WTO value from WTD row if available
-                    wto_value = 0
+                    # Extract WTD value from WTD row if available
+                    wtd_value = 0
                     if wtd_row is not None:
                         # Map metric to the correct column in WTD row
                         wtd_columns = {
@@ -3365,9 +3365,9 @@ class SummaryDataExtractor:
                         }
                         if metric_key in wtd_columns:
                             col_idx = wtd_columns[metric_key]
-                            wto_value = self._safe_extract_number(wtd_row, col_idx)
+                            wtd_value = self._safe_extract_number(wtd_row, col_idx)
                     
-                    production_data["WTO"].append(wto_value)
+                    production_data["WTD"].append(wtd_value)
             
             return pd.DataFrame(production_data)
             
