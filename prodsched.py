@@ -17,6 +17,7 @@ import warnings
 import json
 import pytz
 import numpy as np
+import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 warnings.filterwarnings('ignore')
@@ -3296,7 +3297,7 @@ def create_navigation():
         
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
-# --- Summary Data Extractor Class ---
+# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
@@ -3308,24 +3309,21 @@ class SummaryDataExtractor:
         try:
             metrics = {}
             
-            # Find the data rows based on your sheet structure
-            # Assuming the data starts from row 4 (index 3) based on your image
-            if len(self.df) > 10:  # Ensure we have enough data
+            if len(self.df) > 10:
+                # Extract from WTD column (usually the last data column before staff info)
+                metrics['total_batches'] = self._safe_extract_number(1, -2)
+                metrics['total_volume'] = self._safe_extract_number(2, -2)
+                metrics['total_run_hours'] = self._safe_extract_number(3, -2)
+                metrics['total_manpower'] = self._safe_extract_number(4, -2)
                 
-                # Extract data from specific rows (adjust indices based on your sheet)
-                metrics['total_batches'] = self._safe_extract_number(1, -2)  # WTD column for Batches
-                metrics['total_volume'] = self._safe_extract_number(2, -2)   # WTD column for Volume
-                metrics['total_run_hours'] = self._safe_extract_number(3, -2)  # WTD column for Total Run Hours
-                metrics['total_manpower'] = self._safe_extract_number(4, -2)   # WTD column for Total Manpower
-                
-                # Staff counts from the right side
-                metrics['total_staff_count'] = self._safe_extract_number(1, -1)  # Total Staff Count
-                metrics['production_staff'] = self._safe_extract_number(2, -1)   # Production Staff
-                metrics['support_staff'] = self._safe_extract_number(3, -1)     # Support Staff
+                # Staff counts from rightmost columns
+                metrics['total_staff_count'] = self._safe_extract_number(1, -1)
+                metrics['production_staff'] = self._safe_extract_number(2, -1)
+                metrics['support_staff'] = self._safe_extract_number(3, -1)
                 
                 # Percentages
-                metrics['overtime_percentage'] = self._safe_extract_percentage(6, -2)  # %OT row
-                metrics['capacity_utilization'] = self._safe_extract_percentage(7, -2)  # Capacity Utilization row
+                metrics['overtime_percentage'] = self._safe_extract_percentage(6, -2)
+                metrics['capacity_utilization'] = self._safe_extract_percentage(7, -2)
                 
             return metrics
             
@@ -3338,9 +3336,8 @@ class SummaryDataExtractor:
         try:
             if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
                 value = self.df.iloc[row_idx, col_idx]
-                # Clean the value and convert to number
                 if isinstance(value, str):
-                    value = value.replace(',', '').replace('%', '')
+                    value = value.replace(',', '').replace('%', '').strip("'\"")
                 return float(value) if value and value != '' else 0
         except:
             return 0
@@ -3352,7 +3349,7 @@ class SummaryDataExtractor:
             if row_idx < len(self.df) and abs(col_idx) <= len(self.df.columns):
                 value = self.df.iloc[row_idx, col_idx]
                 if isinstance(value, str):
-                    value = value.replace('%', '').replace(',', '')
+                    value = value.replace('%', '').replace(',', '').strip("'\"")
                 return float(value) if value and value != '' else 0
         except:
             return 0
@@ -3361,25 +3358,16 @@ class SummaryDataExtractor:
     def get_daily_breakdown(self):
         """Extract daily breakdown data for charting"""
         try:
-            # Extract daily data from columns D to J (25Aug to 31Aug)
-            daily_data = {
-                'dates': [],
-                'volumes': []
-            }
+            daily_data = {'dates': [], 'volumes': []}
             
-            # Get the date row (assuming it's in row 0 or 1)
-            date_row = 0  # Adjust based on your sheet structure
-            volume_row = 2  # Volume row
-            
-            # Extract dates and volumes for daily columns (D to J)
-            for col_idx in range(3, 10):  # Columns D to J
-                if col_idx < len(self.df.columns):
-                    date = self.df.iloc[date_row, col_idx]
-                    volume = self._safe_extract_number(volume_row, col_idx)
-                    
-                    if date:
-                        daily_data['dates'].append(date)
-                        daily_data['volumes'].append(volume)
+            # Extract from daily columns (adjust indices based on your sheet)
+            for col_idx in range(3, min(10, len(self.df.columns))):
+                date = self.df.iloc[0, col_idx] if len(self.df) > 0 else ""
+                volume = self._safe_extract_number(2, col_idx)  # Volume row
+                
+                if date and str(date).strip():
+                    daily_data['dates'].append(str(date))
+                    daily_data['volumes'].append(volume)
             
             return daily_data if daily_data['dates'] else None
             
@@ -3393,7 +3381,6 @@ def init_google_sheets():
     try:
         credentials = load_credentials_prod()
         if credentials:
-            import gspread
             client = gspread.authorize(credentials)
             return client
     except Exception as e:
@@ -3401,10 +3388,22 @@ def init_google_sheets():
         return None
 
 def update_dropdown_cell(client, spreadsheet_id, worksheet_name, cell, value):
-    """Update a specific cell in Google Sheets"""
+    """Update a specific cell in Google Sheets with proper value formatting"""
     try:
         sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
-        sheet.update(cell, value)
+        
+        # FIXED: Ensure the value is sent as a number, not text
+        # Remove any potential quotes or text formatting
+        clean_value = str(value).strip("'\"")
+        
+        # Try to convert to number if it's numeric
+        try:
+            numeric_value = int(clean_value)
+            sheet.update(cell, numeric_value, value_input_option='USER_ENTERED')
+        except ValueError:
+            # If not numeric, send as raw value
+            sheet.update(cell, clean_value, value_input_option='RAW')
+        
         return True
     except Exception as e:
         st.error(f"Failed to update cell: {e}")
@@ -3415,11 +3414,17 @@ def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
     try:
         sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
         value = sheet.acell(cell).value
-        return value
+        
+        # FIXED: Clean the returned value of any quotes
+        if value:
+            clean_value = str(value).strip("'\"")
+            return clean_value
+        return None
     except Exception as e:
         st.error(f"Failed to get cell value: {e}")
         return None
 
+# --- Updated Summary Page with Better Error Handling ---
 def summary_page():
     """Summary page showing weekly KPI data with Google Sheets dropdown control"""
     
@@ -3444,9 +3449,9 @@ def summary_page():
         client = init_google_sheets()
         
         # Configuration
-        SPREADSHEET_ID = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"  # Your spreadsheet ID
-        WORKSHEET_NAME = "MAIN"  # Adjust based on your sheet name
-        DROPDOWN_CELL = "C1"  # The week dropdown cell
+        SPREADSHEET_ID = "1PxdGZDltF2OWj5b6A3ncd7a1O4H-1ARjiZRBH0kcYrI"
+        WORKSHEET_NAME = "MAIN"
+        DROPDOWN_CELL = "C1"
         
         # --- Week Selection with Google Sheets Integration ---
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -3455,45 +3460,61 @@ def summary_page():
             st.markdown("### 📅 Week Selection")
             
             # Get current dropdown value from Google Sheets
+            current_week = None
             if client:
-                current_week = get_current_dropdown_value(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL)
-                if not current_week:
-                    current_week = "Week 35"  # Default fallback
-            else:
-                current_week = "Week 35"
+                try:
+                    current_week = get_current_dropdown_value(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL)
+                    st.info(f"Current Google Sheets value: {current_week}")  # Debug info
+                except Exception as e:
+                    st.warning(f"Could not read from Google Sheets: {e}")
+            
+            # Set default if we couldn't get current value
+            if not current_week:
+                current_week = "35"  # Default fallback
                 
-            # Week options (customize based on your needs)
+            # Week options - FIXED: Use just numbers
             week_options = [
-                "1", "2", "3", "4", "5", "6",
-                "7", "8", "9", "10", "11", "12",
-                "13", "14", "15", "16", "17", "18",
-                "19", "20", "21", "22", "23", "24",
-                "25", "26", "27", "28", "29", "30",
-                "31", "32", "33", "34", "35", "36",
-                "37", "38", "39", "40", "41", "42",
-                "43", "44", "45", "46", "47", "48",
-                "49", "50", "51", "52", "53"
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
+                "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+                "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+                "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                "51", "52", "53"
             ]
+            
+            # Find current index safely
+            try:
+                current_index = week_options.index(str(current_week)) if current_week in week_options else week_options.index("35")
+            except ValueError:
+                current_index = week_options.index("35")  # Default to week 35
             
             # Streamlit week selector
             selected_week = st.selectbox(
                 "Select Week",
                 options=week_options,
-                index=week_options.index(current_week) if current_week in week_options else 0,
-                key="summary_week_selector",  # <- Unique key for summary page
+                index=current_index,
+                key="summary_week_selector",
                 help="This will update the Google Sheets dropdown and refresh the data"
             )
             
-            # Update Google Sheets if week changed
-            if client and selected_week != current_week:
-                with st.spinner("Updating Google Sheets..."):
-                    success = update_dropdown_cell(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL, selected_week)
-                    if success:
-                        st.success(f"✅ Updated to {selected_week}")
-                        time.sleep(2)  # Give Google Sheets time to recalculate
-                        st.rerun()
-                    else:
-                        st.error("❌ Failed to update Google Sheets")
+            # Show current selection
+            st.success(f"Selected Week: {selected_week}")
+            
+            # Manual update button to avoid constant updates
+            if st.button("📤 Update Google Sheets", type="primary"):
+                if client:
+                    with st.spinner("Updating Google Sheets..."):
+                        success = update_dropdown_cell(client, SPREADSHEET_ID, WORKSHEET_NAME, DROPDOWN_CELL, selected_week)
+                        if success:
+                            st.success(f"✅ Successfully updated to Week {selected_week}")
+                            # Clear cache to get fresh data
+                            st.cache_data.clear()
+                            time.sleep(2)  # Give Google Sheets time to recalculate
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to update Google Sheets")
+                else:
+                    st.error("❌ Google Sheets client not available")
             
             # Refresh button
             if st.button("🔄 Refresh Data", help="Reload data from Google Sheets"):
@@ -3506,10 +3527,18 @@ def summary_page():
         
         st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
         
+        # --- Display Debug Info ---
+        with st.expander("🔧 Debug Information"):
+            st.json({
+                "Current Week": current_week,
+                "Selected Week": selected_week,
+                "Summary Data Keys": list(summary_data.keys()),
+                "Data Shape": df_summary.shape if not df_summary.empty else "Empty"
+            })
+        
         # --- KPI Cards ---
         st.markdown("### Summary")
         
-        # Create 3 rows of KPI cards
         # Row 1: Basic Production Metrics
         col1, col2, col3, col4 = st.columns(4)
         
@@ -3549,7 +3578,7 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # Row 2: Staff and Overtime Metrics
+        # Row 2: Staff Metrics
         col5, col6, col7, col8 = st.columns(4)
         
         with col5:
@@ -3588,8 +3617,8 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # Row 3: Utilization Metrics
-        col9, col10 = st.columns([1, 1])
+        # Row 3: Capacity Utilization
+        col9, col10 = st.columns(2)
         
         with col9:
             capacity_util = summary_data.get('capacity_utilization', 0)
@@ -3602,15 +3631,15 @@ def summary_page():
             """, unsafe_allow_html=True)
         
         with col10:
-            # Add a status indicator
+            # Status indicator
             if capacity_util >= 90:
-                status_color = "#e74c3c"  # Red for high utilization
+                status_color = "#e74c3c"
                 status_text = "High Utilization"
             elif capacity_util >= 70:
-                status_color = "#f39c12"  # Orange for moderate utilization
+                status_color = "#f39c12"
                 status_text = "Moderate Utilization"
             else:
-                status_color = "#27ae60"  # Green for low utilization
+                status_color = "#27ae60"
                 status_text = "Low Utilization"
                 
             st.markdown(f"""
@@ -3622,36 +3651,25 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # --- Daily Breakdown Chart ---
+        # --- Daily Chart ---
         st.markdown("### 📈 Daily Production Volume")
-        
         daily_data = summary_extractor.get_daily_breakdown()
-        if daily_data:
-            # Create the chart using Streamlit's native charting
+        if daily_data and daily_data['dates']:
             chart_df = pd.DataFrame({
                 'Date': daily_data['dates'],
                 'Volume (kg)': daily_data['volumes']
             })
-            
             st.line_chart(chart_df.set_index('Date'), use_container_width=True)
         else:
             st.info("Daily breakdown data not available")
         
-        # --- Detailed Data Table ---
+        # --- Summary Table ---
         st.markdown("### 📋 Detailed Summary Table")
-        
-        # Create a summary table
         summary_table_data = {
             'Metric': [
-                'Total Batches',
-                'Total Volume (kg)',
-                'Total Run Hours',
-                'Total Manpower Required',
-                'Total Staff Count',
-                'Production Staff',
-                'Support Staff',
-                'Overtime Percentage (%)',
-                'Capacity Utilization (%)'
+                'Total Batches', 'Total Volume (kg)', 'Total Run Hours',
+                'Total Manpower Required', 'Total Staff Count', 'Production Staff',
+                'Support Staff', 'Overtime Percentage (%)', 'Capacity Utilization (%)'
             ],
             'Value': [
                 f"{summary_data.get('total_batches', 0):,.0f}",
@@ -3671,7 +3689,8 @@ def summary_page():
         
     except Exception as e:
         st.error(f"Error loading summary data: {str(e)}")
-        st.info("Please check your Google Sheets connection and data format.")
+        import traceback
+        st.error(f"Full error: {traceback.format_exc()}")
 
 def weekly_prod_schedule():
 
