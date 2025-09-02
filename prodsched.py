@@ -3300,163 +3300,104 @@ def create_navigation():
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
-    def __init__(self, client, sheet_name="MAIN"): 
-        st.info(f"🚀 DEBUG: Initializing SummaryDataExtractor")
-        st.info(f"📝 DEBUG: Sheet name provided: '{sheet_name}'")
-        st.info(f"🔑 DEBUG: Client type: {type(client)}")
-        
-        self.client = client
-        self.sheet_name = sheet_name
-        self.worksheet = None
-        
-        # Verify client is working
-        if not client:
-            st.error("❌ DEBUG: Client is None or invalid!")
-            return
-            
-        try:
-            # Test client connection by listing a spreadsheet
-            st.info("🔍 DEBUG: Testing client connection...")
-            test_sheets = self.client.openall()
-            st.success(f"✅ DEBUG: Client working! Found {len(test_sheets)} accessible spreadsheets")
-        except Exception as client_error:
-            st.error(f"❌ DEBUG: Client connection failed: {client_error}")
-            return
-        
-        self.connect_to_sheet()
+    def __init__(self, sheet_client, spreadsheet_id):
+        self.client = sheet_client
+        self.spreadsheet_id = spreadsheet_id
+        self.sheet = None
+        self._initialize_sheet()
     
-    def connect_to_sheet(self):
-        """Connect to the Google Sheet"""
+    def _initialize_sheet(self):
+        """Initialize the first sheet (index 0) of the spreadsheet"""
         try:
-            st.info(f"🔍 DEBUG: Attempting to connect to sheet: '{self.sheet_name}'")
-            
-            # Step 1: Try to open the spreadsheet
-            try:
-                spreadsheet = self.client.open(self.sheet_name)
-                st.success(f"✅ DEBUG: Successfully opened spreadsheet: '{self.sheet_name}'")
-                st.info(f"📋 DEBUG: Spreadsheet ID: {spreadsheet.id}")
-                st.info(f"📋 DEBUG: Spreadsheet URL: {spreadsheet.url}")
-            except gspread.SpreadsheetNotFound:
-                st.error(f"❌ DEBUG: Spreadsheet '{self.sheet_name}' not found!")
-                st.info("💡 DEBUG: Available spreadsheets:")
-                try:
-                    # List all available spreadsheets
-                    all_sheets = self.client.openall()
-                    for i, sheet in enumerate(all_sheets):
-                        st.info(f"  {i+1}. '{sheet.title}' (ID: {sheet.id})")
-                except Exception as list_error:
-                    st.error(f"❌ DEBUG: Could not list spreadsheets: {list_error}")
-                return
-            except Exception as open_error:
-                st.error(f"❌ DEBUG: Error opening spreadsheet: {open_error}")
-                return
-            
-            # Step 2: Get worksheet information
-            try:
-                worksheets = spreadsheet.worksheets()
-                st.info(f"📑 DEBUG: Found {len(worksheets)} worksheets:")
-                for i, ws in enumerate(worksheets):
-                    st.info(f"  {i}. '{ws.title}' (ID: {ws.id}) - {ws.row_count} rows × {ws.col_count} cols")
-                
-                # Get the first worksheet (index 0)
-                if len(worksheets) > 0:
-                    self.worksheet = worksheets[0]  # Use direct indexing instead of get_worksheet
-                    st.success(f"✅ DEBUG: Connected to worksheet: '{self.worksheet.title}'")
-                else:
-                    st.error("❌ DEBUG: No worksheets found in the spreadsheet!")
-                    return
-                    
-            except Exception as worksheet_error:
-                st.error(f"❌ DEBUG: Error accessing worksheets: {worksheet_error}")
-                return
-                
+            spreadsheet = self.client.open_by_key(self.spreadsheet_id)
+            self.sheet = spreadsheet.get_worksheet(0)  # Get first sheet (index 0)
         except Exception as e:
-            st.error(f"❌ DEBUG: Unexpected error in connect_to_sheet: {e}")
-            st.error(f"❌ DEBUG: Error type: {type(e)}")
-            import traceback
-            st.error(f"❌ DEBUG: Full traceback: {traceback.format_exc()}")
+            st.error(f"Failed to access sheet: {e}")
     
-    def update_week_number(self, week_number):
-        """Update week number in cell C1 of the source sheet"""
+    def update_week_dropdown(self, week_number):
+        """Update the week dropdown in cell C1 of the sheet"""
         try:
-            if self.worksheet:
-                self.worksheet.update('C1', week_number)
+            if self.sheet:
+                self.sheet.update('C1', week_number)
+                st.success(f"Updated sheet to week {week_number}")
                 return True
         except Exception as e:
-            st.error(f"Error updating week number: {e}")
+            st.error(f"Failed to update week in sheet: {e}")
             return False
         return False
     
-    def get_header_dates(self):
-        """Get the date headers from row 3 (columns E-K)"""
+    def extract_summary_data(self):
+        """Extract summary data from the sheet after week update"""
         try:
-            if self.worksheet:
-                # Get dates from E3:K3
-                date_values = self.worksheet.batch_get(['E3:K3'])[0]
-                if date_values and len(date_values[0]) > 0:
-                    return date_values[0]
+            if not self.sheet:
+                return None, None, None
+            
+            # Get all data from the sheet
+            all_data = self.sheet.get_all_values()
+            
+            # Extract header row (B3:L3) - adjust for 0-indexing
+            header_row = all_data[2][1:12]  # Row 3, columns B to L
+            
+            # Extract data rows (B4:L10) - rows 4-10, columns B to L
+            data_rows = []
+            for i in range(3, 10):  # Rows 4-10 (0-indexed: 3-9)
+                if i < len(all_data):
+                    row = all_data[i][1:12]  # Columns B to L
+                    data_rows.append(row)
+            
+            # Create DataFrame
+            df = pd.DataFrame(data_rows, columns=header_row)
+            
+            # Set category names as index
+            categories = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 
+                         'Total OT Manhrs', '%OT', 'Capacity Utilization']
+            df.index = categories
+            
+            # Extract staff metrics from column N
+            staff_metrics = {}
+            if len(all_data) > 3 and len(all_data[3]) > 13:  # N4
+                staff_metrics['Total Staff Count'] = all_data[3][13]
+            if len(all_data) > 5 and len(all_data[5]) > 13:  # N6
+                staff_metrics['Production Staff'] = all_data[5][13]
+            if len(all_data) > 7 and len(all_data[7]) > 13:  # N8
+                staff_metrics['Support Staff'] = all_data[7][13]
+            
+            # Get current week from C1
+            current_week = self.sheet.acell('C1').value
+            
+            return df, staff_metrics, current_week
+            
         except Exception as e:
-            st.error(f"Error fetching header dates: {e}")
-        return []
+            st.error(f"Failed to extract data: {e}")
+            return None, None, None
     
-    def get_summary_data(self):
-        """Extract summary data from the sheet (B3:L9)"""
+    def get_date_headers(self, week_number):
+        """Generate date headers for the selected week"""
         try:
-            if self.worksheet:
-                # Get the data range B3:L9
-                data_range = self.worksheet.batch_get(['B3:L9'])[0]
-                
-                if not data_range:
-                    return None
-                
-                # Extract headers (first row)
-                headers = data_range[0] if data_range else []
-                
-                # Extract data rows (skip header row)
-                data_rows = data_range[1:] if len(data_range) > 1 else []
-                
-                # Create DataFrame
-                df = pd.DataFrame(data_rows, columns=headers)
-                
-                # Set proper row labels based on your specification
-                row_labels = [
-                    "Category",      # index 2 (row 4 in sheet)
-                    "Batches",       # index 3 (row 5 in sheet)
-                    "Volume",        # index 4 (row 6 in sheet)
-                    "Total Run Mhrs", # index 5 (row 7 in sheet)
-                    "Total Manpower Required", # index 6 (row 8 in sheet)
-                    "Total OT Manhrs", # index 7 (row 9 in sheet)
-                    "%OT",           # index 8 (row 10 in sheet)
-                    "Capacity Utilization" # index 9 (row 11 in sheet)
-                ]
-                
-                # Add row labels if we have data
-                if len(df) > 0:
-                    df.insert(0, 'Metrics', row_labels[:len(df)])
-                
-                return df
-                
-        except Exception as e:
-            st.error(f"Error fetching summary data: {e}")
-        return None
-    
-    def get_staff_metrics(self):
-        """Get staff count metrics from column N"""
-        try:
-            if self.worksheet:
-                # Get staff data from N4, N6, N8
-                staff_data = self.worksheet.batch_get(['N4', 'N6', 'N8'])
-                
-                metrics = {
-                    'total_staff': staff_data[0][0][0] if staff_data[0] else 0,
-                    'production_staff': staff_data[1][0][0] if staff_data[1] else 0,
-                    'support_staff': staff_data[2][0][0] if staff_data[2] else 0
-                }
-                
-                return metrics
-        except Exception as e:
-            st.error(f"Error fetching staff metrics: {e}")
-        return {'total_staff': 0, 'production_staff': 0, 'support_staff': 0}
+            # Calculate start date of the week (assuming week 1 starts on a specific date)
+            # You may need to adjust this based on your year start date
+            year = datetime.now().year
+            start_of_year = datetime(year, 1, 1)
+            
+            # Find the first Monday of the year
+            days_ahead = 0 - start_of_year.weekday()  # Monday is 0
+            if days_ahead < 0:
+                days_ahead += 7
+            first_monday = start_of_year + timedelta(days=days_ahead)
+            
+            # Calculate the start date of the selected week
+            week_start = first_monday + timedelta(weeks=week_number - 1)
+            
+            # Generate 7 dates for the week
+            dates = []
+            for i in range(7):
+                date = week_start + timedelta(days=i)
+                dates.append(date.strftime('%d%b'))  # Format as 11Aug, 12Aug, etc.
+            
+            return dates
+        except:
+            # Fallback to generic labels if date calculation fails
+            return ['Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7']
     
             
 @st.cache_resource
@@ -3471,221 +3412,175 @@ def init_google_sheets():
         st.error(f"Failed to connect to Google Sheets: {e}")
         return None
 
+def create_metric_cards(staff_metrics):
+    """Create metric cards for staff information"""
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="📊 Total Staff Count",
+            value=staff_metrics.get('Total Staff Count', 'N/A'),
+            delta=None
+        )
+    
+    with col2:
+        st.metric(
+            label="👷 Production Staff",
+            value=staff_metrics.get('Production Staff', 'N/A'),
+            delta=None
+        )
+    
+    with col3:
+        st.metric(
+            label="🔧 Support Staff",
+            value=staff_metrics.get('Support Staff', 'N/A'),
+            delta=None
+        )
+
+def format_dataframe(df):
+    """Apply formatting to the DataFrame for better display"""
+    # Create a copy to avoid modifying the original
+    formatted_df = df.copy()
+    
+    # Apply number formatting for specific rows
+    for idx in formatted_df.index:
+        for col in formatted_df.columns:
+            try:
+                value = formatted_df.loc[idx, col]
+                if value and str(value).replace('.', '').replace(',', '').isdigit():
+                    # Format numbers with commas
+                    formatted_df.loc[idx, col] = f"{float(value):,.0f}" if '.' not in str(value) else f"{float(value):,.2f}"
+                elif '%' in str(value) or idx in ['%OT', 'Capacity Utilization']:
+                    # Keep percentage formatting
+                    pass
+            except:
+                continue
+    
+    return formatted_df
+
 
 
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
     
-    st.title("📊 Production Summary")
-    
-    # Add debug toggle
-    debug_mode = st.checkbox("🐛 Enable Debug Mode", value=True, help="Show detailed debugging information")
+    st.title("📈 Production Summary")
+    st.markdown("---")
     
     # Initialize Google Sheets connection
-    if debug_mode:
-        st.info("🔄 DEBUG: Initializing Google Sheets connection...")
-        
-    client = init_google_sheets()
-    if not client:
-        st.error("Unable to connect to Google Sheets. Please check your credentials.")
+    sheets_client = init_google_sheets()
+    
+    if not sheets_client:
+        st.error("❌ Unable to connect to Google Sheets. Please check your credentials.")
         return
     
-    if debug_mode:
-        st.success("✅ DEBUG: Google Sheets client initialized successfully")
+    # Initialize data extractor (you'll need to provide your spreadsheet ID)
+    SPREADSHEET_ID = "your_spreadsheet_id_here"  # Replace with actual spreadsheet ID
     
-    # Sheet name input for debugging
-    if debug_mode:
-        st.subheader("🔧 Debug Configuration")
-        sheet_name = st.text_input(
-            "Enter exact sheet name:", 
-            value="YourSheetName",
-            help="Enter the exact name of your Google Sheet (case-sensitive)"
-        )
-    else:
-        sheet_name = "YourSheetName"  # Replace with your actual sheet name
-    
-    # Initialize data extractor
-    if debug_mode:
-        st.info(f"🔄 DEBUG: Creating SummaryDataExtractor with sheet: '{sheet_name}'")
-        
-    data_extractor = SummaryDataExtractor(client, sheet_name)
-    
-    # Check if connection was successful
-    if not data_extractor.worksheet:
-        st.error("❌ Failed to connect to worksheet. Please check the debug information above.")
+    try:
+        extractor = SummaryDataExtractor(sheets_client, SPREADSHEET_ID)
+    except Exception as e:
+        st.error(f"Failed to initialize data extractor: {e}")
         return
     
-    if debug_mode:
-        st.success("✅ DEBUG: SummaryDataExtractor created successfully")
-        st.divider()
+    # Week selection dropdown
+    st.subheader("🗓️ Week Selection")
     
-    # Create week selector
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        # Week selector (1-53)
-        selected_week = st.selectbox(
-            "Select Week:",
-            options=list(range(1, 54)),
-            index=0,  # Default to week 1
-            help="Select the week number (1-53) to view production data"
-        )
-    
-    # Update week number in sheet when changed
-    if st.session_state.get('current_week') != selected_week:
-        with st.spinner("Updating week data..."):
-            if debug_mode:
-                st.info(f"🔄 DEBUG: Updating week number to {selected_week} in cell C1")
-                
-            success = data_extractor.update_week_number(selected_week)
-            if success:
-                st.session_state.current_week = selected_week
-                if debug_mode:
-                    st.success(f"✅ DEBUG: Week {selected_week} updated successfully")
-                # Clear cache to force data refresh
-                st.cache_data.clear()
-                st.rerun()
-            else:
-                if debug_mode:
-                    st.error("❌ DEBUG: Failed to update week number")
-    
-    st.divider()
-    
-    # Get staff metrics for metric cards
-    if debug_mode:
-        st.info("🔄 DEBUG: Fetching staff metrics...")
-        
-    staff_metrics = data_extractor.get_staff_metrics()
-    
-    if debug_mode:
-        st.success("✅ DEBUG: Staff metrics retrieved")
-        st.json(staff_metrics)
-    
-    # Display staff metrics in cards
-    st.subheader("👥 Staff Overview")
-    
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns([1, 3])
     
     with col1:
-        st.metric(
-            label="Total Staff Count",
-            value=staff_metrics['total_staff'],
-            help="Total number of staff members"
+        selected_week = st.selectbox(
+            "Select Week:",
+            options=list(range(1, 54)),  # Weeks 1-53
+            index=32,  # Default to week 33 (0-indexed: 32)
+            key="week_selector"
         )
     
     with col2:
-        st.metric(
-            label="Production Staff",
-            value=staff_metrics['production_staff'],
-            help="Number of production staff members"
-        )
+        if st.button("🔄 Update Data", type="primary"):
+            with st.spinner("Updating spreadsheet and fetching data..."):
+                # Update the week in the spreadsheet
+                success = extractor.update_week_dropdown(selected_week)
+                if success:
+                    # Small delay to allow spreadsheet to update
+                    import time
+                    time.sleep(2)
+                    st.rerun()  # Refresh the page to show updated data
     
-    with col3:
-        st.metric(
-            label="Support Staff",
-            value=staff_metrics['support_staff'],
-            help="Number of support staff members"
-        )
+    st.markdown("---")
     
-    st.divider()
+    # Extract and display data
+    with st.spinner("Loading data..."):
+        df, staff_metrics, current_week = extractor.extract_summary_data()
     
-    # Get and display summary data
-    st.subheader(f"📈 Weekly Production Data - Week {selected_week}")
-    
-    with st.spinner("Loading production data..."):
-        if debug_mode:
-            st.info("🔄 DEBUG: Fetching summary data from range B3:L9...")
-            
-        summary_df = data_extractor.get_summary_data()
+    if df is not None and staff_metrics is not None:
+        # Display current week info
+        st.info(f"📅 Currently showing data for Week {current_week}")
         
-        if debug_mode and summary_df is not None:
-            st.success(f"✅ DEBUG: Retrieved DataFrame with shape: {summary_df.shape}")
-            st.info("📊 DEBUG: DataFrame preview:")
-            st.dataframe(summary_df.head())
-    
-    if summary_df is not None and not summary_df.empty:
-        # Style the dataframe
-        styled_df = summary_df.style.format({
-            col: "{:.2f}" if summary_df[col].dtype in ['float64', 'int64'] and col not in ['Metrics'] 
-            else "{}" 
-            for col in summary_df.columns
-        }).set_properties(**{
-            'background-color': '#f8f9fa',
-            'color': '#212529',
-            'border': '1px solid #dee2e6'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [
-                ('background-color', '#495057'),
-                ('color', 'white'),
-                ('font-weight', 'bold'),
-                ('text-align', 'center'),
-                ('padding', '10px')
-            ]},
-            {'selector': 'td', 'props': [
-                ('text-align', 'center'),
-                ('padding', '8px')
-            ]},
-            {'selector': 'tr:hover', 'props': [
-                ('background-color', '#e9ecef')
-            ]}
-        ])
+        # Display staff metrics as cards
+        st.subheader("👥 Staff Metrics")
+        create_metric_cards(staff_metrics)
         
-        # Display the styled dataframe
+        st.markdown("---")
+        
+        # Display main data table
+        st.subheader("📊 Weekly Production Data")
+        
+        # Format the DataFrame for better display
+        formatted_df = format_dataframe(df)
+        
+        # Display the DataFrame with custom styling
         st.dataframe(
-            styled_df,
+            formatted_df,
             use_container_width=True,
-            hide_index=True
+            height=300,
+            column_config={
+                col: st.column_config.TextColumn(
+                    col,
+                    help=f"Data for {col}",
+                    width="medium"
+                ) for col in formatted_df.columns
+            }
         )
         
-        # Add download button for the data
-        csv = summary_df.to_csv(index=False)
-        st.download_button(
-            label="📥 Download Data as CSV",
-            data=csv,
-            file_name=f"production_summary_week_{selected_week}.csv",
-            mime="text/csv",
-            help="Download the production summary data as a CSV file"
-        )
+        # Additional insights
+        st.markdown("---")
+        st.subheader("💡 Key Insights")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            try:
+                # Extract some key metrics for insights
+                if 'WTD' in df.columns:
+                    batches_wtd = df.loc['Batches', 'WTD']
+                    volume_wtd = df.loc['Volume', 'WTD']
+                    
+                    st.markdown(f"""
+                    **Week-to-Date Performance:**
+                    - Total Batches: **{batches_wtd}**
+                    - Total Volume: **{volume_wtd} kg**
+                    """)
+            except:
+                pass
+        
+        with col2:
+            try:
+                if '%OT' in df.index and 'WTD' in df.columns:
+                    ot_percentage = df.loc['%OT', 'WTD']
+                    capacity_util = df.loc['Capacity Utilization', 'WTD']
+                    
+                    st.markdown(f"""
+                    **Efficiency Metrics:**
+                    - Overtime: **{ot_percentage}**
+                    - Capacity Utilization: **{capacity_util}**
+                    """)
+            except:
+                pass
         
     else:
-        st.warning("No data available for the selected week. Please check your data source.")
-        if debug_mode:
-            st.error("❌ DEBUG: summary_df is None or empty")
-    
-    # Additional information
-    with st.expander("ℹ️ Data Information"):
-        st.info("""
-        **Data Source**: Google Sheets Production Database
-        
-        **Metrics Included**:
-        - Category breakdown and UOM
-        - Batch counts and volume metrics
-        - Machine hours and manpower requirements
-        - Overtime hours and percentage
-        - Capacity utilization rates
-        
-        **Staff Metrics**:
-        - Total staff count from cell N4
-        - Production staff from cell N6  
-        - Support staff from cell N8
-        
-        **Week Selection**: Changing the week updates cell C1 in the source sheet
-        """)
-
-# Additional helper function to format numbers
-def format_number(value):
-    """Format numbers for display"""
-    try:
-        num = float(value)
-        if num >= 1000000:
-            return f"{num/1000000:.1f}M"
-        elif num >= 1000:
-            return f"{num/1000:.1f}K"
-        else:
-            return f"{num:.2f}"
-    except:
-        return str(value)
+        st.error("❌ Failed to load data from the spreadsheet.")
+        st.info("Please check your spreadsheet connection and data format.")
 
 def weekly_prod_schedule():
 
