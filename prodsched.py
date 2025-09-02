@@ -3387,40 +3387,40 @@ class SummaryDataExtractor:
         return None
     
     def _find_metric_rows(self):
-    """Find the row indices for each metric including WTD"""
-    metrics = {
-        "Total Batches": "batches",
-        "Total Volume (kg)": "volume",
-        "Total Run Hours": "run",
-        "Total Manpower": "manpower",
-        "Overtime %": "ot",
-        "Capacity Utilization %": "capacity"
-    }
-    
-    metric_rows = {}
-    wtd_row = None
-    
-    for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
-        # Check if this is the WTD row
-        for col_idx in range(min(5, len(self.ddf.columns))):
-            cell_value = self.df.iloc[row_idx, col_idx]
-            if cell_value and "wtd" in str(cell_value).lower():
-                wtd_row = row_idx
-                break
+        """Find the row indices for each metric including WTD"""
+        metrics = {
+            "Total Batches": "batches",
+            "Total Volume (kg)": "volume",
+            "Total Run Hours": "run",
+            "Total Manpower": "manpower",
+            "Overtime %": "ot",
+            "Capacity Utilization %": "capacity"
+        }
         
-        # Check for regular metrics
-        for metric_display, metric_key in metrics.items():
-            for col_idx in range(min(5, len(self.df.columns))):
+        metric_rows = {}
+        wtd_row = None
+        
+        for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
+            # Check if this is the WTD row
+            for col_idx in range(min(5, len(self.ddf.columns))):
                 cell_value = self.df.iloc[row_idx, col_idx]
-                if cell_value and metric_key in str(cell_value).lower():
-                    metric_rows[metric_display] = row_idx
+                if cell_value and "wtd" in str(cell_value).lower():
+                    wtd_row = row_idx
                     break
-    
-    # Store WTD row for later use
-    if wtd_row is not None:
-        metric_rows["_wtd_row"] = wtd_row
-    
-    return metric_rows
+            
+            # Check for regular metrics
+            for metric_display, metric_key in metrics.items():
+                for col_idx in range(min(5, len(self.df.columns))):
+                    cell_value = self.df.iloc[row_idx, col_idx]
+                    if cell_value and metric_key in str(cell_value).lower():
+                        metric_rows[metric_display] = row_idx
+                        break
+        
+        # Store WTD row for later use
+        if wtd_row is not None:
+            metric_rows["_wtd_row"] = wtd_row
+        
+        return metric_rows
     
     def _safe_extract_number(self, row_idx, col_idx):
         """Safely extract a number from the dataframe"""
