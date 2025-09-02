@@ -3298,6 +3298,7 @@ def create_navigation():
         st.warning("Logo file 'cloudeats.png' not found. Using fallback icon.")
 
 # --- Add the SummaryDataExtractor class if not already present ---
+# --- Add the SummaryDataExtractor class if not already present ---
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
@@ -3408,6 +3409,21 @@ def update_dropdown_cell(client, spreadsheet_id, worksheet_name, cell, value):
     except Exception as e:
         st.error(f"Failed to update cell: {e}")
         return False
+
+def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
+    """Get current value from dropdown cell"""
+    try:
+        sheet = client.open_by_key(spreadsheet_id).worksheet(worksheet_name)
+        value = sheet.acell(cell).value
+        
+        # FIXED: Clean the returned value of any quotes
+        if value:
+            clean_value = str(value).strip("'\"")
+            return clean_value
+        return None
+    except Exception as e:
+        st.error(f"Failed to get cell value: {e}")
+        return None
 
 def get_current_dropdown_value(client, spreadsheet_id, worksheet_name, cell):
     """Get current value from dropdown cell"""
@@ -3540,7 +3556,6 @@ def summary_page():
         st.error(f"Error loading summary data: {str(e)}")
         import traceback
         st.error(f"Full error: {traceback.format_exc()}")
-
 def weekly_prod_schedule():
 
     st.markdown("""
