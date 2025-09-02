@@ -1983,6 +1983,8 @@ def display_kpi_dashboard():
         st.error(f"Error displaying KPI dashboard: {str(e)}")
         st.exception(e)  # Show full exception details for debugging
 
+    display_kpi_dashboard()
+
 
 # --- DATA LOADER FUNCTION ---
 @st.cache_data(ttl=60)
