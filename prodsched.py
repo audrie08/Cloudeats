@@ -3300,20 +3300,52 @@ def create_navigation():
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
-    def __init__(self, client, sheet_name="Weekly Production Schedule"):
-        """Initialize with Google Sheets client and sheet name"""
+    def __init__(self, client, spreadsheet_name=None, worksheet_name=None):
+        """Initialize with Google Sheets client and sheet names"""
         self.client = client
-        self.sheet_name = sheet_name
+        self.spreadsheet_name = spreadsheet_name
+        self.worksheet_name = worksheet_name
         self.sheet = None
         
     def connect_to_sheet(self):
         """Connect to the specific Google Sheet"""
         try:
-            spreadsheet = self.client.open(self.sheet_name)
-            self.sheet = spreadsheet.sheet1  # Assuming first sheet
+            # If no spreadsheet name provided, try to list available spreadsheets
+            if not self.spreadsheet_name:
+                st.warning("No spreadsheet name provided. Please specify the spreadsheet name.")
+                return False
+            
+            # Try to open the spreadsheet
+            spreadsheet = self.client.open(self.spreadsheet_name)
+            
+            # If worksheet name is provided, use it; otherwise use first sheet
+            if self.worksheet_name:
+                try:
+                    self.sheet = spreadsheet.worksheet(self.worksheet_name)
+                except Exception as e:
+                    st.error(f"Worksheet '{self.worksheet_name}' not found. Available worksheets:")
+                    worksheets = [ws.title for ws in spreadsheet.worksheets()]
+                    st.write(worksheets)
+                    return False
+            else:
+                self.sheet = spreadsheet.sheet1
+            
+            st.success(f"Successfully connected to spreadsheet: '{self.spreadsheet_name}'")
             return True
+            
+        except gspread.SpreadsheetNotFound:
+            st.error(f"Spreadsheet '{self.spreadsheet_name}' not found.")
+            try:
+                # List available spreadsheets for debugging
+                st.info("Listing available spreadsheets:")
+                files = self.client.list_spreadsheet_files()
+                for file in files[:10]:  # Show first 10 files
+                    st.write(f"- {file['name']}")
+            except:
+                pass
+            return False
         except Exception as e:
-            st.error(f"Failed to connect to sheet '{self.sheet_name}': {e}")
+            st.error(f"Failed to connect to spreadsheet '{self.spreadsheet_name}': {e}")
             return False
     
     def extract_header_row(self):
@@ -3452,7 +3484,6 @@ def display_staff_metrics(staff_data):
         )
 
 
-
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
@@ -3465,12 +3496,42 @@ def summary_page():
         st.error("Unable to connect to Google Sheets. Please check your credentials.")
         return
     
-    # Create data extractor
-    extractor = SummaryDataExtractor(client)
+    # Add configuration section for sheet names
+    with st.expander("🔧 Sheet Configuration", expanded=False):
+        spreadsheet_name = st.text_input(
+            "Spreadsheet Name:", 
+            value="Weekly Production Schedule",
+            help="Enter the exact name of your Google Spreadsheet"
+        )
+        worksheet_name = st.text_input(
+            "Worksheet Name (optional):", 
+            value="",
+            help="Enter the specific worksheet name, or leave blank to use the first sheet"
+        )
+        
+        if st.button("🔍 List Available Spreadsheets"):
+            try:
+                files = client.list_spreadsheet_files()
+                st.write("Available spreadsheets:")
+                for i, file in enumerate(files[:20]):  # Show first 20 files
+                    st.write(f"{i+1}. **{file['name']}**")
+            except Exception as e:
+                st.error(f"Failed to list spreadsheets: {e}")
+    
+    # Create data extractor with user inputs
+    extractor = SummaryDataExtractor(
+        client, 
+        spreadsheet_name=spreadsheet_name if spreadsheet_name.strip() else None,
+        worksheet_name=worksheet_name if worksheet_name.strip() else None
+    )
     
     # Connect to sheet
     if not extractor.connect_to_sheet():
-        st.error("Unable to connect to the Weekly Production Schedule sheet.")
+        st.error("Unable to connect to the specified sheet.")
+        st.info("💡 **Troubleshooting Tips:**")
+        st.info("1. Check if the spreadsheet name is exactly correct (case-sensitive)")
+        st.info("2. Make sure the spreadsheet is shared with your service account")
+        st.info("3. Use the 'List Available Spreadsheets' button to see what's accessible")
         return
     
     try:
