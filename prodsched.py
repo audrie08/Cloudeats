@@ -4063,7 +4063,7 @@ def ytd_production():
             st.warning("No production data matches the selected filters")
             # Show empty dataframe structure
             empty_df = pd.DataFrame(columns=['Station', 'SKU', 'Batches'])
-            st.dataframe(empty_df, use_container_width=True, hide_index=True)
+            st.dataframe(empty_df, width='stretch', hide_index=True)
 
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
