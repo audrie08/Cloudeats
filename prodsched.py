@@ -3319,14 +3319,11 @@ class SummaryDataExtractor:
                 if day_value and str(day_value).strip() and str(day_value).strip() not in ['', 'Category', 'UOM', 'Standard', 'WTD']:
                     day_columns.append((col_idx, str(day_value).strip()))
             
-            # Find the metric rows including WTD
+            # Find the metric rows
             metric_rows = self._find_metric_rows()
             if not metric_rows:
                 st.error("Could not find metric rows in the data")
                 return pd.DataFrame()
-            
-            # Get WTD row if available
-            wtd_row = metric_rows.get("_wtd_row")
             
             # Create the production dataframe with dynamic day columns
             production_data = {"Metric": []}
@@ -3339,37 +3336,28 @@ class SummaryDataExtractor:
             production_data["WTD"] = []
             
             # Extract data for each metric
-            for metric_name, metric_key in [("Total Batches", "batches"), 
-                                          ("Total Volume (kg)", "volume"),
-                                          ("Total Run Hours", "run"), 
-                                          ("Total Manpower", "manpower"),
-                                          ("Overtime %", "ot"), 
-                                          ("Capacity Utilization %", "capacity")]:
+            for metric_name, row_idx in metric_rows.items():
+                if metric_name.startswith("_"):  # Skip internal keys like _wtd_row
+                    continue
+                    
+                production_data["Metric"].append(metric_name)
                 
-                if metric_name in metric_rows:
-                    row_idx = metric_rows[metric_name]
-                    production_data["Metric"].append(metric_name)
-                    
-                    # Extract values for each day
-                    for col_idx, day_name in day_columns:
-                        value = self._safe_extract_number(row_idx, col_idx)
-                        production_data[day_name].append(value)
-                    
-                    # Extract WTD value from WTD row if available
-                    wtd_value = 0
-                    if wtd_row is not None:
-                        # Map metric to the correct column in WTD row
-                        wtd_columns = {
-                            "batches": 3, "volume": 4, "run": 5, 
-                            "manpower": 6, "ot": 8, "capacity": 9
-                        }
-                        if metric_key in wtd_columns:
-                            col_idx = wtd_columns[metric_key]
-                            wtd_value = self._safe_extract_number(wtd_row, col_idx)
-                    
-                    production_data["WTD"].append(wtd_value)
+                # Extract values for each day
+                for col_idx, day_name in day_columns:
+                    value = self._safe_extract_number(row_idx, col_idx)
+                    production_data[day_name].append(value)
+                
+                # Extract WTD value from COLUMN 11 (index 11)
+                wtd_value = self._safe_extract_number(row_idx, 11)
+                production_data["WTD"].append(wtd_value)
             
             return pd.DataFrame(production_data)
+            
+        except Exception as e:
+            st.error(f"Error creating production dataframe: {str(e)}")
+            import traceback
+            st.error(f"Full error: {traceback.format_exc()}")
+            return pd.DataFrame()
             
         except Exception as e:
             st.error(f"Error creating production dataframe: {str(e)}")
@@ -3387,38 +3375,31 @@ class SummaryDataExtractor:
         return None
     
     def _find_metric_rows(self):
-        """Find the row indices for each metric including WTD"""
-        metrics = {
-            "Total Batches": "batches",
-            "Total Volume (kg)": "volume",
-            "Total Run Hours": "run",
-            "Total Manpower": "manpower",
-            "Overtime %": "ot",
-            "Capacity Utilization %": "capacity"
-        }
+        """Find the row indices for each metric"""
+        # Based on your debug data structure:
+        # Rows 4-10 contain the daily data for each metric
+        # We need to map these rows to the correct metrics
         
         metric_rows = {}
-        wtd_row = None
         
-        for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
-            # Check if this is the WTD row
-            for col_idx in range(min(5, len(self.df.columns))):
-                cell_value = self.df.iloc[row_idx, col_idx]
-                if cell_value and "wtd" in str(cell_value).lower():
-                    wtd_row = row_idx
-                    break
-            
-            # Check for regular metrics
-            for metric_display, metric_key in metrics.items():
-                for col_idx in range(min(5, len(self.df.columns))):
-                    cell_value = self.df.iloc[row_idx, col_idx]
-                    if cell_value and metric_key in str(cell_value).lower():
-                        metric_rows[metric_display] = row_idx
-                        break
-        
-        # Store WTD row for later use
-        if wtd_row is not None:
-            metric_rows["_wtd_row"] = wtd_row
+        # Find which row contains which metric by checking column 2 (the day names)
+        for row_idx in range(4, 11):  # Rows 4-10 (index 4-10)
+            if row_idx < len(self.df):
+                # Check if this row has a day name in column 2
+                day_value = self.df.iloc[row_idx, 2] if len(self.df.columns) > 2 else ""
+                if day_value and any(day in str(day_value).lower() for day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'aug', 'sep', 'oct']):
+                    # This is a data row, map it to metrics based on position
+                    metric_mapping = {
+                        4: "Total Batches",
+                        5: "Total Volume (kg)", 
+                        6: "Total Run Hours",
+                        7: "Total Manpower",
+                        8: "Overtime %",
+                        9: "Capacity Utilization %",
+                        10: "Capacity Utilization %"  # Handle edge case
+                    }
+                    if row_idx in metric_mapping:
+                        metric_rows[metric_mapping[row_idx]] = row_idx
         
         return metric_rows
     
