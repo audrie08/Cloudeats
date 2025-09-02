@@ -3301,18 +3301,80 @@ class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
     def __init__(self, client, sheet_name="YourSheetName"):  # Replace with your actual sheet name
+        st.info(f"🚀 DEBUG: Initializing SummaryDataExtractor")
+        st.info(f"📝 DEBUG: Sheet name provided: '{sheet_name}'")
+        st.info(f"🔑 DEBUG: Client type: {type(client)}")
+        
         self.client = client
         self.sheet_name = sheet_name
         self.worksheet = None
+        
+        # Verify client is working
+        if not client:
+            st.error("❌ DEBUG: Client is None or invalid!")
+            return
+            
+        try:
+            # Test client connection by listing a spreadsheet
+            st.info("🔍 DEBUG: Testing client connection...")
+            test_sheets = self.client.openall()
+            st.success(f"✅ DEBUG: Client working! Found {len(test_sheets)} accessible spreadsheets")
+        except Exception as client_error:
+            st.error(f"❌ DEBUG: Client connection failed: {client_error}")
+            return
+        
         self.connect_to_sheet()
     
     def connect_to_sheet(self):
         """Connect to the Google Sheet"""
         try:
-            spreadsheet = self.client.open(self.sheet_name)
-            self.worksheet = spreadsheet.get_worksheet(0)  # Assuming first worksheet
+            st.info(f"🔍 DEBUG: Attempting to connect to sheet: '{self.sheet_name}'")
+            
+            # Step 1: Try to open the spreadsheet
+            try:
+                spreadsheet = self.client.open(self.sheet_name)
+                st.success(f"✅ DEBUG: Successfully opened spreadsheet: '{self.sheet_name}'")
+                st.info(f"📋 DEBUG: Spreadsheet ID: {spreadsheet.id}")
+                st.info(f"📋 DEBUG: Spreadsheet URL: {spreadsheet.url}")
+            except gspread.SpreadsheetNotFound:
+                st.error(f"❌ DEBUG: Spreadsheet '{self.sheet_name}' not found!")
+                st.info("💡 DEBUG: Available spreadsheets:")
+                try:
+                    # List all available spreadsheets
+                    all_sheets = self.client.openall()
+                    for i, sheet in enumerate(all_sheets):
+                        st.info(f"  {i+1}. '{sheet.title}' (ID: {sheet.id})")
+                except Exception as list_error:
+                    st.error(f"❌ DEBUG: Could not list spreadsheets: {list_error}")
+                return
+            except Exception as open_error:
+                st.error(f"❌ DEBUG: Error opening spreadsheet: {open_error}")
+                return
+            
+            # Step 2: Get worksheet information
+            try:
+                worksheets = spreadsheet.worksheets()
+                st.info(f"📑 DEBUG: Found {len(worksheets)} worksheets:")
+                for i, ws in enumerate(worksheets):
+                    st.info(f"  {i}. '{ws.title}' (ID: {ws.id}) - {ws.row_count} rows × {ws.col_count} cols")
+                
+                # Get the first worksheet (index 0)
+                if len(worksheets) > 0:
+                    self.worksheet = worksheets[0]  # Use direct indexing instead of get_worksheet
+                    st.success(f"✅ DEBUG: Connected to worksheet: '{self.worksheet.title}'")
+                else:
+                    st.error("❌ DEBUG: No worksheets found in the spreadsheet!")
+                    return
+                    
+            except Exception as worksheet_error:
+                st.error(f"❌ DEBUG: Error accessing worksheets: {worksheet_error}")
+                return
+                
         except Exception as e:
-            st.error(f"Error connecting to sheet: {e}")
+            st.error(f"❌ DEBUG: Unexpected error in connect_to_sheet: {e}")
+            st.error(f"❌ DEBUG: Error type: {type(e)}")
+            import traceback
+            st.error(f"❌ DEBUG: Full traceback: {traceback.format_exc()}")
     
     def update_week_number(self, week_number):
         """Update week number in cell C1 of the source sheet"""
@@ -3417,14 +3479,46 @@ def summary_page():
     
     st.title("📊 Production Summary")
     
+    # Add debug toggle
+    debug_mode = st.checkbox("🐛 Enable Debug Mode", value=True, help="Show detailed debugging information")
+    
     # Initialize Google Sheets connection
+    if debug_mode:
+        st.info("🔄 DEBUG: Initializing Google Sheets connection...")
+        
     client = init_google_sheets()
     if not client:
         st.error("Unable to connect to Google Sheets. Please check your credentials.")
         return
     
+    if debug_mode:
+        st.success("✅ DEBUG: Google Sheets client initialized successfully")
+    
+    # Sheet name input for debugging
+    if debug_mode:
+        st.subheader("🔧 Debug Configuration")
+        sheet_name = st.text_input(
+            "Enter exact sheet name:", 
+            value="YourSheetName",
+            help="Enter the exact name of your Google Sheet (case-sensitive)"
+        )
+    else:
+        sheet_name = "YourSheetName"  # Replace with your actual sheet name
+    
     # Initialize data extractor
-    data_extractor = SummaryDataExtractor(client)
+    if debug_mode:
+        st.info(f"🔄 DEBUG: Creating SummaryDataExtractor with sheet: '{sheet_name}'")
+        
+    data_extractor = SummaryDataExtractor(client, sheet_name)
+    
+    # Check if connection was successful
+    if not data_extractor.worksheet:
+        st.error("❌ Failed to connect to worksheet. Please check the debug information above.")
+        return
+    
+    if debug_mode:
+        st.success("✅ DEBUG: SummaryDataExtractor created successfully")
+        st.divider()
     
     # Create week selector
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -3441,17 +3535,32 @@ def summary_page():
     # Update week number in sheet when changed
     if st.session_state.get('current_week') != selected_week:
         with st.spinner("Updating week data..."):
+            if debug_mode:
+                st.info(f"🔄 DEBUG: Updating week number to {selected_week} in cell C1")
+                
             success = data_extractor.update_week_number(selected_week)
             if success:
                 st.session_state.current_week = selected_week
+                if debug_mode:
+                    st.success(f"✅ DEBUG: Week {selected_week} updated successfully")
                 # Clear cache to force data refresh
                 st.cache_data.clear()
                 st.rerun()
+            else:
+                if debug_mode:
+                    st.error("❌ DEBUG: Failed to update week number")
     
     st.divider()
     
     # Get staff metrics for metric cards
+    if debug_mode:
+        st.info("🔄 DEBUG: Fetching staff metrics...")
+        
     staff_metrics = data_extractor.get_staff_metrics()
+    
+    if debug_mode:
+        st.success("✅ DEBUG: Staff metrics retrieved")
+        st.json(staff_metrics)
     
     # Display staff metrics in cards
     st.subheader("👥 Staff Overview")
@@ -3485,7 +3594,15 @@ def summary_page():
     st.subheader(f"📈 Weekly Production Data - Week {selected_week}")
     
     with st.spinner("Loading production data..."):
+        if debug_mode:
+            st.info("🔄 DEBUG: Fetching summary data from range B3:L9...")
+            
         summary_df = data_extractor.get_summary_data()
+        
+        if debug_mode and summary_df is not None:
+            st.success(f"✅ DEBUG: Retrieved DataFrame with shape: {summary_df.shape}")
+            st.info("📊 DEBUG: DataFrame preview:")
+            st.dataframe(summary_df.head())
     
     if summary_df is not None and not summary_df.empty:
         # Style the dataframe
@@ -3533,6 +3650,8 @@ def summary_page():
         
     else:
         st.warning("No data available for the selected week. Please check your data source.")
+        if debug_mode:
+            st.error("❌ DEBUG: summary_df is None or empty")
     
     # Additional information
     with st.expander("ℹ️ Data Information"):
