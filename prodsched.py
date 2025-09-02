@@ -3300,7 +3300,7 @@ def create_navigation():
 class SummaryDataExtractor:
     """Class to extract and process summary data from the Google Sheets"""
     
-    def __init__(self, client, sheet_name="YourSheetName"):  # Replace with your actual sheet name
+    def __init__(self, client, sheet_name="MAIN"): 
         st.info(f"🚀 DEBUG: Initializing SummaryDataExtractor")
         st.info(f"📝 DEBUG: Sheet name provided: '{sheet_name}'")
         st.info(f"🔑 DEBUG: Client type: {type(client)}")
