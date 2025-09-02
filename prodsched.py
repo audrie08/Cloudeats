@@ -3319,11 +3319,14 @@ class SummaryDataExtractor:
                 if day_value and str(day_value).strip() and str(day_value).strip() not in ['', 'Category', 'UOM', 'Standard', 'WTD']:
                     day_columns.append((col_idx, str(day_value).strip()))
             
-            # Find the metric rows
+            # Find the metric rows including WTD
             metric_rows = self._find_metric_rows()
             if not metric_rows:
                 st.error("Could not find metric rows in the data")
                 return pd.DataFrame()
+            
+            # Get WTD row if available
+            wtd_row = metric_rows.get("_wtd_row")
             
             # Create the production dataframe with dynamic day columns
             production_data = {"Metric": []}
@@ -3333,20 +3336,38 @@ class SummaryDataExtractor:
                 production_data[day_name] = []
             
             # Add WTO column
-            production_data["WTD"] = []
+            production_data["WTO"] = []
             
             # Extract data for each metric
-            for metric_name, row_idx in metric_rows.items():
-                production_data["Metric"].append(metric_name)
+            for metric_name, metric_key in [("Total Batches", "batches"), 
+                                          ("Total Volume (kg)", "volume"),
+                                          ("Total Run Hours", "run"), 
+                                          ("Total Manpower", "manpower"),
+                                          ("Overtime %", "ot"), 
+                                          ("Capacity Utilization %", "capacity")]:
                 
-                # Extract values for each day
-                for col_idx, day_name in day_columns:
-                    value = self._safe_extract_number(row_idx, col_idx)
-                    production_data[day_name].append(value)
-                
-                # Extract WTO value (usually the last column before staff info)
-                wto_value = self._safe_extract_number(row_idx, -2)  # Second last column
-                production_data["WTD"].append(wto_value)
+                if metric_name in metric_rows:
+                    row_idx = metric_rows[metric_name]
+                    production_data["Metric"].append(metric_name)
+                    
+                    # Extract values for each day
+                    for col_idx, day_name in day_columns:
+                        value = self._safe_extract_number(row_idx, col_idx)
+                        production_data[day_name].append(value)
+                    
+                    # Extract WTO value from WTD row if available
+                    wto_value = 0
+                    if wtd_row is not None:
+                        # Map metric to the correct column in WTD row
+                        wtd_columns = {
+                            "batches": 3, "volume": 4, "run": 5, 
+                            "manpower": 6, "ot": 8, "capacity": 9
+                        }
+                        if metric_key in wtd_columns:
+                            col_idx = wtd_columns[metric_key]
+                            wto_value = self._safe_extract_number(wtd_row, col_idx)
+                    
+                    production_data["WTO"].append(wto_value)
             
             return pd.DataFrame(production_data)
             
@@ -3366,27 +3387,40 @@ class SummaryDataExtractor:
         return None
     
     def _find_metric_rows(self):
-        """Find the row indices for each metric"""
-        metrics = {
-            "Total Batches (no.)": "batches",
-            "Total Volume (kg)": "volume",
-            "Total Run Hours (hrs)": "run",
-            "Total Manpower (count)": "manpower",
-            "Overtime %": "ot",
-            "Capacity Utilization %": "capacity"
-        }
+    """Find the row indices for each metric including WTD"""
+    metrics = {
+        "Total Batches": "batches",
+        "Total Volume (kg)": "volume",
+        "Total Run Hours": "run",
+        "Total Manpower": "manpower",
+        "Overtime %": "ot",
+        "Capacity Utilization %": "capacity"
+    }
+    
+    metric_rows = {}
+    wtd_row = None
+    
+    for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
+        # Check if this is the WTD row
+        for col_idx in range(min(5, len(self.ddf.columns))):
+            cell_value = self.df.iloc[row_idx, col_idx]
+            if cell_value and "wtd" in str(cell_value).lower():
+                wtd_row = row_idx
+                break
         
-        metric_rows = {}
-        
-        for row_idx in range(min(15, len(self.df))):  # Check first 15 rows
-            for metric_display, metric_key in metrics.items():
-                for col_idx in range(min(5, len(self.df.columns))):  # Check first 5 columns
-                    cell_value = self.df.iloc[row_idx, col_idx]
-                    if cell_value and metric_key in str(cell_value).lower():
-                        metric_rows[metric_display] = row_idx
-                        break
-        
-        return metric_rows
+        # Check for regular metrics
+        for metric_display, metric_key in metrics.items():
+            for col_idx in range(min(5, len(self.df.columns))):
+                cell_value = self.df.iloc[row_idx, col_idx]
+                if cell_value and metric_key in str(cell_value).lower():
+                    metric_rows[metric_display] = row_idx
+                    break
+    
+    # Store WTD row for later use
+    if wtd_row is not None:
+        metric_rows["_wtd_row"] = wtd_row
+    
+    return metric_rows
     
     def _safe_extract_number(self, row_idx, col_idx):
         """Safely extract a number from the dataframe"""
