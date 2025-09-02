@@ -3517,10 +3517,6 @@ def summary_page():
         # Display current week info
         st.info(f"📅 Currently showing data for Week {current_week}")
         
-        # Display staff metrics as cards
-        st.subheader("👥 Staff Metrics")
-        create_metric_cards(staff_metrics)
-        
         st.markdown("---")
         
         # Display main data table
@@ -3610,6 +3606,10 @@ def summary_page():
         """
         
         st.markdown(scrollable_html, unsafe_allow_html=True)
+
+        # Display staff metrics as cards
+        st.subheader("👥 Staff Details")
+        create_metric_cards(staff_metrics)
         
     else:
         st.error("❌ Failed to load data from the spreadsheet.")
