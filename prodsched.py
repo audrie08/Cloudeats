@@ -3543,41 +3543,6 @@ def summary_page():
             }
         )
         
-        # Additional insights
-        st.markdown("---")
-        st.subheader("💡 Key Insights")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            try:
-                # Extract some key metrics for insights
-                if 'WTD' in df.columns:
-                    batches_wtd = df.loc['Batches', 'WTD']
-                    volume_wtd = df.loc['Volume', 'WTD']
-                    
-                    st.markdown(f"""
-                    **Week-to-Date Performance:**
-                    - Total Batches: **{batches_wtd}**
-                    - Total Volume: **{volume_wtd} kg**
-                    """)
-            except:
-                pass
-        
-        with col2:
-            try:
-                if '%OT' in df.index and 'WTD' in df.columns:
-                    ot_percentage = df.loc['%OT', 'WTD']
-                    capacity_util = df.loc['Capacity Utilization', 'WTD']
-                    
-                    st.markdown(f"""
-                    **Efficiency Metrics:**
-                    - Overtime: **{ot_percentage}**
-                    - Capacity Utilization: **{capacity_util}**
-                    """)
-            except:
-                pass
-        
     else:
         st.error("❌ Failed to load data from the spreadsheet.")
         st.info("Please check your spreadsheet connection and data format.")
