@@ -3529,19 +3529,87 @@ def summary_page():
         # Format the DataFrame for better display
         formatted_df = format_dataframe(df)
         
-        # Display the DataFrame with custom styling
-        st.dataframe(
-            formatted_df,
-            use_container_width=True,
-            height=300,
-            column_config={
-                col: st.column_config.TextColumn(
-                    col,
-                    help=f"Data for {col}",
-                    width="medium"
-                ) for col in formatted_df.columns
-            }
+        # Add CSS styling
+        st.markdown("""
+        <style>
+        .scrollable-table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+        .station-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+        }
+        .station-table th {
+            background: #1e2323;
+            color: #f4d602;
+            font-weight: bold;
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 2px solid #3b3f46;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .station-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+            text-align: center;
+            font-weight: 500;
+        }
+        .station-table tr:hover {
+            background-color: rgba(244, 214, 2, 0.1);
+            transition: background-color 0.2s ease;
+        }
+        .station-table tr:last-child td {
+            border-bottom: none;
+        }
+        /* Set equal widths for numeric columns */
+        .station-table th:nth-child(n+2),
+        .station-table td:nth-child(n+2) {
+            width: 12%;
+            min-width: 100px;
+        }
+        /* First column (category names) */
+        .station-table td:first-child,
+        .station-table th:first-child {
+            min-width: 180px;
+            width: 22%;
+            text-align: left;
+            padding-left: 15px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Reset index to make categories a column
+        display_df = formatted_df.reset_index()
+        display_df = display_df.rename(columns={'index': 'Category'})
+        
+        # Render as HTML table with pills in scrollable container
+        html_table = display_df.to_html(
+            escape=False, 
+            index=False, 
+            classes='station-table',
+            table_id='production-table'
         )
+        
+        # Wrap table in scrollable container
+        scrollable_html = f"""
+        <div class="scrollable-table-container">
+            {html_table}
+        </div>
+        """
+        
+        st.markdown(scrollable_html, unsafe_allow_html=True)
         
     else:
         st.error("❌ Failed to load data from the spreadsheet.")
@@ -3551,7 +3619,7 @@ def weekly_prod_schedule():
 
     st.markdown("""
     <div class="main-header">
-        <h1><b>Commissary Production Scheduler</b></h1>
+        <h1><b>Commissary Production Schedule</b></h1>
         <p><b>Weekly Production Schedule Management</b></p>
     </div>
     """, unsafe_allow_html=True)
