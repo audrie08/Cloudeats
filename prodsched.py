@@ -4069,17 +4069,13 @@ def ytd_production():
         </div>
     """, unsafe_allow_html=True)
         
-# --- Update your main() function to include the Summary page ---
 def main():
-    """Main application function - UPDATED VERSION"""
+    """Main application function - CORRECTED VERSION"""
     
     # Create modern navigation header
     create_navigation()
-
-    # Display KPI Dashboard
-    display_kpi_dashboard()
     
-    # Initialize session state for navigation
+    # Initialize session state for navigation FIRST
     if 'main_tab' not in st.session_state:
         st.session_state.main_tab = "KPI Dashboard"
     if 'sub_tab' not in st.session_state:
@@ -4130,7 +4126,7 @@ def main():
         }
     )
     
-   # Store the main page selection in session state
+    # Store the main page selection in session state
     st.session_state.main_tab = main_page_selection
     
     # Show sub-navigation only if Production Details is selected
@@ -4186,6 +4182,7 @@ def main():
     
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "KPI Dashboard":
+        # FIXED: Call the existing main_page() function instead of display_kpi_dashboard()
         main_page()
     else:
         # UPDATED: Added Summary page routing
