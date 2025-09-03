@@ -3585,10 +3585,14 @@ def summary_page():
         </style>
         """, unsafe_allow_html=True)
         
+        # Reset index to make categories a column
+        display_df = formatted_df.reset_index()
+        display_df = display_df.rename(columns={'index': 'Category'})
+        
         # Render as HTML table with pills in scrollable container
-        html_table = formatted_df.to_html(
+        html_table = display_df.to_html(
             escape=False, 
-            index=True, 
+            index=False, 
             classes='station-table',
             table_id='production-table'
         )
@@ -3609,7 +3613,7 @@ def summary_page():
     else:
         st.error("❌ Failed to load data from the spreadsheet.")
         st.info("Please check your spreadsheet connection and data format.")
-
+        
 def weekly_prod_schedule():
 
     st.markdown("""
