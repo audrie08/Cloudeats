@@ -3154,7 +3154,7 @@ def render_machine_table(machines, day_filter="Current Week", day_options=None):
     """, unsafe_allow_html=True)
     
     # Render as HTML table
-    html_table = df_display.to_html(
+    html_table = formatted_df.to_html(
         escape=False, 
         index=False, 
         classes='machine-table',
