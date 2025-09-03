@@ -3587,8 +3587,16 @@ def summary_page():
         """, unsafe_allow_html=True)
         
         # Reset index to make categories a column
-        display_df = formatted_df.reset_index()
-        display_df = display_df.rename(columns={'index': 'Category'})
+        if formatted_df.index.name is not None or not any('category' in col.lower() for col in formatted_df.columns):
+            display_df = formatted_df.reset_index()
+            # Remove duplicate category columns if they exist
+            category_cols = [col for col in display_df.columns if 'category' in col.lower()]
+            if len(category_cols) > 1:
+                # Keep only the first category column
+                cols_to_drop = category_cols[1:]
+                display_df = display_df.drop(columns=cols_to_drop)
+        else:
+            display_df = formatted_df.copy()
         
         # Render as HTML table with pills in scrollable container
         html_table = display_df.to_html(
