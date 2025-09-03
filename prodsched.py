@@ -3570,7 +3570,7 @@ def summary_page():
         st.markdown(f"""
             <div style="position: relative; z-index: 1;">
                 <h3 style="
-                    color: white;
+                    color: black;
                     margin: 0;
                     font-size: 1.5rem;
                     font-weight: 700;
@@ -3582,6 +3582,7 @@ def summary_page():
                 ">
                     Currently Displaying Week 
                     <span style="
+                        color: black,
                         background: rgba(255, 255, 255, 0.2);
                         padding: 5px 15px;
                         border-radius: 15px;
