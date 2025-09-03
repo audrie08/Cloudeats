@@ -2455,10 +2455,11 @@ def render_sku_table(skus, day_filter="Current Week", days=None):
     """, unsafe_allow_html=True)
     
     # Use the formatted_df as-is (categories are already the index)
-    html_table = formatted_df.to_html(
+    html_table = df_display.to_html(
         escape=False, 
+        index=False, 
         classes='station-table',
-        table_id='production-table'
+        table_id='sku-table'
     )
     
     # Wrap table in scrollable container
