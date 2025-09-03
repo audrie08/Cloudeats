@@ -3521,7 +3521,7 @@ def summary_page():
             border-radius: 20px !important;
             padding: 0.625rem 1rem !important;
             font-weight: 500 !important;
-            margin-top: 2.05rem !important;
+            margin-top: 1.75rem !important;
             width: 100% !important;
             height: 2.75rem !important;
             transition: all 0.3s ease !important;
