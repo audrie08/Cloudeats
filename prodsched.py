@@ -3464,12 +3464,8 @@ def format_dataframe(df):
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
     
-    st.markdown("""
-    <div class="main-header">
-        <h1><b>Production Summary</b></h1>
-        <p><b>Weekly Production Summary</b></p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("📈 Production Summary")
+    st.markdown("---")
     
     # Initialize Google Sheets connection
     sheets_client = init_google_sheets()
@@ -3486,7 +3482,7 @@ def summary_page():
     except Exception as e:
         st.error(f"Failed to initialize data extractor: {e}")
         return
-        
+    
     # Week selection dropdown
     st.subheader("🗓️ Week Selection")
     
@@ -3511,30 +3507,17 @@ def summary_page():
                     time.sleep(2)
                     st.rerun()  # Refresh the page to show updated data
     
+    st.markdown("---")
+    
+    # Extract and display data
+    with st.spinner("Loading data..."):
+        df, staff_metrics, current_week = extractor.extract_summary_data()
+    
     if df is not None and staff_metrics is not None:
-        # Modern info card for current week
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    color: white; padding: 1.5rem; border-radius: 12px; 
-                    margin: 1.5rem 0; text-align: center;">
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Currently Viewing</div>
-            <div style="font-size: 1.5rem; font-weight: 700;">Week {current_week}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Display main data table with enhanced styling
-        st.markdown("""
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; 
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1.5rem 0;">
-            <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">
-                Weekly Production Data
-            </h3>
-        </div>
-        """, unsafe_allow_html=True)
+        # Display current week info
+        st.info(f"📅 Currently showing data for Week {current_week}")
         
         st.markdown("---")
-
-# -------
         
         # Display main data table
         st.subheader("📊 Weekly Production Data")
