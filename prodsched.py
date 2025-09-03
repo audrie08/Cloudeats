@@ -3488,7 +3488,6 @@ def summary_page():
         return
     
     # Week selection dropdown
-    st.subheader("🗓️ Week Selection")
     
     col1, col2 = st.columns([1, 3])
     
