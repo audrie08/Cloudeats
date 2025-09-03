@@ -3566,11 +3566,71 @@ def summary_page():
         df, staff_metrics, current_week = extractor.extract_summary_data()
     
     if df is not None and staff_metrics is not None:
-        # Display current week info
-        st.info(f"📅 Currently showing data for Week {current_week}")
+        # Modern current week display
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 30px;
+            border-radius: 20px;
+            margin: 25px 0;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+                pointer-events: none;
+            "></div>
+            <div style="position: relative; z-index: 1;">
+                <h3 style="
+                    color: white;
+                    margin: 0;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 12px;
+                ">
+                    <span style="
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 8px 12px;
+                        border-radius: 50%;
+                        font-size: 1.2rem;
+                    ">📊</span>
+                    Currently Displaying Week 
+                    <span style="
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 5px 15px;
+                        border-radius: 15px;
+                        font-size: 1.8rem;
+                        font-weight: 900;
+                        margin-left: 5px;
+                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        backdrop-filter: blur(5px);
+                    ">{current_week}</span>
+                </h3>
+                <p style="
+                    color: rgba(255, 255, 255, 0.9);
+                    margin: 8px 0 0 0;
+                    font-size: 0.95rem;
+                    font-weight: 500;
+                    opacity: 0.9;
+                ">Production data and analytics</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
                 
         # Display main data table
-        st.subheader("📊 Weekly Production Data")
+        st.subheader("Weekly Production Data")
         
         # Format the DataFrame for better display
         formatted_df = format_dataframe(df)
