@@ -3580,7 +3580,7 @@ def summary_page():
                     justify-content: center;
                     gap: 12px;
                 ">
-                    Currently Displaying Week 
+                    Week 
                     <span style="
                         color: white;
                         background: #334155;
