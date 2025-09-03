@@ -3487,7 +3487,7 @@ def summary_page():
         st.error(f"Failed to initialize data extractor: {e}")
         return
     
-    # Center the controls container
+   # Center the controls container
     st.markdown("""
     <div style="display: flex; justify-content: center; margin: 20px 0;">
         <div style="width: 100%; max-width: 600px;">
@@ -3505,19 +3505,29 @@ def summary_page():
         )
     
     with col2:
-        # Add custom CSS for the button styling
+        # Add custom CSS for perfect button alignment
         st.markdown("""
         <style>
+        /* Reset any margins on the button container */
+        .stButton {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
         .stButton > button {
             background-color: #6c757d !important;
             color: white !important;
             border: none !important;
             border-radius: 20px !important;
-            padding: 0.5rem 1rem !important;
+            padding: 0.625rem 1rem !important;
             font-weight: 500 !important;
-            margin-top: 1.85rem !important;
+            margin-top: 2.05rem !important;
             width: 100% !important;
+            height: 2.75rem !important;
             transition: all 0.3s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         .stButton > button:hover {
             background-color: #5a6268 !important;
@@ -3527,8 +3537,16 @@ def summary_page():
         .stButton > button:focus {
             box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25) !important;
         }
+        
+        /* Ensure selectbox has consistent styling */
+        .stSelectbox > div > div > div {
+            height: 2.75rem !important;
+        }
         </style>
         """, unsafe_allow_html=True)
+        
+        # Add some spacing to match the selectbox label
+        st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("🔄 Update Data", key="update_button"):
             with st.spinner("Updating spreadsheet and fetching data..."):
