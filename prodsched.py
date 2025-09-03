@@ -3523,7 +3523,7 @@ def summary_page():
             font-weight: 500 !important;
             margin-top: 1.75rem !important;
             width: 100% !important;
-            height: 2.00rem !important;
+            height: 1.5rem !important;
             transition: all 0.3s ease !important;
             display: flex !important;
             align-items: center !important;
