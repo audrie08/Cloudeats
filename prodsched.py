@@ -3487,10 +3487,12 @@ def summary_page():
         st.error(f"Failed to initialize data extractor: {e}")
         return
         
-    # Better column layout for controls
-    col1, col2, col3, col4 = st.columns([2, 3, 1])
+    # Week selection dropdown
+    st.subheader("🗓️ Week Selection")
     
-    with col2:
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
         selected_week = st.selectbox(
             "Select Week:",
             options=list(range(1, 54)),  # Weeks 1-53
@@ -3498,8 +3500,8 @@ def summary_page():
             key="week_selector"
         )
     
-    with col3:
-        if st.button("🔄 Update Data", type="primary", use_container_width=True):
+    with col2:
+        if st.button("🔄 Update Data", type="primary"):
             with st.spinner("Updating spreadsheet and fetching data..."):
                 # Update the week in the spreadsheet
                 success = extractor.update_week_dropdown(selected_week)
@@ -3508,10 +3510,6 @@ def summary_page():
                     import time
                     time.sleep(2)
                     st.rerun()  # Refresh the page to show updated data
-    
-    # Extract and display data
-    with st.spinner("Loading data..."):
-        df, staff_metrics, current_week = extractor.extract_summary_data()
     
     if df is not None and staff_metrics is not None:
         # Modern info card for current week
