@@ -24,7 +24,7 @@ warnings.filterwarnings('ignore')
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="Commissary Production Scheduler",
+    page_title="Commissary Production Schedule",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -3464,8 +3464,11 @@ def format_dataframe(df):
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
     
-    st.title("📈 Production Summary")
-    st.markdown("---")
+    <div class="main-header">
+        <h1><b>Production Summary</b></h1>
+        <p><b>Weekly Production Summary</b></p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Initialize Google Sheets connection
     sheets_client = init_google_sheets()
