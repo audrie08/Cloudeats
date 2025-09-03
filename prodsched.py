@@ -3464,8 +3464,12 @@ def format_dataframe(df):
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
     
-    st.title("📈 Production Summary")
-    st.markdown("---")
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>Production Summary</b></h1>
+        <p><b>Weekly Production Summary</b></p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Initialize Google Sheets connection
     sheets_client = init_google_sheets()
