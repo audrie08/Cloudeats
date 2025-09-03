@@ -3464,6 +3464,7 @@ def format_dataframe(df):
 def summary_page():
     """Summary page showing weekly production data as DataFrame"""
     
+    st.markdown("""
     <div class="main-header">
         <h1><b>Production Summary</b></h1>
         <p><b>Weekly Production Summary</b></p>
