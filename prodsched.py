@@ -3605,7 +3605,7 @@ def summary_page():
                         padding: 8px 12px;
                         border-radius: 50%;
                         font-size: 1.2rem;
-                    ">📊</span>
+                    "></span>
                     Currently Displaying Week 
                     <span style="
                         background: rgba(255, 255, 255, 0.2);
@@ -3618,13 +3618,6 @@ def summary_page():
                         backdrop-filter: blur(5px);
                     ">{current_week}</span>
                 </h3>
-                <p style="
-                    color: rgba(255, 255, 255, 0.9);
-                    margin: 8px 0 0 0;
-                    font-size: 0.95rem;
-                    font-weight: 500;
-                    opacity: 0.9;
-                ">Production data and analytics</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
