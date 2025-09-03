@@ -3521,9 +3521,9 @@ def summary_page():
             border-radius: 20px !important;
             padding: 0.625rem 1rem !important;
             font-weight: 500 !important;
-            margin-top: 1.75rem !important;
+            margin-top: 1.00rem !important;
             width: 100% !important;
-            height: 1.5rem !important;
+            height: 1.00rem !important;
             transition: all 0.3s ease !important;
             display: flex !important;
             align-items: center !important;
