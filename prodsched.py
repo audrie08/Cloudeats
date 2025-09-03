@@ -3586,10 +3586,6 @@ def summary_page():
         </style>
         """, unsafe_allow_html=True)
         
-        # Reset index to make categories a column
-        display_df = formatted_df.reset_index()
-        display_df = display_df.rename(columns={'index': 'Category'})
-        
         # Render as HTML table with pills in scrollable container
         html_table = display_df.to_html(
             escape=False, 
