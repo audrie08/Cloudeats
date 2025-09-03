@@ -3486,20 +3486,11 @@ def summary_page():
     except Exception as e:
         st.error(f"Failed to initialize data extractor: {e}")
         return
-    
-   # Week selection with modern card design
-    st.markdown("""
-    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; border-left: 4px solid #3b82f6;">
-        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">
-            🗓️ Week Selection
-        </h3>
-    </div>
-    """, unsafe_allow_html=True)
-    
+        
     # Better column layout for controls
-    col1, col2, col3 = st.columns([2, 3, 1])
+    col1, col2, col3, col4 = st.columns([2, 3, 1])
     
-    with col1:
+    with col2:
         selected_week = st.selectbox(
             "Select Week:",
             options=list(range(1, 54)),  # Weeks 1-53
@@ -3507,7 +3498,7 @@ def summary_page():
             key="week_selector"
         )
     
-    with col2:
+    with col3:
         if st.button("🔄 Update Data", type="primary", use_container_width=True):
             with st.spinner("Updating spreadsheet and fetching data..."):
                 # Update the week in the spreadsheet
@@ -3538,7 +3529,7 @@ def summary_page():
         <div style="background: white; padding: 1.5rem; border-radius: 12px; 
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1.5rem 0;">
             <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">
-                📊 Weekly Production Data
+                Weekly Production Data
             </h3>
         </div>
         """, unsafe_allow_html=True)
