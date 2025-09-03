@@ -3487,9 +3487,14 @@ def summary_page():
         st.error(f"Failed to initialize data extractor: {e}")
         return
     
-    # Week selection dropdown
+    # Center the controls container
+    st.markdown("""
+    <div style="display: flex; justify-content: center; margin: 20px 0;">
+        <div style="width: 100%; max-width: 600px;">
+    """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns([1, 3])
+    # Week selection and update button - perfectly aligned
+    col1, col2 = st.columns([2, 1])
     
     with col1:
         selected_week = st.selectbox(
@@ -3500,7 +3505,32 @@ def summary_page():
         )
     
     with col2:
-        if st.button("🔄 Update Data", type="primary"):
+        # Add custom CSS for the button styling
+        st.markdown("""
+        <style>
+        .stButton > button {
+            background-color: #6c757d !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500 !important;
+            margin-top: 1.85rem !important;
+            width: 100% !important;
+            transition: all 0.3s ease !important;
+        }
+        .stButton > button:hover {
+            background-color: #5a6268 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+        }
+        .stButton > button:focus {
+            box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25) !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        if st.button("🔄 Update Data", key="update_button"):
             with st.spinner("Updating spreadsheet and fetching data..."):
                 # Update the week in the spreadsheet
                 success = extractor.update_week_dropdown(selected_week)
@@ -3510,8 +3540,9 @@ def summary_page():
                     time.sleep(2)
                     st.rerun()  # Refresh the page to show updated data
     
-    st.markdown("---")
-    
+    # Close the centered container
+    st.markdown("</div></div>", unsafe_allow_html=True)
+        
     # Extract and display data
     with st.spinner("Loading data..."):
         df, staff_metrics, current_week = extractor.extract_summary_data()
@@ -3519,9 +3550,7 @@ def summary_page():
     if df is not None and staff_metrics is not None:
         # Display current week info
         st.info(f"📅 Currently showing data for Week {current_week}")
-        
-        st.markdown("---")
-        
+                
         # Display main data table
         st.subheader("📊 Weekly Production Data")
         
@@ -3585,6 +3614,24 @@ def summary_page():
             width: 22%;
             text-align: left;
             padding-left: 15px;
+        }
+        
+        /* Center the controls container */
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Ensure selectbox and button are aligned */
+        .stSelectbox > div > div {
+            margin-bottom: 0 !important;
         }
         </style>
         """, unsafe_allow_html=True)
