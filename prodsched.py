@@ -3568,26 +3568,6 @@ def summary_page():
     if df is not None and staff_metrics is not None:
         # Modern current week display
         st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px 30px;
-            border-radius: 20px;
-            margin: 25px 0;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        ">
-            <div style="
-                position: absolute;
-                top: -50%;
-                right: -50%;
-                width: 100%;
-                height: 100%;
-                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-                pointer-events: none;
-            "></div>
             <div style="position: relative; z-index: 1;">
                 <h3 style="
                     color: white;
@@ -3600,12 +3580,6 @@ def summary_page():
                     justify-content: center;
                     gap: 12px;
                 ">
-                    <span style="
-                        background: rgba(255, 255, 255, 0.2);
-                        padding: 8px 12px;
-                        border-radius: 50%;
-                        font-size: 1.2rem;
-                    "></span>
                     Currently Displaying Week 
                     <span style="
                         background: rgba(255, 255, 255, 0.2);
@@ -3619,8 +3593,7 @@ def summary_page():
                     ">{current_week}</span>
                 </h3>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
                 
         # Display main data table
         st.subheader("Weekly Production Data")
