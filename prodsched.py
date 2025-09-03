@@ -3492,7 +3492,7 @@ def summary_page():
         selected_week = st.selectbox(
             "Select Week:",
             options=list(range(1, 54)),  # Weeks 1-53
-            index=None
+            index=None,
             key="week_selector"
         )
     
