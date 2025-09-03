@@ -3487,10 +3487,17 @@ def summary_page():
         st.error(f"Failed to initialize data extractor: {e}")
         return
     
-    # Week selection dropdown
-    st.subheader("🗓️ Week Selection")
+   # Week selection with modern card design
+    st.markdown("""
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; border-left: 4px solid #3b82f6;">
+        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.25rem; font-weight: 600;">
+            🗓️ Week Selection
+        </h3>
+    </div>
+    """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns([1, 3])
+    # Better column layout for controls
+    col1, col2, col3 = st.columns([2, 3, 1])
     
     with col1:
         selected_week = st.selectbox(
@@ -3501,7 +3508,7 @@ def summary_page():
         )
     
     with col2:
-        if st.button("🔄 Update Data", type="primary"):
+        if st.button("🔄 Update Data", type="primary", use_container_width=True):
             with st.spinner("Updating spreadsheet and fetching data..."):
                 # Update the week in the spreadsheet
                 success = extractor.update_week_dropdown(selected_week)
@@ -3511,17 +3518,34 @@ def summary_page():
                     time.sleep(2)
                     st.rerun()  # Refresh the page to show updated data
     
-    st.markdown("---")
-    
     # Extract and display data
     with st.spinner("Loading data..."):
         df, staff_metrics, current_week = extractor.extract_summary_data()
     
     if df is not None and staff_metrics is not None:
-        # Display current week info
-        st.info(f"📅 Currently showing data for Week {current_week}")
+        # Modern info card for current week
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; padding: 1.5rem; border-radius: 12px; 
+                    margin: 1.5rem 0; text-align: center;">
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Currently Viewing</div>
+            <div style="font-size: 1.5rem; font-weight: 700;">Week {current_week}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Display main data table with enhanced styling
+        st.markdown("""
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; 
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1.5rem 0;">
+            <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.5rem; font-weight: 600;">
+                📊 Weekly Production Data
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
         
         st.markdown("---")
+
+# -------
         
         # Display main data table
         st.subheader("📊 Weekly Production Data")
