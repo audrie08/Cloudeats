@@ -3583,7 +3583,7 @@ def summary_page():
                     Currently Displaying Week 
                     <span style="
                         color: black,
-                        background: rgba(255, 255, 255, 0.2);
+                        background: gray;
                         padding: 5px 15px;
                         border-radius: 15px;
                         font-size: 1.8rem;
