@@ -3492,7 +3492,7 @@ def summary_page():
         selected_week = st.selectbox(
             "Select Week:",
             options=list(range(1, 54)),  # Weeks 1-53
-            index=int(current_week) - 1 if str(current_week).isdigit() else 32,  # Default to current week from spreadsheet (0-indexed), fallback to week 33
+            index=None
             key="week_selector"
         )
     
