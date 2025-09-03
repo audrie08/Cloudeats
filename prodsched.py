@@ -3586,7 +3586,7 @@ def summary_page():
         """, unsafe_allow_html=True)
         
         # Render as HTML table with pills in scrollable container
-        html_table = display_df.to_html(
+        html_table = formatted_df.to_html(
             escape=False, 
             index=False, 
             classes='station-table',
