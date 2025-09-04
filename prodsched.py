@@ -3984,14 +3984,6 @@ def ytd_production():
         <p><b>Comprehensive Production Schedule – 2025</b></p>
     </div>
     """, unsafe_allow_html=True)
-   
-    # --- Debug Section ---
-    st.markdown("### 🐛 Debug Information")
-    
-    # --- Load Data from Multiple Sheets ---
-    try:
-        with debug_expander:
-            st.write("Loading data from multiple Google Sheets...")
         
         # Load all sheets (6-11)
         sheet_data = {}
