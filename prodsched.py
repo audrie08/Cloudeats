@@ -4099,7 +4099,7 @@ def ytd_production():
         filtered_batches = metrics_pivot.get('Total Batches', 0)
        
         # --- KPI Cards ---
-        st.markdown("### Production Summary")
+        st.markdown("### Summary")
         
         col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6 = st.columns(6)
 
