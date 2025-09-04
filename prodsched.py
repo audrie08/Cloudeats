@@ -4126,7 +4126,7 @@ def ytd_production():
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Volume</div>
                 <div class="kpi-number">{metrics_pivot.get('Total Volume', 0):,.0f}</div>
-                <div class="kpi-unit">(units)</div>
+                <div class="kpi-unit">(kg)</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -4135,7 +4135,7 @@ def ytd_production():
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Hrs Needed</div>
                 <div class="kpi-number">{metrics_pivot.get('Total Hrs Needed', 0):,.0f}</div>
-                <div class="kpi-unit">(hours)</div>
+                <div class="kpi-unit">(hrs)</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -4144,7 +4144,7 @@ def ytd_production():
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Manhrs</div>
                 <div class="kpi-number">{metrics_pivot.get('Total Manhrs Needed', 0):,.0f}</div>
-                <div class="kpi-unit">(man-hours)</div>
+                <div class="kpi-unit">(hrs)</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -4153,7 +4153,7 @@ def ytd_production():
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Manpower</div>
                 <div class="kpi-number">{metrics_pivot.get('Total Manpower', 0):,.0f}</div>
-                <div class="kpi-unit">(people)</div>
+                <div class="kpi-unit">(count)</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -4162,7 +4162,7 @@ def ytd_production():
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total OT</div>
                 <div class="kpi-number">{metrics_pivot.get('Total OT per Person', 0):,.0f}</div>
-                <div class="kpi-unit">(OT hours)</div>
+                <div class="kpi-unit">(hrs)</div>
             </div>
             """, unsafe_allow_html=True)
        
