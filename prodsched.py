@@ -4169,43 +4169,56 @@ def ytd_production():
        
         # --- Production Data Table ---
         st.markdown("### Production Data")
-       
+        
         if not production_df.empty:
-            # Add all metrics to the production dataframe
-            production_df_expanded = production_df.copy()
+            # Create a new dataframe with all metrics
+            all_metrics_df = production_df.copy()  # This already has Station, SKU, Batches
             
-            # For each row, calculate the additional metrics
-            for idx, row in production_df_expanded.iterrows():
-                station = row['Station']
-                sku = row['SKU']
+            # Calculate additional metrics from other sheets using the SAME approach
+            for sheet_index, metric_name in [(7, 'Total Volume'), (8, 'Total Hrs Needed'), 
+                                           (9, 'Total Manhrs Needed'), (10, 'Total Manpower'), 
+                                           (11, 'Total OT per Person')]:
                 
-                # Get additional metrics for this specific station/SKU
-                for sheet_index, metric_name in [(7, 'Total Volume'), (8, 'Total Hrs Needed'), 
-                                               (9, 'Total Manhrs Needed'), (10, 'Total Manpower'), 
-                                               (11, 'Total OT per Person')]:
+                if sheet_index in sheet_data:
+                    # Create extractor for this sheet
+                    metric_extractor = YTDProductionExtractor(sheet_data[sheet_index])
                     
-                    if sheet_index in sheet_data:
-                        sheet_extractor = YTDProductionExtractor(sheet_data[sheet_index])
-                        metric_value = sheet_extractor.get_filtered_production_data(
-                            selected_week=selected_week,
-                            selected_day=selected_day_display if selected_day_display != "All Days" else None,
-                            selected_station=station,
-                            selected_sku=sku
-                        )['Batches'].sum()
+                    # Get filtered data using the SAME filters
+                    metric_data = metric_extractor.get_filtered_production_data(
+                        selected_week=selected_week,
+                        selected_day=selected_day_display if selected_day_display != "All Days" else None,
+                        selected_station=selected_station if selected_station != "All Stations" else None,
+                        selected_sku=selected_sku if selected_sku != "All SKUs" else None
+                    )
+                    
+                    # Add the metric values to our main dataframe
+                    # The metric_data will have the same structure: Station, SKU, Batches (but actually represents the metric)
+                    for idx, row in all_metrics_df.iterrows():
+                        station = row['Station']
+                        sku = row['SKU']
                         
-                        production_df_expanded.loc[idx, metric_name] = metric_value
+                        # Find matching row in metric data
+                        matching_row = metric_data[(metric_data['Station'] == station) & (metric_data['SKU'] == sku)]
+                        if not matching_row.empty:
+                            # Use the 'Batches' column value (which actually contains the metric value)
+                            metric_value = matching_row['Batches'].iloc[0]
+                            all_metrics_df.loc[idx, metric_name] = metric_value
+                        else:
+                            all_metrics_df.loc[idx, metric_name] = 0
             
-            # Format numeric columns
+            # Format all numeric columns
             numeric_cols = ['Batches', 'Total Volume', 'Total Hrs Needed', 
                            'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
             
             for col in numeric_cols:
-                if col in production_df_expanded.columns:
-                    production_df_expanded[col] = production_df_expanded[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "0")
+                if col in all_metrics_df.columns:
+                    all_metrics_df[col] = all_metrics_df[col].apply(
+                        lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
+                    )
            
             # Display the dataframe
-            st.dataframe(production_df_expanded, width='stretch', hide_index=True)
-       
+            st.dataframe(all_metrics_df, width='stretch', hide_index=True)
+        
         else:
             st.warning("No production data matches the selected filters")
             # Show empty dataframe structure
@@ -4213,6 +4226,7 @@ def ytd_production():
                          'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
             empty_df = pd.DataFrame(columns=empty_cols)
             st.dataframe(empty_df, width='stretch', hide_index=True)
+       
 
     except Exception as e:
         st.error(f"Error loading YTD Production data: {str(e)}")
