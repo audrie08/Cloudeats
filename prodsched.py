@@ -3975,13 +3975,13 @@ def machine_utilization():
     """, unsafe_allow_html=True)
 
 def ytd_production():
-    """YTD Production Schedule Page - Aggregated across multiple sheets"""
+    """YTD Production Schedule Page - Each sheet contains a different metric"""
    
     # --- Header ---
     st.markdown("""
     <div class="main-header">
         <h1><b>📈 YTD Production Schedule</b></h1>
-        <p><b>Year-to-date production metrics aggregated across all stations</b></p>
+        <p><b>Year-to-date production metrics from different sheets</b></p>
     </div>
     """, unsafe_allow_html=True)
    
@@ -3994,28 +3994,41 @@ def ytd_production():
         with debug_expander:
             st.write("Loading data from multiple Google Sheets...")
         
-        # Define the sheet indices to load (6 to 11)
-        sheet_indices = list(range(6, 12))
+        # Each sheet contains a different metric
+        METRIC_SHEETS = {
+            6: 'Total Batches',
+            7: 'Total Volume', 
+            8: 'Total Hrs Needed',
+            9: 'Total Manhrs Needed',
+            10: 'Total Manpower',
+            11: 'Total OT per Person'
+        }
+        
         all_sheets_metrics = []
         
-        for sheet_index in sheet_indices:
+        for sheet_index, metric_name in METRIC_SHEETS.items():
             try:
                 df = load_production_data(sheet_index=sheet_index)
                 with debug_expander:
-                    st.write(f"Sheet {sheet_index} loaded successfully, shape: {df.shape}")
+                    st.write(f"Sheet {sheet_index} ({metric_name}) loaded, shape: {df.shape}")
                 
-                # Use the SAME pattern as get_production_totals() but for all metrics
-                metrics = calculate_all_metrics(df)
+                # Calculate the total for this specific metric from this sheet
+                metric_total = calculate_sheet_total(df)
+                
+                # Calculate Total SKUs (same for all sheets since structure is identical)
+                total_skus = calculate_total_skus(df)
                 
                 all_sheets_metrics.append({
                     'Sheet Index': sheet_index,
                     'Sheet Name': f"Sheet_{sheet_index}",
-                    **metrics  # Unpack all the metrics
+                    'Metric': metric_name,
+                    'Total SKUs': total_skus,
+                    'Total Value': metric_total
                 })
                 
             except Exception as e:
                 with debug_expander:
-                    st.error(f"Error processing sheet {sheet_index}: {str(e)}")
+                    st.error(f"Error processing sheet {sheet_index} ({metric_name}): {str(e)}")
                 continue
         
         if not all_sheets_metrics:
@@ -4025,94 +4038,44 @@ def ytd_production():
         # Create a DataFrame with all metrics
         metrics_df = pd.DataFrame(all_sheets_metrics)
         
+        # Pivot the data to have metrics as columns
+        pivot_df = metrics_df.pivot_table(
+            index=['Sheet Index', 'Sheet Name', 'Total SKUs'],
+            columns='Metric',
+            values='Total Value',
+            aggfunc='first'
+        ).reset_index()
+        
         with debug_expander:
             st.write("Extracted metrics from all sheets:")
-            st.dataframe(metrics_df)
-        
-        # Calculate totals across all sheets
-        total_skus_all = metrics_df['Total SKUs'].sum()
-        total_batches_all = metrics_df['Total Batches'].sum()
-        total_volume_all = metrics_df['Total Volume'].sum()
-        total_hrs_needed_all = metrics_df['Total Hrs Needed'].sum()
-        total_manhrs_needed_all = metrics_df['Total Manhrs Needed'].sum()
-        total_manpower_all = metrics_df['Total Manpower'].sum()
-        total_ot_per_person_all = metrics_df['Total OT per Person'].sum()
+            st.dataframe(pivot_df)
         
         # --- KPI Cards ---
-        st.markdown("### 📊 Production Summary (All Sheets)")
+        st.markdown("### 📊 Production Summary")
         
-        col1, col2, col3, col4 = st.columns(4)
-        col5, col6, col7, _ = st.columns(4)
+        # Create columns for each metric
+        cols = st.columns(len(METRIC_SHEETS))
         
-        with col1:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_skus_all:,.0f}</div>
-                <div class="kpi-title">Total SKUs</div>
-            </div>
-            """, unsafe_allow_html=True)
+        for idx, ((sheet_index, metric_name), col) in enumerate(zip(METRIC_SHEETS.items(), cols)):
+            metric_value = pivot_df[metric_name].sum() if not pivot_df.empty else 0
+            with col:
+                st.markdown(f"""
+                <div class="kpi-card kpi-card-wps">
+                    <div class="kpi-label">{metric_name}</div>
+                    <div class="kpi-number">{metric_value:,.0f}</div>
+                    <div class="kpi-unit">Sheet {sheet_index}</div>
+                </div>
+                """, unsafe_allow_html=True)
         
-        with col2:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_batches_all:,.0f}</div>
-                <div class="kpi-title">Total Batches</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_volume_all:,.0f}</div>
-                <div class="kpi-title">Total Volume</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_hrs_needed_all:,.0f}</div>
-                <div class="kpi-title">Total Hrs Needed</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col5:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_manhrs_needed_all:,.0f}</div>
-                <div class="kpi-title">Total Manhrs Needed</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col6:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_manpower_all:,.0f}</div>
-                <div class="kpi-title">Total Manpower</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col7:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-number">{total_ot_per_person_all:,.0f}</div>
-                <div class="kpi-title">Total OT per Person</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # --- Metrics by Sheet Table ---
+        # --- Metrics Table ---
         st.markdown("### 📋 Metrics by Sheet")
         
-        if not metrics_df.empty:
-            # Create a copy for display
-            display_df = metrics_df.copy()
-            
+        if not pivot_df.empty:
             # Format the numeric columns
-            numeric_cols = ['Total SKUs', 'Total Batches', 'Total Volume', 'Total Hrs Needed', 
-                           'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
-            
-            for col in numeric_cols:
-                display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "0")
+            display_df = pivot_df.copy()
+            for col in METRIC_SHEETS.values():
+                if col in display_df.columns:
+                    display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "0")
             
             # Display the dataframe
             st.dataframe(display_df, use_container_width=True, hide_index=True)
@@ -4123,17 +4086,34 @@ def ytd_production():
         with debug_expander:
             st.error(f"Full error: {traceback.format_exc()}")
 
-def calculate_all_metrics(df):
-    """Calculate all metrics using the same pattern as get_production_totals()"""
+def calculate_sheet_total(df):
+    """Calculate total value from a sheet (sum of all data in columns I-NI)"""
+    try:
+        total_value = 0
+        start_col = YTD_COLUMNS['data_start']
+        end_col = min(YTD_COLUMNS['data_end'], len(df.columns))
+        
+        # Sum all values in the data range
+        for col_idx in range(start_col, end_col + 1):
+            if col_idx < len(df.columns):
+                # Sum all rows in this column
+                for row_idx in range(len(df)):
+                    value = df.iloc[row_idx, col_idx]
+                    try:
+                        numeric_value = float(value) if value else 0
+                        total_value += numeric_value
+                    except (ValueError, TypeError):
+                        pass
+        
+        return total_value
+    except Exception as e:
+        st.error(f"Error calculating sheet total: {e}")
+        return 0
+
+def calculate_total_skus(df):
+    """Calculate total SKUs from a sheet"""
     try:
         total_skus = 0
-        total_batches = 0
-        total_volume = 0
-        total_hrs_needed = 0
-        total_manhrs_needed = 0
-        total_manpower = 0
-        total_ot_per_person = 0
-        
         STATION_RANGES = {
             'Hot Kitchen': [(8, 36), (38, 72)],
             'Cold Sauce': [(74, 113)],
@@ -4141,7 +4121,6 @@ def calculate_all_metrics(df):
             'Pastry': [(154, 176)]
         }
         
-        # Process all station ranges (same as get_production_totals)
         for station_name, ranges in STATION_RANGES.items():
             for start_row, end_row in ranges:
                 start_idx = start_row - 1
@@ -4151,55 +4130,11 @@ def calculate_all_metrics(df):
                     subrecipe = df.iloc[idx, YTD_COLUMNS['subrecipe']]
                     if pd.notna(subrecipe) and str(subrecipe).strip() != '':
                         total_skus += 1
-                        
-                        # Sum all data from columns I to NI for each metric
-                        start_col = YTD_COLUMNS['data_start']
-                        end_col = min(YTD_COLUMNS['data_end'], len(df.columns))
-                        
-                        for col_idx in range(start_col, end_col + 1):
-                            if col_idx < len(df.columns):
-                                # For batches (your existing logic)
-                                batch_value = df.iloc[idx, col_idx]
-                                try:
-                                    batch_count = float(batch_value) if batch_value else 0
-                                except (ValueError, TypeError):
-                                    batch_count = 0
-                                total_batches += batch_count
-                                
-                                # For other metrics - USE THE SAME PATTERN
-                                # Since they're in the same columns I-NI
-                                volume_value = df.iloc[idx, col_idx]  # Same cell for volume
-                                hrs_value = df.iloc[idx, col_idx]      # Same cell for hours
-                                # etc.
-                                
-                                try:
-                                    total_volume += float(volume_value) if volume_value else 0
-                                    total_hrs_needed += float(hrs_value) if hrs_value else 0
-                                    # Add other metrics the same way
-                                except (ValueError, TypeError):
-                                    pass
         
-        return {
-            'Total SKUs': total_skus,
-            'Total Batches': total_batches,
-            'Total Volume': total_volume,
-            'Total Hrs Needed': total_hrs_needed,
-            'Total Manhrs Needed': total_manhrs_needed,
-            'Total Manpower': total_manpower,
-            'Total OT per Person': total_ot_per_person
-        }
-        
+        return total_skus
     except Exception as e:
-        st.error(f"Error calculating metrics: {e}")
-        return {
-            'Total SKUs': 0,
-            'Total Batches': 0,
-            'Total Volume': 0,
-            'Total Hrs Needed': 0,
-            'Total Manhrs Needed': 0,
-            'Total Manpower': 0,
-            'Total OT per Person': 0
-        }
+        st.error(f"Error calculating total SKUs: {e}")
+        return 0
         
 def main():
     """Main application function - CORRECTED VERSION"""
