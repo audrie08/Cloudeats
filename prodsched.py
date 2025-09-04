@@ -4176,7 +4176,7 @@ def ytd_production():
             
             # Calculate additional metrics from other sheets using the SAME approach
             for sheet_index, metric_name in [(7, 'Total Volume'), (8, 'Total Hrs Needed'), 
-                                           (9, 'Total Manhrs Needed'), (10, 'Total Manpower'), 
+                                           (10, 'Total Manpower'), 
                                            (11, 'Total OT per Person')]:
                 
                 if sheet_index in sheet_data:
@@ -4192,7 +4192,6 @@ def ytd_production():
                     )
                     
                     # Add the metric values to our main dataframe
-                    # The metric_data will have the same structure: Station, SKU, Batches (but actually represents the metric)
                     for idx, row in all_metrics_df.iterrows():
                         station = row['Station']
                         sku = row['SKU']
@@ -4206,26 +4205,157 @@ def ytd_production():
                         else:
                             all_metrics_df.loc[idx, metric_name] = 0
             
-            # Format all numeric columns
-            numeric_cols = ['Batches', 'Total Volume', 'Total Hrs Needed', 
-                           'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
+            # Prepare data for display with proper formatting
+            table_data = []
             
-            for col in numeric_cols:
-                if col in all_metrics_df.columns:
-                    all_metrics_df[col] = all_metrics_df[col].apply(
-                        lambda x: f"{x:,.0f}" if pd.notna(x) else "0"
-                    )
-           
-            # Display the dataframe
-            st.dataframe(all_metrics_df, width='stretch', hide_index=True)
+            # Station color mapping for pills
+            station_colors = {
+                'Hot Kitchen': "#f26556",
+                'Cold Sauce': "#7dbfea", 
+                'Fabrication': "#febc51",
+                'Pastry': "#ba85cf",
+                'Unknown': "#94abad"
+            }
+            
+            for idx, row in all_metrics_df.iterrows():
+                station = row['Station']
+                station_color = station_colors.get(station, station_colors['Unknown'])
+                
+                # Create station pill
+                station_pill = f"""<span style="background-color: {station_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;">{station}</span>"""
+                
+                table_data.append({
+                    'Station': station_pill,
+                    'SKU': row['SKU'],
+                    'Batches (no.)': f"{row['Batches']:,.0f}" if 'Batches' in row else "0",
+                    'Volume (kg)': f"{row.get('Total Volume', 0):,.1f}",
+                    'Hours (hr)': f"{row.get('Total Hrs Needed', 0):,.1f}",
+                    'Manpower (count)': f"{row.get('Total Manpower', 0):,.0f}",
+                    'Overtime per Person (hrs)': f"{row.get('Total OT per Person', 0):,.0f}"
+                })
+        
+            # Build DataFrame for display
+            df_display = pd.DataFrame(table_data)
+            
+            # Apply the CSS styling
+            st.markdown("""
+            <style>
+            .scrollable-table-container {
+                max-height: 600px;
+                overflow-y: auto;
+                overflow-x: auto;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin: 20px 0;
+            }
+            .station-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+                background: white;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                margin: 0;
+            }
+            .station-table th {
+                background: #1e2323;
+                color: #f4d602;
+                font-weight: bold;
+                padding: 12px 8px;
+                text-align: center;
+                border-bottom: 2px solid #3b3f46;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            .station-table td {
+                padding: 12px 8px;
+                border-bottom: 1px solid #e0e0e0;
+                vertical-align: middle;
+                text-align: center;
+                font-weight: 500;
+            }
+            .station-table tr:hover {
+                background-color: rgba(244, 214, 2, 0.1);
+                transition: background-color 0.2s ease;
+            }
+            .station-table tr:last-child td {
+                border-bottom: none;
+            }
+            /* Set equal widths for numeric columns (Batches to Overtime per Person) */
+            .station-table th:nth-child(3),
+            .station-table th:nth-child(4),
+            .station-table th:nth-child(5),
+            .station-table th:nth-child(6),
+            .station-table th:nth-child(7),
+            .station-table td:nth-child(3),
+            .station-table td:nth-child(4),
+            .station-table td:nth-child(5),
+            .station-table td:nth-child(6),
+            .station-table td:nth-child(7) {
+                width: 10%;
+                min-width: 100px;
+            }
+            /* Station column width */
+            .station-table td:first-child,
+            .station-table th:first-child {
+                min-width: 120px;
+                width: 18%;
+            }
+            /* SKU column width */
+            .station-table td:nth-child(2),
+            .station-table th:nth-child(2) {
+                width: 30%;
+                min-width: 150px;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Convert to HTML with styling
+            html_table = df_display.to_html(
+                escape=False, 
+                index=False, 
+                classes='station-table',
+                table_id='production-table'
+            )
+            
+            # Wrap table in scrollable container
+            scrollable_html = f"""
+            <div class="scrollable-table-container">
+                {html_table}
+            </div>
+            """
+            
+            st.markdown(scrollable_html, unsafe_allow_html=True)
         
         else:
             st.warning("No production data matches the selected filters")
-            # Show empty dataframe structure
-            empty_cols = ['Station', 'SKU', 'Batches', 'Total Volume', 'Total Hrs Needed', 
-                         'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
-            empty_df = pd.DataFrame(columns=empty_cols)
-            st.dataframe(empty_df, width='stretch', hide_index=True)
+            
+            # Show empty styled table
+            empty_data = [{
+                'Station': '',
+                'SKU': '',
+                'Batches (no.)': '',
+                'Volume (kg)': '',
+                'Hours (hr)': '',
+                'Manpower (count)': '',
+                'Overtime per Person (hrs)': ''
+            }]
+            
+            empty_df = pd.DataFrame(empty_data)
+            
+            html_table = empty_df.to_html(
+                index=False, 
+                classes='station-table',
+                table_id='production-table-empty'
+            )
+            
+            scrollable_html = f"""
+            <div class="scrollable-table-container">
+                {html_table}
+            </div>
+            """
+            
+            st.markdown(scrollable_html, unsafe_allow_html=True)
        
 
     except Exception as e:
