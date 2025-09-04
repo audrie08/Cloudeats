@@ -3975,13 +3975,13 @@ def machine_utilization():
     """, unsafe_allow_html=True)
 
 def ytd_production():
-    """YTD Production Schedule Page - Each sheet contains a different metric"""
+    """YTD Production Schedule Page"""
    
     # --- Header ---
     st.markdown("""
     <div class="main-header">
-        <h1><b>📈 YTD Production Schedule</b></h1>
-        <p><b>Year-to-date production metrics from different sheets</b></p>
+        <h1><b>YTD Production Schedule</b></h1>
+        <p><b>Comprehensive Production Schedule – 2025</b></p>
     </div>
     """, unsafe_allow_html=True)
    
@@ -3994,97 +3994,247 @@ def ytd_production():
         with debug_expander:
             st.write("Loading data from multiple Google Sheets...")
         
-        # Each sheet contains a different metric
-        METRIC_SHEETS = {
-            6: 'Total Batches',
-            7: 'Total Volume', 
-            8: 'Total Hrs Needed',
-            9: 'Total Manhrs Needed',
-            10: 'Total Manpower',
-            11: 'Total OT per Person'
-        }
-        
-        all_sheets_metrics = []
-        
-        for sheet_index, metric_name in METRIC_SHEETS.items():
+        # Load all sheets (6-11)
+        sheet_data = {}
+        for sheet_index in range(6, 12):
             try:
                 df = load_production_data(sheet_index=sheet_index)
+                sheet_data[sheet_index] = df
                 with debug_expander:
-                    st.write(f"Sheet {sheet_index} ({metric_name}) loaded, shape: {df.shape}")
-                
-                # Calculate the total for this specific metric from this sheet
-                metric_total = calculate_sheet_total(df)
-                
-                # Calculate Total SKUs (same for all sheets since structure is identical)
-                total_skus = calculate_total_skus(df)
-                
-                all_sheets_metrics.append({
-                    'Sheet Index': sheet_index,
-                    'Sheet Name': f"Sheet_{sheet_index}",
-                    'Metric': metric_name,
-                    'Total SKUs': total_skus,
-                    'Total Value': metric_total
-                })
-                
+                    st.write(f"Sheet {sheet_index} loaded successfully, shape: {df.shape}")
             except Exception as e:
                 with debug_expander:
-                    st.error(f"Error processing sheet {sheet_index} ({metric_name}): {str(e)}")
-                continue
+                    st.error(f"Error loading sheet {sheet_index}: {str(e)}")
         
-        if not all_sheets_metrics:
+        if not sheet_data:
             st.error("No data could be loaded from any sheets")
             return
         
-        # Create a DataFrame with all metrics
-        metrics_df = pd.DataFrame(all_sheets_metrics)
-        
-        # Pivot the data to have metrics as columns
-        pivot_df = metrics_df.pivot_table(
-            index=['Sheet Index', 'Sheet Name', 'Total SKUs'],
-            columns='Metric',
-            values='Total Value',
-            aggfunc='first'
-        ).reset_index()
-        
-        with debug_expander:
-            st.write("Extracted metrics from all sheets:")
-            st.dataframe(pivot_df)
-        
-        # --- KPI Cards ---
-        st.markdown("### 📊 Production Summary")
-        
-        # Create columns for each metric
-        cols = st.columns(len(METRIC_SHEETS))
-        
-        for idx, ((sheet_index, metric_name), col) in enumerate(zip(METRIC_SHEETS.items(), cols)):
-            metric_value = pivot_df[metric_name].sum() if not pivot_df.empty else 0
-            with col:
-                st.markdown(f"""
-                <div class="kpi-card kpi-card-wps">
-                    <div class="kpi-label">{metric_name}</div>
-                    <div class="kpi-number">{metric_value:,.0f}</div>
-                    <div class="kpi-unit">Sheet {sheet_index}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        # --- Metrics Table ---
-        st.markdown("### 📋 Metrics by Sheet")
-        
-        if not pivot_df.empty:
-            # Format the numeric columns
-            display_df = pivot_df.copy()
-            for col in METRIC_SHEETS.values():
-                if col in display_df.columns:
-                    display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "0")
+        # Use sheet 6 as the main extractor (for filters, SKUs, etc.)
+        df_ytd = sheet_data[6]
+        extractor = YTDProductionExtractor(df_ytd)
+       
+        # --- Single Row of Filters ---  
+        col1, col2, col3, col4 = st.columns(4)
+       
+        with col1:
+            # Week Selection
+            available_weeks = extractor.get_available_weeks()
+            week_options = ["All Weeks"] + [f"Week {week['week_number']}" for week in available_weeks]
+            selected_week_display = st.selectbox("Select Week", options=week_options, index=0)
+           
+            # Get actual week number
+            if selected_week_display == "All Weeks":
+                selected_week = None
+            else:
+                week_numbers = [week['week_number'] for week in available_weeks]
+                selected_week = week_numbers[week_options.index(selected_week_display) - 1]
+       
+        with col2:
+            # Day Selection
+            selected_day_filter = None
+            selected_day_display = "All Days"
             
+            if selected_week:
+                week_days = extractor.get_week_days(selected_week)
+                day_options = ["All Days"] + [f"{day['day_name']} ({day['formatted_date']})" for day in week_days]
+                selected_day_display = st.selectbox("Select Day", options=day_options, index=0)
+                
+                # Store the selected day for filtering
+                if selected_day_display != "All Days":
+                    selected_day_filter = selected_day_display
+            else:
+                selected_day_display = st.selectbox("Select Day", options=["All Days"], index=0, disabled=True)
+       
+        with col3:
+            # Station Selection
+            all_stations = extractor.get_all_stations()
+            selected_station = st.selectbox("Select Station", options=all_stations, index=0)
+       
+        with col4:
+            # SKU Selection
+            if selected_station and selected_station != "All Stations":
+                station_skus = extractor.get_station_skus(selected_station)
+                sku_options = ["All SKUs"] + station_skus
+                selected_sku = st.selectbox("Select SKU", options=sku_options, index=0)
+            else:
+                selected_sku = st.selectbox("Select SKU", options=["All SKUs"], index=0, disabled=True)
+       
+        # --- Get Filtered Data from ALL Sheets ---
+        all_metrics_data = []
+        
+        for sheet_index, df in sheet_data.items():
+            sheet_extractor = YTDProductionExtractor(df)
+            
+            # Get filtered data for this sheet using the same filters
+            filtered_data = sheet_extractor.get_filtered_production_data(
+                selected_week=selected_week,
+                selected_day=selected_day_display if selected_day_display != "All Days" else None,
+                selected_station=selected_station if selected_station != "All Stations" else None,
+                selected_sku=selected_sku if selected_sku != "All SKUs" else None
+            )
+            
+            # Calculate total for this sheet's metric
+            sheet_total = filtered_data['Batches'].sum() if not filtered_data.empty else 0
+            
+            # Map sheet index to metric name
+            metric_names = {
+                6: 'Total Batches',
+                7: 'Total Volume',
+                8: 'Total Hrs Needed',
+                9: 'Total Manhrs Needed',
+                10: 'Total Manpower',
+                11: 'Total OT per Person'
+            }
+            
+            all_metrics_data.append({
+                'Sheet': metric_names[sheet_index],
+                'Total Value': sheet_total
+            })
+        
+        # Convert to DataFrame and pivot
+        metrics_df = pd.DataFrame(all_metrics_data)
+        metrics_pivot = metrics_df.set_index('Sheet')['Total Value']
+        
+        # Get SKU count from main sheet (sheet 6)
+        production_df = extractor.get_filtered_production_data(
+            selected_week=selected_week,
+            selected_day=selected_day_display if selected_day_display != "All Days" else None,
+            selected_station=selected_station if selected_station != "All Stations" else None,
+            selected_sku=selected_sku if selected_sku != "All SKUs" else None
+        )
+        
+        filtered_skus = production_df['SKU'].nunique() if not production_df.empty else 0
+        filtered_batches = metrics_pivot.get('Total Batches', 0)
+       
+        # --- KPI Cards ---
+        st.markdown("### Production Summary")
+        
+        col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6, col_kpi7 = st.columns(7)
+        
+        with col_kpi1:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total SKUs</div>
+                <div class="kpi-number">{filtered_skus:,.0f}</div>
+                <div class="kpi-unit">(no.)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi2:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total Batches</div>
+                <div class="kpi-number">{metrics_pivot.get('Total Batches', 0):,.0f}</div>
+                <div class="kpi-unit">(no.)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi3:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total Volume</div>
+                <div class="kpi-number">{metrics_pivot.get('Total Volume', 0):,.0f}</div>
+                <div class="kpi-unit">(units)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi4:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total Hrs Needed</div>
+                <div class="kpi-number">{metrics_pivot.get('Total Hrs Needed', 0):,.0f}</div>
+                <div class="kpi-unit">(hours)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi5:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total Manhrs</div>
+                <div class="kpi-number">{metrics_pivot.get('Total Manhrs Needed', 0):,.0f}</div>
+                <div class="kpi-unit">(man-hours)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi6:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total Manpower</div>
+                <div class="kpi-number">{metrics_pivot.get('Total Manpower', 0):,.0f}</div>
+                <div class="kpi-unit">(people)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_kpi7:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total OT</div>
+                <div class="kpi-number">{metrics_pivot.get('Total OT per Person', 0):,.0f}</div>
+                <div class="kpi-unit">(OT hours)</div>
+            </div>
+            """, unsafe_allow_html=True)
+       
+        # --- Production Data Table ---
+        st.markdown("### Production Data")
+       
+        if not production_df.empty:
+            # Add all metrics to the production dataframe
+            production_df_expanded = production_df.copy()
+            
+            # For each row, calculate the additional metrics
+            for idx, row in production_df_expanded.iterrows():
+                station = row['Station']
+                sku = row['SKU']
+                
+                # Get additional metrics for this specific station/SKU
+                for sheet_index, metric_name in [(7, 'Total Volume'), (8, 'Total Hrs Needed'), 
+                                               (9, 'Total Manhrs Needed'), (10, 'Total Manpower'), 
+                                               (11, 'Total OT per Person')]:
+                    
+                    if sheet_index in sheet_data:
+                        sheet_extractor = YTDProductionExtractor(sheet_data[sheet_index])
+                        metric_value = sheet_extractor.get_filtered_production_data(
+                            selected_week=selected_week,
+                            selected_day=selected_day_display if selected_day_display != "All Days" else None,
+                            selected_station=station,
+                            selected_sku=sku
+                        )['Batches'].sum()
+                        
+                        production_df_expanded.loc[idx, metric_name] = metric_value
+            
+            # Format numeric columns
+            numeric_cols = ['Batches', 'Total Volume', 'Total Hrs Needed', 
+                           'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
+            
+            for col in numeric_cols:
+                if col in production_df_expanded.columns:
+                    production_df_expanded[col] = production_df_expanded[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "0")
+           
             # Display the dataframe
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            st.dataframe(production_df_expanded, width='stretch', hide_index=True)
+       
+        else:
+            st.warning("No production data matches the selected filters")
+            # Show empty dataframe structure
+            empty_cols = ['Station', 'SKU', 'Batches', 'Total Volume', 'Total Hrs Needed', 
+                         'Total Manhrs Needed', 'Total Manpower', 'Total OT per Person']
+            empty_df = pd.DataFrame(columns=empty_cols)
+            st.dataframe(empty_df, width='stretch', hide_index=True)
 
     except Exception as e:
-        st.error(f"Error processing YTD Production data: {str(e)}")
+        st.error(f"Error loading YTD Production data: {str(e)}")
         import traceback
         with debug_expander:
             st.error(f"Full error: {traceback.format_exc()}")
+
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 YTD Production Schedule</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 def calculate_sheet_total(df):
     """Calculate total value from a sheet (sum of all data in columns I-NI)"""
