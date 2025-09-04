@@ -296,7 +296,7 @@ st.markdown(f"""
 
     /* === KPI CARDS === */
     .kpi-card {{
-        border-radius: 16px;
+        border-radius: 25px;
         padding: 2rem;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         border: 1px solid rgba(244, 214, 2, 0.2);
@@ -306,7 +306,7 @@ st.markdown(f"""
     
     /* Weekly Production Schedule Card */
     .kpi-card-wps {{
-        background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
+        background: linear-gradient(135deg, #3c485c 0%, #2a364a 100%);
         color: #2a364a;
     }}
     
@@ -318,7 +318,7 @@ st.markdown(f"""
     
     /* YTD Production Schedule Card */
     .kpi-card-ytd {{
-        background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
+        background: linear-gradient(135deg, #3c485c 0%, #2a364a 100%);
         color: #2a364a;
     }}
     
