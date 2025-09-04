@@ -3984,7 +3984,9 @@ def ytd_production():
         <p><b>Comprehensive Production Schedule – 2025</b></p>
     </div>
     """, unsafe_allow_html=True)
-        
+
+    # --- Load Data from Multiple Sheets ---
+    try:
         # Load all sheets (6-11)
         sheet_data = {}
         for sheet_index in range(6, 12):
