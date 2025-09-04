@@ -377,9 +377,10 @@ st.markdown(f"""
     .kpi-card:hover {{
         transform: scale(1.05) translateY(-8px);
         box-shadow: 
-            0 25px 50px rgba(244, 214, 2, 0.3),
-            0 0 30px rgba(247, 212, 44, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            0 25px 50px rgba(255, 255, 255, 0.4),
+            0 0 40px rgba(230, 230, 230, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        filter: brightness(1.1) contrast(1.05);
     }}
     
     .kpi-card:hover::before {{
