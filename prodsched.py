@@ -296,35 +296,29 @@ st.markdown(f"""
 
     /* === KPI CARDS === */
     .kpi-card {{
-        padding: 1rem;
-        border-radius: 30px;
-        text-align: center;
-        margin: 0rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 170px;
-        position: relative;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(244, 214, 2, 0.2);
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }}
     
     /* Weekly Production Schedule Card */
     .kpi-card-wps {{
-        background: linear-gradient(135deg, #bd593c 0%, #f28261 100%);
+        background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
         color: #f0ebe4;
     }}
     
     /* Machine Utilization Card */
     .kpi-card-mu {{
-        background: linear-gradient(135deg, #504fab 0%, #8786eb 100%);
+        background: linear-gradient(135deg, #3c485c 0%, #2a364a 100%);
         color: #f0ebe4;
     }}
     
     /* YTD Production Schedule Card */
     .kpi-card-ytd {{
-        background: linear-gradient(135deg, #1f454a 0%, #325d63 100%);
+        background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
         color: #f0ebe4;
     }}
     
