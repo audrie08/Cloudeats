@@ -3987,7 +3987,6 @@ def ytd_production():
    
     # --- Debug Section ---
     st.markdown("### 🐛 Debug Information")
-    debug_expander = st.expander("Show Debug Info", expanded=False)
     
     # --- Load Data from Multiple Sheets ---
     try:
@@ -4000,8 +3999,6 @@ def ytd_production():
             try:
                 df = load_production_data(sheet_index=sheet_index)
                 sheet_data[sheet_index] = df
-                with debug_expander:
-                    st.write(f"Sheet {sheet_index} loaded successfully, shape: {df.shape}")
             except Exception as e:
                 with debug_expander:
                     st.error(f"Error loading sheet {sheet_index}: {str(e)}")
