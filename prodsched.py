@@ -3799,8 +3799,8 @@ def weekly_prod_schedule():
     with col1:
         st.markdown(f"""
         <div class="kpi-card kpi-card-wps">
-            <div class="kpi-number">{len(filtered_skus)}</div>
             <div class="kpi-label">Total SKUs</div>
+            <div class="kpi-number">{len(filtered_skus)}</div>
             <div class="kpi-unit">(no.)</div>
         </div>
         """, unsafe_allow_html=True)
@@ -3808,8 +3808,8 @@ def weekly_prod_schedule():
     with col2:
         st.markdown(f"""
         <div class="kpi-card kpi-card-wps">
-            <div class="kpi-number">{total_batches:,.0f}</div>
             <div class="kpi-label">Total Batches</div>
+            <div class="kpi-number">{total_batches:,.0f}</div>
             <div class="kpi-unit">(no.)</div>
         </div>
         """, unsafe_allow_html=True)
@@ -3817,8 +3817,8 @@ def weekly_prod_schedule():
     with col3:
         st.markdown(f"""
         <div class="kpi-card kpi-card-wps">
-            <div class="kpi-number">{total_volume:,.0f}</div>
             <div class="kpi-label">Total Volume</div>
+            <div class="kpi-number">{total_volume:,.0f}</div>
             <div class="kpi-unit">(kg)</div>
         </div>
         """, unsafe_allow_html=True)
@@ -3826,8 +3826,8 @@ def weekly_prod_schedule():
     with col4:
         st.markdown(f"""
         <div class="kpi-card kpi-card-wps">
-            <div class="kpi-number">{total_hours:,.0f}</div>
             <div class="kpi-label">Total Hours</div>
+            <div class="kpi-number">{total_hours:,.0f}</div>
             <div class="kpi-unit">(hrs)</div>
         </div>
         """, unsafe_allow_html=True)
@@ -3835,17 +3835,17 @@ def weekly_prod_schedule():
     with col5:
         st.markdown(f"""
         <div class="kpi-card kpi-card-wps">
-            <div class="kpi-number">{total_total_manpower:,.0f}</div>
             <div class="kpi-label">Total Manpower</div>
+            <div class="kpi-number">{total_total_manpower:,.0f}</div>
             <div class="kpi-unit">(count)</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col6:
         st.markdown(f"""
-        <div class="kpi-card kpi-card-wpsd">
-            <div class="kpi-number">{overtime_percentage:.1f}%</div>
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-label">Overtime</div>
+            <div class="kpi-number">{overtime_percentage:.1f}%</div>
             <div class="kpi-unit">%</div>
         </div>
         """, unsafe_allow_html=True)
