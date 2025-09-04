@@ -307,19 +307,19 @@ st.markdown(f"""
     /* Weekly Production Schedule Card */
     .kpi-card-wps {{
         background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
-        color: #f0ebe4;
+        color: #2a364a;
     }}
     
     /* Machine Utilization Card */
     .kpi-card-mu {{
         background: linear-gradient(135deg, #3c485c 0%, #2a364a 100%);
-        color: #f0ebe4;
+        color: #2a364a;
     }}
     
     /* YTD Production Schedule Card */
     .kpi-card-ytd {{
         background: linear-gradient(135deg, ##3c485c 0%, #2a364a 100%);
-        color: #f0ebe4;
+        color: #2a364a;
     }}
     
     /* KPI Title Styling */
