@@ -4110,7 +4110,7 @@ def ytd_production():
         # --- KPI Cards ---
         st.markdown("### Production Summary")
         
-        col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6= st.columns(7)
+        col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6 = st.columns(6)
 
         with col_kpi1:
             st.markdown(f"""
