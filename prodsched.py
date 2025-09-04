@@ -360,7 +360,7 @@ st.markdown(f"""
         left: -2px;
         right: -2px;
         bottom: -2px;
-        background: linear-gradient(45deg, #787e8a, #626a78, #cfc184);
+        background: linear-gradient(45deg, #474b54, #49505c, #6b664e);
         background-size: 400% 400%;
         border-radius: 30px;
         z-index: -1;
