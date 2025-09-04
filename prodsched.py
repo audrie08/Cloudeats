@@ -1,4 +1,3 @@
-import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
@@ -4112,7 +4111,17 @@ def ytd_production():
         
         col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6 = st.columns(6)
 
+
         with col_kpi1:
+            st.markdown(f"""
+            <div class="kpi-card kpi-card-ytd">
+                <div class="kpi-label">Total SKUs</div>
+                <div class="kpi-number">{filtered_skus:,.0f}</div>
+                <div class="kpi-unit">(no.)</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Batches</div>
@@ -4121,7 +4130,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi2:
+        with col_kpi3:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Volume</div>
@@ -4130,20 +4139,11 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi3:
+        with col_kpi4:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Hrs Needed</div>
                 <div class="kpi-number">{metrics_pivot.get('Total Hrs Needed', 0):,.0f}</div>
-                <div class="kpi-unit">(hrs)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col_kpi4:
-            st.markdown(f"""
-            <div class="kpi-card kpi-card-ytd">
-                <div class="kpi-label">Total Manhrs</div>
-                <div class="kpi-number">{metrics_pivot.get('Total Manhrs Needed', 0):,.0f}</div>
                 <div class="kpi-unit">(hrs)</div>
             </div>
             """, unsafe_allow_html=True)
