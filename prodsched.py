@@ -4110,18 +4110,9 @@ def ytd_production():
         # --- KPI Cards ---
         st.markdown("### Production Summary")
         
-        col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6, col_kpi7 = st.columns(7)
-        
+        col_kpi1, col_kpi2, col_kpi3, col_kpi4, col_kpi5, col_kpi6= st.columns(7)
+
         with col_kpi1:
-            st.markdown(f"""
-            <div class="kpi-card kpi-card-ytd">
-                <div class="kpi-label">Total SKUs</div>
-                <div class="kpi-number">{filtered_skus:,.0f}</div>
-                <div class="kpi-unit">(no.)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Batches</div>
@@ -4130,7 +4121,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi3:
+        with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Volume</div>
@@ -4139,7 +4130,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi4:
+        with col_kpi3:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Hrs Needed</div>
@@ -4148,7 +4139,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi5:
+        with col_kpi4:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Manhrs</div>
@@ -4157,7 +4148,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi6:
+        with col_kpi5:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Manpower</div>
@@ -4166,7 +4157,7 @@ def ytd_production():
             </div>
             """, unsafe_allow_html=True)
         
-        with col_kpi7:
+        with col_kpi6:
             st.markdown(f"""
             <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total OT</div>
