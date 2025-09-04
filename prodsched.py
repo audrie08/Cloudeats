@@ -296,43 +296,9 @@ st.markdown(f"""
 
     /* === KPI CARDS === */
     .kpi-card {{
-        background: linear-gradient(135deg, #bd593c 0%, #f28261 100%);
-        color: #f0ebe4;
         padding: 1rem;
         border-radius: 30px;
-        text-align: left;
-        margin: 0rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 170px;
-        position: relative;
-    }}
-    .kpi-card-mu {{
-        background: linear-gradient(135deg, #504fab 0%, #8786eb 100%);
-        color: #f0ebe4;
-        padding: 1rem;
-        border-radius: 30px;
-        text-align: left;
-        margin: 0rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 170px;
-        position: relative;
-    }}
-    .kpi-card-ytd {{
-        background: linear-gradient(135deg, #1f454a 0%, #325d63 100%);
-        color: #f0ebe4;
-        padding: 1rem;
-        border-radius: 30px;
-        text-align: left;
+        text-align: center;
         margin: 0rem;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s;
@@ -344,6 +310,55 @@ st.markdown(f"""
         position: relative;
     }}
     
+    /* Weekly Production Schedule Card */
+    .kpi-card-wps {{
+        background: linear-gradient(135deg, #bd593c 0%, #f28261 100%);
+        color: #f0ebe4;
+    }}
+    
+    /* Machine Utilization Card */
+    .kpi-card-mu {{
+        background: linear-gradient(135deg, #504fab 0%, #8786eb 100%);
+        color: #f0ebe4;
+    }}
+    
+    /* YTD Production Schedule Card */
+    .kpi-card-ytd {{
+        background: linear-gradient(135deg, #1f454a 0%, #325d63 100%);
+        color: #f0ebe4;
+    }}
+    
+    /* KPI Title Styling */
+    .kpi-label {{
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }}
+    
+    /* KPI Number Styling */
+    .kpi-number {{
+        color: #ffffff;
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1;
+        margin: 10px 0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        transition: all 0.3s ease;
+    }}
+    
+    /* Target Styling */
+    .kpi-unit {{
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }}
+    
+    /* Hover Effects */
     .kpi-card::before {{
         content: '';
         position: absolute;
@@ -351,7 +366,7 @@ st.markdown(f"""
         left: -2px;
         right: -2px;
         bottom: -2px;
-        background: #272c2f;
+        background: linear-gradient(45deg, #ff8765, #f4d602, #ff8765);
         background-size: 400% 400%;
         border-radius: 30px;
         z-index: -1;
@@ -359,48 +374,26 @@ st.markdown(f"""
         transition: opacity 0.4s ease;
         animation: gradientShift 3s ease infinite;
     }}
-
+    
     @keyframes gradientShift {{
-        0%, 100% {{ background-position: 0% 50%; }}
-        50% {{ background-position: 100% 50%; }}
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
     }}
-
+    
     .kpi-card:hover {{
-        transform: scale(1.05) translateY(-8px) rotateY(5deg);
+        transform: scale(1.05) translateY(-8px);
         box-shadow: 
             0 25px 50px rgba(244, 214, 2, 0.3),
             0 0 30px rgba(247, 212, 44, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }}
-
+    
     .kpi-card:hover::before {{
         opacity: 1;
     }}
     
     .kpi-card:hover .kpi-number {{
         transform: scale(1.1);
-    }}
-
-    .kpi-number {{
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
-        font-size: 2.2em;
-        font-weight: 700;
-        margin-bottom: 0.9rem;
-        transition: all 0.3s ease;
-    }}
-
-    .kpi-label {{
-        font-weight: 700;      /* Bold */
-        text-transform: uppercase;  /* Capitalize */
-        margin-bottom: 0.1rem;
-        opacity: 1;
-    }}
-
-    .kpi-unit {{
-        font-size: 0.9em;
-        font-weight: 450;
-        opacity: 1;
-        margin-bottom: 0.1rem;
     }}
 
     /* === SKU TABLE === */
@@ -3805,7 +3798,7 @@ def weekly_prod_schedule():
     
     with col1:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-number">{len(filtered_skus)}</div>
             <div class="kpi-label">Total SKUs</div>
             <div class="kpi-unit">(no.)</div>
@@ -3814,7 +3807,7 @@ def weekly_prod_schedule():
     
     with col2:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-number">{total_batches:,.0f}</div>
             <div class="kpi-label">Total Batches</div>
             <div class="kpi-unit">(no.)</div>
@@ -3823,7 +3816,7 @@ def weekly_prod_schedule():
     
     with col3:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-number">{total_volume:,.0f}</div>
             <div class="kpi-label">Total Volume</div>
             <div class="kpi-unit">(kg)</div>
@@ -3832,7 +3825,7 @@ def weekly_prod_schedule():
     
     with col4:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-number">{total_hours:,.0f}</div>
             <div class="kpi-label">Total Hours</div>
             <div class="kpi-unit">(hrs)</div>
@@ -3841,7 +3834,7 @@ def weekly_prod_schedule():
     
     with col5:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wps">
             <div class="kpi-number">{total_total_manpower:,.0f}</div>
             <div class="kpi-label">Total Manpower</div>
             <div class="kpi-unit">(count)</div>
@@ -3850,7 +3843,7 @@ def weekly_prod_schedule():
     
     with col6:
         st.markdown(f"""
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-wpsd">
             <div class="kpi-number">{overtime_percentage:.1f}%</div>
             <div class="kpi-label">Overtime</div>
             <div class="kpi-unit">%</div>
@@ -3929,45 +3922,45 @@ def machine_utilization():
     
     with colA:
         st.markdown(f"""
-        <div class="kpi-card-mu">
-            <div class="kpi-number">{total_machines:,.0f}</div>
+        <div class="kpi-card kpi-card-mu">
             <div class="kpi-label">Total Machines</div>
+            <div class="kpi-number">{total_machines:,.0f}</div>
             <div class="kpi-unit">(no.)</div>
         </div>
         """, unsafe_allow_html=True)
     
     with colB:
         st.markdown(f"""
-        <div class="kpi-card-mu">
-            <div class="kpi-number">{total_needed_hrs:,.0f}</div>
+        <div class="kpi-card kpi-card-mu">
             <div class="kpi-label">Needed Run Hours</div>
+            <div class="kpi-number">{total_needed_hrs:,.0f}</div>
             <div class="kpi-unit">(hrs)</div>
         </div>
         """, unsafe_allow_html=True)
     
     with colC:
         st.markdown(f"""
-        <div class="kpi-card-mu">
-            <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
+        <div class="kpi-card kpi-card-mu">
             <div class="kpi-label">Remaining Available Hours</div>
+            <div class="kpi-number">{total_remaining_hrs:,.0f}</div>
             <div class="kpi-unit">(hrs)</div>
         </div>
         """, unsafe_allow_html=True)
     
     with colD:
         st.markdown(f"""
-        <div class="kpi-card-mu">
-            <div class="kpi-number">{total_machine_needed:,.0f}</div>
+        <div class="kpi-card kpi-card-mu">
             <div class="kpi-label">Additional Machines Needed</div>
+            <div class="kpi-number">{total_machine_needed:,.0f}</div>
             <div class="kpi-unit">(no.)</div>
         </div>
         """, unsafe_allow_html=True)
     
     with colE:
         st.markdown(f"""
-        <div class="kpi-card-mu">
-            <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
+        <div class="kpi-card kpi-card-mu">
             <div class="kpi-label">Capacity Utilization</div>
+            <div class="kpi-number">{total_capacity_utilization:,.0f}%</div>
             <div class="kpi-unit">(%)</div>
         </div>
         """, unsafe_allow_html=True)
@@ -4069,23 +4062,23 @@ def ytd_production():
        
         # --- KPI Cards ---
         st.markdown("### Production Summary")
-       
+        
         col_kpi1, col_kpi2 = st.columns(2)
-       
+        
         with col_kpi1:
             st.markdown(f"""
-            <div class="kpi-card-ytd">
-                <div class="kpi-number">{filtered_skus:,.0f}</div>
+            <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total SKUs</div>
+                <div class="kpi-number">{filtered_skus:,.0f}</div>
                 <div class="kpi-unit">(no.)</div>
             </div>
             """, unsafe_allow_html=True)
-       
+        
         with col_kpi2:
             st.markdown(f"""
-            <div class="kpi-card-ytd">
-                <div class="kpi-number">{filtered_batches:,.0f}</div>
+            <div class="kpi-card kpi-card-ytd">
                 <div class="kpi-label">Total Batches</div>
+                <div class="kpi-number">{filtered_batches:,.0f}</div>
                 <div class="kpi-unit">(no.)</div>
             </div>
             """, unsafe_allow_html=True)
