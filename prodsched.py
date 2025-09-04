@@ -3400,29 +3400,32 @@ def init_google_sheets():
         return None
 
 def create_metric_cards(staff_metrics):
-    """Create metric cards for staff information"""
+    """Create metric cards for staff information using custom KPI styling"""
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric(
-            label="📊 Total Staff Count",
-            value=staff_metrics.get('Total Staff Count', 'N/A'),
-            delta=None
-        )
+        st.markdown(f"""
+        <div class="kpi-card kpi-card-wps">
+            <div class="kpi-label">Total Staff Count</div>
+            <div class="kpi-number">{staff_metrics.get('Total Staff Count', 'N/A')}</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.metric(
-            label="👷 Production Staff",
-            value=staff_metrics.get('Production Staff', 'N/A'),
-            delta=None
-        )
+        st.markdown(f"""
+        <div class="kpi-card kpi-card-wps">
+            <div class="kpi-label">Production Staff</div>
+            <div class="kpi-number">{staff_metrics.get('Production Staff', 'N/A')}</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.metric(
-            label="🔧 Support Staff",
-            value=staff_metrics.get('Support Staff', 'N/A'),
-            delta=None
-        )
+        st.markdown(f"""
+        <div class="kpi-card kpi-card-wps">
+            <div class="kpi-label">Support Staff</div>
+            <div class="kpi-number">{staff_metrics.get('Support Staff', 'N/A')}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 def format_dataframe(df):
     """Apply formatting to the DataFrame for better display"""
