@@ -302,6 +302,11 @@ st.markdown(f"""
         border: 1px solid rgba(244, 214, 2, 0.2);
         margin-bottom: 2rem;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
     }}
     
     /* Weekly Production Schedule Card */
@@ -322,7 +327,7 @@ st.markdown(f"""
         color: #2a364a;
     }}
     
-    /* KPI Title Styling */
+    /* KPI Label Styling */
     .kpi-label {{
         color: rgba(255, 255, 255, 0.9);
         font-size: 12px;
@@ -344,7 +349,7 @@ st.markdown(f"""
         transition: all 0.3s ease;
     }}
     
-    /* Target Styling */
+    /* Unit Styling */
     .kpi-unit {{
         color: rgba(255, 255, 255, 0.7);
         font-size: 14px;
