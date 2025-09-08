@@ -4506,7 +4506,7 @@ SUBRECIPE_COLUMNS = {
     'pack_size': 7,          # Column H
     'shelf_life': 8,         # Column I
     'kg_per_hr': 33,         # Column AH
-    'data_start_row': 3,     # Row 4 (0-based)
+    'data_start_row': 4,     # Row 4 (0-based)
     'data_end_row': 131      # Row 132 (0-based)
 }
 
@@ -4779,7 +4779,7 @@ def render_subrecipe_details_page():
     
     # Reorder columns to show category after item name
     column_order = [
-        'Item Name', 'Category', 'Standard Yield (kg/batch)', 
+        'Category', 'Item Name', 'Standard Yield (kg/batch)', 
         'Actual Yield (kg/batch)', 'Pack Qty', 'Pack Size (kg/pack)', 
         'Shelf Life (days)', 'Kg per Hr'
     ]
@@ -4787,7 +4787,7 @@ def render_subrecipe_details_page():
     
     # Display table with scrollable container
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<div class="table-header">Recipe Database</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
     
     if not display_df.empty:
         # Render as HTML table with scrollable container
