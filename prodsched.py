@@ -4567,7 +4567,7 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with modal popup functionality"""
+    """Render the Subrecipe Details page with clean table and modal functionality"""
     
     # Add CSS
     st.markdown("""
@@ -4619,6 +4619,81 @@ def render_subrecipe_details_page():
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .table-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 20px 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .scrollable-subrecipe-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border-radius: 10px;
+        margin: 0;
+    }
+    
+    .subrecipe-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        margin: 0;
+    }
+    
+    .subrecipe-table th {
+        background: #1e2323;
+        color: #f4d602;
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #3b3f46;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .subrecipe-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .subrecipe-table tr:hover {
+        background-color: rgba(244, 214, 2, 0.1);
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .subrecipe-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .subrecipe-table td:first-child {
+        text-align: left;
+        font-weight: 600;
+        min-width: 200px;
+    }
+    
+    .subrecipe-table td:nth-child(2) {
+        min-width: 150px;
     }
     
     .machine-pill {
@@ -4763,51 +4838,66 @@ def render_subrecipe_details_page():
         else:
             st.markdown("**Machine data not available**")
     
-    # Display data using st.dataframe with clean styling
+    # Display clean table without selection
+    st.markdown('<div class="table-container">', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
+    
     if not filtered_df.empty:
-        st.markdown("### Recipe Details")
-        st.markdown("*Click on a row to see machine requirements*")
-        
-        # Create display dataframe for st.dataframe
+        # Create display dataframe with category badges
         display_df = filtered_df.copy()
         
-        # Format columns for better display
-        display_columns = [
-            'Item Name',
-            'Category', 
-            'Standard Yield (kg/batch)',
-            'Shelf Life (days)'
+        def create_category_badge(category):
+            badge_color = station_colors.get(category, station_colors['Unknown'])
+            return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
+        
+        display_df['Category'] = display_df['Category'].apply(create_category_badge)
+        
+        # Select and reorder columns for display
+        column_order = [
+            'Item Name', 'Category', 'Standard Yield (kg/batch)', 'Shelf Life (days)'
         ]
+        display_df = display_df[column_order]
         
-        table_df = display_df[display_columns].copy()
-        table_df['Standard Yield (kg/batch)'] = table_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
-        table_df['Shelf Life (days)'] = table_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
+        # Format numeric columns
+        display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
+        display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
         
-        # Use st.dataframe with row selection
-        event = st.dataframe(
-            table_df,
-            use_container_width=True,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single-row",
-            column_config={
-                "Item Name": st.column_config.TextColumn("Item Name", width="medium"),
-                "Category": st.column_config.TextColumn("Category", width="medium"),
-                "Standard Yield (kg/batch)": st.column_config.TextColumn("Standard Yield", width="small"),
-                "Shelf Life (days)": st.column_config.TextColumn("Shelf Life", width="small")
-            }
+        # Render as clean HTML table
+        html_table = display_df.to_html(
+            escape=False, 
+            index=False, 
+            classes='subrecipe-table',
+            table_id='subrecipe-table'
         )
         
-        # Show machine details modal if a row is selected
-        if len(event.selection["rows"]) > 0:
-            selected_idx = event.selection["rows"][0]
-            selected_row = filtered_df.iloc[selected_idx]
+        # Wrap table in scrollable container
+        scrollable_html = f"""
+        <div class="scrollable-subrecipe-container">
+            {html_table}
+        </div>
+        """
+        
+        st.markdown(scrollable_html, unsafe_allow_html=True)
+        
+        # Add manual selection for modal
+        st.markdown("---")
+        st.markdown("**Select an item to see machine requirements:**")
+        
+        # Create dropdown for item selection
+        item_options = ["Select an item..."] + [f"{row['Item Name']}" for _, row in filtered_df.iterrows()]
+        selected_item = st.selectbox("Choose item:", item_options, key="modal_selector")
+        
+        if selected_item != "Select an item...":
+            # Find the selected row
+            selected_row = filtered_df[filtered_df['Item Name'] == selected_item].iloc[0]
             show_machine_modal(selected_row)
         
         # Show count
-        st.caption(f"Showing {len(table_df)} of {len(subrecipe_df)} items")
+        st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
     else:
         st.warning("No items match the current filters.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Show last modified time
     if last_modified:
