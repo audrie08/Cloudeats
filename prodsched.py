@@ -4686,9 +4686,9 @@ def render_subrecipe_details_page():
     }
     
     .subrecipe-table td:first-child {
-        text-align: left;
+        text-align: center;
         font-weight: 600;
-        min-width: 200px;
+        min-width: 150px;
     }
     
     .subrecipe-table td:nth-child(2) {
@@ -4765,8 +4765,9 @@ def render_subrecipe_details_page():
         st.warning("No subrecipe data found")
         return
     
-    # Get unique categories from column C
-    categories = ['All Categories'] + sorted([cat for cat in subrecipe_df['Category'].unique() if cat])
+    # Get unique categories from column C and group them
+    unique_categories = sorted([group_category(cat) for cat in subrecipe_df['Category'].unique() if cat])
+    categories = ['All Categories'] + sorted(list(set(unique_categories)))
     
     # Filters section
     st.markdown('<div class="filters-container">', unsafe_allow_html=True)
@@ -4810,7 +4811,7 @@ def render_subrecipe_details_page():
     filtered_df = subrecipe_df.copy()
     
     if category_filter != "All Categories":
-        filtered_df = filtered_df[filtered_df['Category'] == category_filter]
+        filtered_df = filtered_df[filtered_df['Category'].apply(group_category) == category_filter]
     
     if item_filter != "All Items":
         filtered_df = filtered_df[filtered_df['Item Name'] == item_filter]
@@ -4821,15 +4822,27 @@ def render_subrecipe_details_page():
     else:
         filtered_df = filtered_df.sort_values(sort_by, ascending=False)
     
-    # Station color mapping
+    # Group categories into main categories
+    def group_category(category):
+        category_lower = category.lower()
+        if 'hot kitchen' in category_lower:
+            return 'Hot Kitchen'
+        elif 'fabrication' in category_lower:
+            return 'Fabrication'
+        elif 'cold sauce' in category_lower:
+            return 'Cold Sauce'
+        elif 'pastry' in category_lower:
+            return 'Pastry'
+        else:
+            return 'Other'
+    
+    # Update station colors for grouped categories
     station_colors = {
-        'Hot Kitchen Sauces': "#f26556",
-        'Hot Kitchen Savory': "#f26556",
-        'Cold Sauces': "#7dbfea", 
-        'Fabrication Meats': "#febc51",
-        'Fabrication Poultry': "#febc51",
+        'Hot Kitchen': "#f26556",
+        'Cold Sauce': "#7dbfea", 
+        'Fabrication': "#febc51",
         'Pastry': "#ba85cf",
-        'Unknown': "#94abad"
+        'Other': "#94abad"
     }
     
     # Display clean table
@@ -4840,9 +4853,10 @@ def render_subrecipe_details_page():
         # Create display dataframe with category badges and machine pills
         display_df = filtered_df.copy()
         
-        def create_category_badge(category):
-            badge_color = station_colors.get(category, station_colors['Unknown'])
-            return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
+    def create_category_badge(category):
+        grouped_category = group_category(category)
+        badge_color = station_colors.get(grouped_category, station_colors['Other'])
+        return f'<span class="category-badge" style="background-color: {badge_color};">{grouped_category}</span>'
         
         def create_machine_pills(row):
             if 'machine_names' in row and 'machine_usage' in row:
