@@ -4558,7 +4558,7 @@ def render_subrecipe_details_page():
     }
 
     .subrecipe-header h1 {
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family:'TT Norms', 'Segoe UI', sans-serif;
         font-weight: normal;
         font-size: 2.5em;
         margin: 0;
@@ -4566,7 +4566,7 @@ def render_subrecipe_details_page():
     }
 
     .subrecipe-header p {
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
         font-weight: normal;
         margin: 0.5rem 0 0 0;
     }
@@ -4578,7 +4578,7 @@ def render_subrecipe_details_page():
         margin-bottom: 30px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
     .category-badge {
@@ -4593,7 +4593,7 @@ def render_subrecipe_details_page():
         color: white;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
     .table-container {
@@ -4602,7 +4602,7 @@ def render_subrecipe_details_page():
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
     .table-header {
@@ -4611,7 +4611,66 @@ def render_subrecipe_details_page():
         padding: 20px 30px;
         font-size: 1.2rem;
         font-weight: 600;
-        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    /* Scrollable container for subrecipe table */
+    .scrollable-subrecipe-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border-radius: 10px;
+        margin: 0;
+    }
+    
+    .subrecipe-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        margin: 0;
+    }
+    
+    .subrecipe-table th {
+        background: #1e2323;
+        color: #f4d602;
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #3b3f46;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .subrecipe-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .subrecipe-table tr:hover {
+        background-color: rgba(244, 214, 2, 0.1);
+        transition: background-color 0.2s ease;
+    }
+    
+    .subrecipe-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Item name column styling */
+    .subrecipe-table td:first-child {
+        text-align: left;
+        font-weight: 600;
+        min-width: 200px;
+    }
+    
+    /* Category column styling */
+    .subrecipe-table td:nth-child(2) {
+        min-width: 150px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4726,15 +4785,27 @@ def render_subrecipe_details_page():
     ]
     display_df = display_df[column_order]
     
-    # Display table
+    # Display table with scrollable container
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
     st.markdown('<div class="table-header">Recipe Database</div>', unsafe_allow_html=True)
     
     if not display_df.empty:
-        st.markdown(
-            display_df.to_html(escape=False, index=False),
-            unsafe_allow_html=True
+        # Render as HTML table with scrollable container
+        html_table = display_df.to_html(
+            escape=False, 
+            index=False, 
+            classes='subrecipe-table',
+            table_id='subrecipe-table'
         )
+        
+        # Wrap table in scrollable container
+        scrollable_html = f"""
+        <div class="scrollable-subrecipe-container">
+            {html_table}
+        </div>
+        """
+        
+        st.markdown(scrollable_html, unsafe_allow_html=True)
         
         # Show count
         st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
