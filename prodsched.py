@@ -4499,6 +4499,7 @@ def load_subrecipe_data(sheet_index=11):
 # --- SUBRECIPE COLUMN MAPPINGS ---
 SUBRECIPE_COLUMNS = {
     'item_name': 3,          # Column D
+    'category': 2,           # Column C - ADD THIS
     'standard_yield': 4,     # Column E
     'actual_yield': 5,       # Column F
     'pack_qty': 6,           # Column G
@@ -4529,6 +4530,7 @@ class SubrecipeDataExtractor:
                 if item_name:
                     subrecipe_data.append({
                         'Item Name': item_name,
+                        'Category': safe_value(SUBRECIPE_COLUMNS['category']),  # GET FROM COLUMN C
                         'Standard Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['standard_yield'])),
                         'Actual Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['actual_yield'])),
                         'Pack Qty': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_qty'])),
@@ -4540,7 +4542,83 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page"""
+    """Render the Subrecipe Details page with filters and styled dataframe"""
+    
+    # Add custom CSS for subrecipe page
+    st.markdown("""
+    <style>
+    .subrecipe-header {
+        background: linear-gradient(135deg, #f4d602 0%, #ff8765 100%);
+        padding: 40px;
+        border-radius: 24px;
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(244, 214, 2, 0.3);
+    }
+    
+    .subrecipe-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .subrecipe-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+    
+    .filters-container {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        color: white;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .table-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 20px 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Header
+    st.markdown("""
+    <div class="subrecipe-header">
+        <h1>Subrecipe Details</h1>
+        <p>Comprehensive breakdown of recipe components and production metrics</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Load data
     df_subrecipe, last_modified = load_subrecipe_data()
     
@@ -4548,11 +4626,120 @@ def render_subrecipe_details_page():
         st.error("Failed to load subrecipe data")
         return
     
-    # Extract and display dataframe
+    # Extract dataframe
     extractor = SubrecipeDataExtractor(df_subrecipe)
     subrecipe_df = extractor.get_subrecipe_dataframe()
     
-    st.dataframe(subrecipe_df, width="stretch")
+    if subrecipe_df.empty:
+        st.warning("No subrecipe data found")
+        return
+    
+    # Get unique categories from column C (no auto-categorization needed)
+    categories = ['All Categories'] + sorted([cat for cat in subrecipe_df['Category'].unique() if cat])
+    
+    # Filters section
+    st.markdown('<div class="filters-container">', unsafe_allow_html=True)
+    st.markdown("#### Filters & Search")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        category_filter = st.selectbox(
+            "Category",
+            options=categories,
+            key="category_filter"
+        )
+    
+    with col2:
+        sort_options = [
+            "Item Name",
+            "Standard Yield (kg/batch)",
+            "Actual Yield (kg/batch)",
+            "Pack Qty",
+            "Shelf Life (days)",
+            "Kg per Hr"
+        ]
+        sort_by = st.selectbox(
+            "Sort By",
+            options=sort_options,
+            key="sort_filter"
+        )
+    
+    with col3:
+        search_term = st.text_input(
+            "Search Items",
+            placeholder="Enter item name...",
+            key="search_filter"
+        )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Apply filters
+    filtered_df = subrecipe_df.copy()
+    
+    # Category filter
+    if category_filter != "All Categories":
+        filtered_df = filtered_df[filtered_df['Category'] == category_filter]
+    
+    # Search filter
+    if search_term:
+        filtered_df = filtered_df[
+            filtered_df['Item Name'].str.contains(search_term, case=False, na=False)
+        ]
+    
+    # Sort data
+    if sort_by == "Item Name":
+        filtered_df = filtered_df.sort_values(sort_by)
+    else:
+        filtered_df = filtered_df.sort_values(sort_by, ascending=False)
+    
+    # Station color mapping for category badges
+    station_colors = {
+        'Hot Kitchen': "#f26556",
+        'Cold Sauce': "#7dbfea", 
+        'Fabrication': "#febc51",
+        'Pastry': "#ba85cf",
+        'Unknown': "#94abad"
+    }
+    
+    # Add category badges to the dataframe for display
+    def create_category_badge(category):
+        # Get color from station colors, default to Unknown if not found
+        badge_color = station_colors.get(category, station_colors['Unknown'])
+        return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
+    
+    # Create display dataframe
+    display_df = filtered_df.copy()
+    display_df['Category'] = display_df['Category'].apply(create_category_badge)
+    
+    # Reorder columns to show category after item name
+    column_order = [
+        'Item Name', 'Category', 'Standard Yield (kg/batch)', 
+        'Actual Yield (kg/batch)', 'Pack Qty', 'Pack Size (kg/pack)', 
+        'Shelf Life (days)', 'Kg per Hr'
+    ]
+    display_df = display_df[column_order]
+    
+    # Display table
+    st.markdown('<div class="table-container">', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Database</div>', unsafe_allow_html=True)
+    
+    if not display_df.empty:
+        st.markdown(
+            display_df.to_html(escape=False, index=False),
+            unsafe_allow_html=True
+        )
+        
+        # Show count
+        st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
+    else:
+        st.warning("No items match the current filters.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Show last modified time
+    if last_modified:
+        st.caption(f"Data last updated: {last_modified}")
 
 
 def main():
