@@ -4544,7 +4544,11 @@ class SubrecipeDataExtractor:
 def render_subrecipe_details_page():
     """Render the Subrecipe Details page"""
     # Load data
+    st.write("Loading subrecipe data...")
     df_subrecipe, last_modified = load_subrecipe_data()
+    
+    st.write(f"DataFrame shape: {df_subrecipe.shape}")
+    st.write(f"DataFrame empty: {df_subrecipe.empty}")
     
     if df_subrecipe.empty:
         st.error("Failed to load subrecipe data")
@@ -4553,7 +4557,8 @@ def render_subrecipe_details_page():
     # Extract and display dataframe
     extractor = SubrecipeDataExtractor(df_subrecipe)
     subrecipe_df = extractor.get_subrecipe_dataframe()
-        
+    
+    st.write(f"Extracted DataFrame shape: {subrecipe_df.shape}")
     st.dataframe(subrecipe_df, width="stretch")
 
 
