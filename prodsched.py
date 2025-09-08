@@ -94,6 +94,37 @@ def load_credentials_prod():
         st.error(f"Error loading credentials: {str(e)}")
         return None
 
+# --- CREDENTIALS HANDLING SUBRECIPE ---
+def load_credentials_subrecipe():
+    """Load Google credentials from Streamlit secrets for subrecipe data"""
+    try:
+        # Convert secrets to the format expected by google-auth
+        credentials_dict = {
+            "type": st.secrets["google_credentials2"]["type"],
+            "project_id": st.secrets["google_credentials2"]["project_id"],
+            "private_key_id": st.secrets["google_credentials2"]["private_key_id"],
+            "private_key": st.secrets["google_credentials2"]["private_key"].replace('\\n', '\n'),
+            "client_email": st.secrets["google_credentials2"]["client_email"],
+            "client_id": st.secrets["google_credentials2"]["client_id"],
+            "auth_uri": st.secrets["google_credentials2"]["auth_uri"],
+            "token_uri": st.secrets["google_credentials2"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_credentials2"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_credentials2"]["client_x509_cert_url"]
+        }
+        
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        return credentials
+        
+    except Exception as e:
+        st.error(f"Error loading subrecipe credentials: {str(e)}")
+        return None
+
+
 
 # --- CUSTOM CSS ---
 # Read and encode font (if available)
@@ -4417,9 +4448,117 @@ def calculate_total_skus(df):
     except Exception as e:
         st.error(f"Error calculating total SKUs: {e}")
         return 0
+
+# --- LOAD SUBRECIPE DATA ---
+@st.cache_data(ttl=60)
+def load_subrecipe_data(sheet_index=11):
+    """Load subrecipe data from Google Sheets with last modified time"""
+    credentials = load_credentials_subrecipe()
+    if not credentials:
+        return pd.DataFrame(), None
+    
+    try:
+        gc = gspread.authorize(credentials)
+        spreadsheet_id = "1RH-ZHaeP0PONweP5AIefIiUFjhk6-qKuRxyEIXFzlbk"
+        sh = gc.open_by_key(spreadsheet_id)
         
+        # Get the spreadsheet metadata for last modified time
+        last_modified_time = None
+        
+        # Method 1: Try using the drive API for file metadata
+        try:
+            drive_service = build('drive', 'v3', credentials=credentials)
+            file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
+            last_modified_time = file_metadata.get('modifiedTime')
+        except Exception as e:
+            st.write(f"❌ Drive API method failed: {e}")
+        
+        # Method 2: Try the spreadsheet metadata (fallback)
+        if last_modified_time is None:
+            try:
+                spreadsheet_metadata = sh.fetch_sheet_metadata()
+                last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+            except Exception as e:
+                st.write(f"❌ Sheets metadata method failed: {e}")
+        
+        # Method 3: If still None, use current time as fallback
+        if last_modified_time is None:
+            last_modified_time = datetime.now().isoformat() + 'Z'
+        
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df, last_modified_time
+        
+    except Exception as e:
+        st.error(f"Error loading subrecipe data: {str(e)}")
+        return pd.DataFrame(), None
+
+# --- SUBRECIPE COLUMN MAPPINGS ---
+SUBRECIPE_COLUMNS = {
+    'item_name': 3,          # Column D
+    'standard_yield': 4,     # Column E
+    'actual_yield': 5,       # Column F
+    'pack_qty': 6,           # Column G
+    'pack_size': 7,          # Column H
+    'shelf_life': 8,         # Column I
+    'kg_per_hr': 33,         # Column AH
+    'data_start_row': 3,     # Row 4 (0-based)
+    'data_end_row': 131      # Row 132 (0-based)
+}
+
+class SubrecipeDataExtractor:
+    def __init__(self, df):
+        self.df = df
+    
+    def get_subrecipe_dataframe(self):
+        """Extract subrecipe data and return as DataFrame"""
+        subrecipe_data = []
+        
+        for row_idx in range(SUBRECIPE_COLUMNS['data_start_row'], SUBRECIPE_COLUMNS['data_end_row'] + 1):
+            if row_idx < len(self.df):
+                row = self.df.iloc[row_idx]
+                
+                def safe_value(col_idx):
+                    return str(row[col_idx]).strip() if col_idx < len(row) else ""
+                
+                item_name = safe_value(SUBRECIPE_COLUMNS['item_name'])
+                
+                if item_name:
+                    subrecipe_data.append({
+                        'Item Name': item_name,
+                        'Standard Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['standard_yield'])),
+                        'Actual Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['actual_yield'])),
+                        'Pack Qty': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_qty'])),
+                        'Pack Size (kg/pack)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_size'])),
+                        'Shelf Life (days)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['shelf_life'])),
+                        'Kg per Hr': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['kg_per_hr']))
+                    })
+        
+        return pd.DataFrame(subrecipe_data)
+
+def render_subrecipe_details_page():
+    """Render the Subrecipe Details page"""
+    # Load data
+    df_subrecipe, last_modified = load_subrecipe_data()
+    
+    if df_subrecipe.empty:
+        st.error("Failed to load subrecipe data")
+        return
+    
+    # Extract and display dataframe
+    extractor = SubrecipeDataExtractor(df_subrecipe)
+    subrecipe_df = extractor.get_subrecipe_dataframe()
+    
+    st.dataframe(subrecipe_df, use_container_width=True)
+
+
 def main():
-    """Main application function - CORRECTED VERSION"""
+    """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
     
     # Create modern navigation header
     create_navigation()
@@ -4430,17 +4569,17 @@ def main():
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Summary"  # Default to Summary page
     
-    # Main navigation with smaller, centered buttons
+    # Main navigation with three options including Subrecipe Details
     main_page_selection = option_menu(
         menu_title=None,
-        options=["KPI Dashboard", "Production Details"],
-        icons=["house-fill", "clipboard-data-fill"],
-        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else 1,
+        options=["KPI Dashboard", "Production Details", "Subrecipe Details"],
+        icons=["house-fill", "clipboard-data-fill", "list-ul"],
+        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else (1 if st.session_state.main_tab == "Production Details" else 2),
         orientation="horizontal",
         key="main_navigation",
         styles={
             "container": {
-                "max-width": "350px",
+                "max-width": "500px",  # Increased width to accommodate third option
                 "text-align": "center",
                 "border-radius": "20px", 
                 "color": "#ffffff",
@@ -4533,8 +4672,9 @@ def main():
     if st.session_state.main_tab == "KPI Dashboard":
         # FIXED: Call the existing main_page() function instead of display_kpi_dashboard()
         display_kpi_dashboard()
-    else:
-        # UPDATED: Added Summary page routing
+        
+    elif main_page_selection == "Production Details":
+        # Your existing Production Details code
         if st.session_state.sub_tab == "Summary":
             summary_page()
         elif st.session_state.sub_tab == "Weekly Production Schedule":
@@ -4542,7 +4682,10 @@ def main():
         elif st.session_state.sub_tab == "Machine Utilization":
             machine_utilization()
         elif st.session_state.sub_tab == "YTD Production Schedule":
-            ytd_production()      
+            ytd_production()     
+
+    elif main_page_selection == "Subrecipe Details":
+        render_subrecipe_details_page()
             
 if __name__ == "__main__":
     main()
