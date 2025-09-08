@@ -4471,16 +4471,14 @@ def load_subrecipe_data(sheet_index=11):
             file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
             last_modified_time = file_metadata.get('modifiedTime')
         except Exception as e:
-            st.write(f"❌ Drive API method failed: {e}")
-        
+            pass        
         # Method 2: Try the spreadsheet metadata (fallback)
         if last_modified_time is None:
             try:
                 spreadsheet_metadata = sh.fetch_sheet_metadata()
                 last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
             except Exception as e:
-                st.write(f"❌ Sheets metadata method failed: {e}")
-        
+                pass        
         # Method 3: If still None, use current time as fallback
         if last_modified_time is None:
             last_modified_time = datetime.now().isoformat() + 'Z'
@@ -4544,11 +4542,7 @@ class SubrecipeDataExtractor:
 def render_subrecipe_details_page():
     """Render the Subrecipe Details page"""
     # Load data
-    st.write("Loading subrecipe data...")
     df_subrecipe, last_modified = load_subrecipe_data()
-    
-    st.write(f"DataFrame shape: {df_subrecipe.shape}")
-    st.write(f"DataFrame empty: {df_subrecipe.empty}")
     
     if df_subrecipe.empty:
         st.error("Failed to load subrecipe data")
@@ -4558,7 +4552,6 @@ def render_subrecipe_details_page():
     extractor = SubrecipeDataExtractor(df_subrecipe)
     subrecipe_df = extractor.get_subrecipe_dataframe()
     
-    st.write(f"Extracted DataFrame shape: {subrecipe_df.shape}")
     st.dataframe(subrecipe_df, width="stretch")
 
 
