@@ -4729,10 +4729,12 @@ def render_subrecipe_details_page():
         )
     
     with col3:
-        search_term = st.text_input(
-            "Search Items",
-            placeholder="Enter item name...",
-            key="search_filter"
+        # Get unique item names for filter dropdown
+        item_names = ['All Items'] + sorted(subrecipe_df['Item Name'].unique().tolist())
+        item_filter = st.selectbox(
+            "Filter Item Name",
+            options=item_names,
+            key="item_filter"
         )
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -4744,11 +4746,15 @@ def render_subrecipe_details_page():
     if category_filter != "All Categories":
         filtered_df = filtered_df[filtered_df['Category'] == category_filter]
     
-    # Search filter
-    if search_term:
-        filtered_df = filtered_df[
-            filtered_df['Item Name'].str.contains(search_term, case=False, na=False)
-        ]
+    # Item name filter
+    if item_filter != "All Items":
+        filtered_df = filtered_df[filtered_df['Item Name'] == item_filter]
+    
+    # Sort data
+    if sort_by == "Item Name":
+        filtered_df = filtered_df.sort_values(sort_by)
+    else:
+        filtered_df = filtered_df.sort_values(sort_by, ascending=False)
     
     # Sort data
     if sort_by == "Item Name":
