@@ -4548,26 +4548,27 @@ def render_subrecipe_details_page():
     st.markdown("""
     <style>
     .subrecipe-header {
-        background: linear-gradient(135deg, #f4d602 0%, #ff8765 100%);
-        padding: 40px;
-        border-radius: 24px;
-        color: white;
+        background: #f7d42c;
+        padding: 1rem 1rem;
+        border-radius: 40px;
+        color: #1E2328;
         text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 30px rgba(244, 214, 2, 0.3);
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     }
-    
+
     .subrecipe-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .subrecipe-header p {
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-weight: normal;
+        font-size: 2.5em;
         margin: 0;
+        letter-spacing: 2px;
+    }
+
+    .subrecipe-header p {
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
+        font-weight: normal;
+        margin: 0.5rem 0 0 0;
     }
     
     .filters-container {
@@ -4577,6 +4578,7 @@ def render_subrecipe_details_page():
         margin-bottom: 30px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
     }
     
     .category-badge {
@@ -4591,6 +4593,7 @@ def render_subrecipe_details_page():
         color: white;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
     }
     
     .table-container {
@@ -4599,6 +4602,7 @@ def render_subrecipe_details_page():
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
     }
     
     .table-header {
@@ -4607,15 +4611,15 @@ def render_subrecipe_details_page():
         padding: 20px 30px;
         font-size: 1.2rem;
         font-weight: 600;
+        font-family: {'TT Norms' if font_available else 'Arial'}, 'Arial', sans-serif;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    # Header
     st.markdown("""
     <div class="subrecipe-header">
-        <h1>Subrecipe Details</h1>
-        <p>Comprehensive breakdown of recipe components and production metrics</p>
+        <h1><b>Subrecipe Details</b></h1>
+        <p><b>Comprehensive Breakdown of Subrecipe Details</b></p>
     </div>
     """, unsafe_allow_html=True)
     
