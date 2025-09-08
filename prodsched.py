@@ -4567,9 +4567,9 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with expandable table rows"""
+    """Render the Subrecipe Details page with row selection and machine details"""
     
-    # Add CSS for expandable table
+    # Add CSS
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4606,48 +4606,35 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .category-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        color: white;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-    }
-    
-    .table-container {
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e2e8f0;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-    }
-    
-    .table-header {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        color: white;
-        padding: 20px 30px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    .machine-details-container {
+        background: #f8fafc;
+        border: 2px solid #f4d602;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
     }
     
     .machine-pill {
         display: inline-block;
+        background: #f4d602;
+        color: #1e293b;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        margin: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .machine-pill.used {
         background: #22c55e;
         color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        margin: 2px;
-        font-weight: 600;
+    }
+    
+    .machine-pill.not-used {
+        background: #64748b;
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4741,82 +4728,76 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    # Display table with machine details
-    st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
-    
     if not filtered_df.empty:
-        # Create the display dataframe for the main table
+        # Create display dataframe for table
         display_df = filtered_df.copy()
         
-        # Add category badges
-        def create_category_badge(category):
-            badge_color = station_colors.get(category, station_colors['Unknown'])
-            return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
-        
-        display_df['Category'] = display_df['Category'].apply(create_category_badge)
-        
-        # Select columns for main table display
-        main_columns = [
-            'Item Name', 'Category', 'Standard Yield (kg/batch)', 'Shelf Life (days)'
+        # Format columns for display
+        display_columns = [
+            'Item Name',
+            'Category', 
+            'Standard Yield (kg/batch)',
+            'Shelf Life (days)'
         ]
         
-        # Show main table
-        main_display_df = display_df[main_columns].copy()
+        table_df = display_df[display_columns].copy()
+        table_df['Standard Yield (kg/batch)'] = table_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
+        table_df['Shelf Life (days)'] = table_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
         
-        # Add click functionality using streamlit-aggrid or simple dataframe with selection
-        if 'selected_row' not in st.session_state:
-            st.session_state.selected_row = None
+        # Display the dataframe with selection
+        st.markdown("### Recipe Details")
+        st.markdown("*Click on a row to see machine requirements below*")
         
-        # Display main table
-        st.markdown(
-            main_display_df.to_html(escape=False, index=False),
-            unsafe_allow_html=True
+        event = st.dataframe(
+            table_df,
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            column_config={
+                "Item Name": st.column_config.TextColumn("Item Name", width="medium"),
+                "Category": st.column_config.TextColumn("Category", width="medium"),
+                "Standard Yield (kg/batch)": st.column_config.TextColumn("Standard Yield", width="small"),
+                "Shelf Life (days)": st.column_config.TextColumn("Shelf Life", width="small")
+            }
         )
         
-        # Row selection using buttons
-        st.markdown("**Click on an item to see machine requirements:**")
-        
-        cols = st.columns(min(len(filtered_df), 4))  # Max 4 columns
-        
-        for idx, (_, row) in enumerate(filtered_df.iterrows()):
-            col_idx = idx % 4
-            with cols[col_idx]:
-                if st.button(f"▶ {row['Item Name']}", key=f"btn_{idx}"):
-                    st.session_state.selected_row = idx
-        
-        # Show machine details for selected row
-        if st.session_state.selected_row is not None and st.session_state.selected_row < len(filtered_df):
-            selected_idx = st.session_state.selected_row
+        # Show machine details if a row is selected
+        if len(event.selection["rows"]) > 0:
+            selected_idx = event.selection["rows"][0]
             selected_row = filtered_df.iloc[selected_idx]
             
-            st.markdown("---")
-            st.markdown(f"**Machine Requirements for: {selected_row['Item Name']}**")
+            st.markdown('<div class="machine-details-container">', unsafe_allow_html=True)
+            st.markdown(f"### Machine Requirements for: {selected_row['Item Name']}")
             
-            # Show only machines that are used (value = 1)
+            # Show category badge
+            badge_color = station_colors.get(selected_row['Category'], station_colors['Unknown'])
+            st.markdown(f"**Category:** <span style='background: {badge_color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;'>{selected_row['Category']}</span>", unsafe_allow_html=True)
+            
+            # Show only machines that are used
             if 'machine_names' in selected_row and 'machine_usage' in selected_row:
                 used_machines = []
                 for machine_name, is_used in zip(selected_row['machine_names'], selected_row['machine_usage']):
-                    if is_used:  # Only show machines that are used
+                    if is_used:
                         used_machines.append(machine_name)
                 
                 if used_machines:
-                    machine_pills = ""
+                    st.markdown("**Machines Used:**")
+                    machine_html = ""
                     for machine in used_machines:
-                        machine_pills += f'<span class="machine-pill">{machine}</span>'
-                    
-                    st.markdown(machine_pills, unsafe_allow_html=True)
+                        machine_html += f'<span class="machine-pill used">{machine}</span>'
+                    st.markdown(machine_html, unsafe_allow_html=True)
                 else:
-                    st.write("No machines required for this item")
+                    st.markdown("**No machines required for this item**")
             else:
-                st.write("Machine data not available")
+                st.markdown("**Machine data not available**")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # Show count
         st.caption(f"Showing {len(filtered_df)} of {len(subrecipe_df)} items")
     else:
         st.warning("No items match the current filters.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
     
     # Show last modified time
     if last_modified:
