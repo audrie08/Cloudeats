@@ -4567,9 +4567,9 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with clean dataframe only"""
+    """Render the Subrecipe Details page with machines used column"""
     
-    # Add CSS for clean styling
+    # Add CSS with grayish machine pills
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4694,6 +4694,30 @@ def render_subrecipe_details_page():
     .subrecipe-table td:nth-child(2) {
         min-width: 150px;
     }
+    
+    /* Wider machines column */
+    .subrecipe-table td:nth-child(6) {
+        min-width: 300px;
+        max-width: 350px;
+    }
+    
+    .machines-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+    }
+    
+    .machine-pill {
+        background: #6b7280;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -4791,30 +4815,45 @@ def render_subrecipe_details_page():
     st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-        # Create display dataframe with category badges
+        # Create display dataframe with category badges and machine pills
         display_df = filtered_df.copy()
         
         def create_category_badge(category):
             badge_color = station_colors.get(category, station_colors['Unknown'])
             return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
         
+        def create_machine_pills(row):
+            if 'machine_names' in row and 'machine_usage' in row:
+                used_machines = []
+                for machine_name, is_used in zip(row['machine_names'], row['machine_usage']):
+                    if is_used:
+                        used_machines.append(machine_name)
+                
+                if used_machines:
+                    pills_html = '<div class="machines-pills">'
+                    for machine in used_machines:
+                        pills_html += f'<span class="machine-pill">{machine}</span>'
+                    pills_html += '</div>'
+                    return pills_html
+                else:
+                    return '<div class="machines-pills"><span class="machine-pill">None</span></div>'
+            else:
+                return '<div class="machines-pills"><span class="machine-pill">N/A</span></div>'
+        
         display_df['Category'] = display_df['Category'].apply(create_category_badge)
+        display_df['Machines Used'] = display_df.apply(create_machine_pills, axis=1)
         
         # Select and reorder columns for display
         column_order = [
             'Item Name', 'Category', 'Standard Yield (kg/batch)', 
-            'Actual Yield (kg/batch)', 'Pack Qty', 'Pack Size (kg/pack)', 
-            'Shelf Life (days)', 'Kg per Hr'
+            'Actual Yield (kg/batch)', 'Shelf Life (days)', 'Machines Used'
         ]
         display_df = display_df[column_order]
         
         # Format numeric columns
         display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Actual Yield (kg/batch)'] = display_df['Actual Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
-        display_df['Pack Qty'] = display_df['Pack Qty'].apply(lambda x: f"{x:.0f}")
-        display_df['Pack Size (kg/pack)'] = display_df['Pack Size (kg/pack)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
-        display_df['Kg per Hr'] = display_df['Kg per Hr'].apply(lambda x: f"{x:.1f}")
         
         # Render as clean HTML table
         html_table = display_df.to_html(
@@ -4839,10 +4878,6 @@ def render_subrecipe_details_page():
         st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Show last modified time
-    if last_modified:
-        st.caption(f"Data last updated: {last_modified}")
 
 def main():
     """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
