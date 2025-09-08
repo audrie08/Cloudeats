@@ -4496,17 +4496,19 @@ def load_subrecipe_data(sheet_index=11):
         st.error(f"Error loading subrecipe data: {str(e)}")
         return pd.DataFrame(), None
 
-# --- SUBRECIPE COLUMN MAPPINGS ---
+# --- UPDATED SUBRECIPE COLUMN MAPPINGS ---
 SUBRECIPE_COLUMNS = {
     'item_name': 3,          # Column D
-    'category': 2,           # Column C - ADD THIS
+    'category': 2,           # Column C
     'standard_yield': 4,     # Column E
     'actual_yield': 5,       # Column F
     'pack_qty': 6,           # Column G
     'pack_size': 7,          # Column H
     'shelf_life': 8,         # Column I
     'kg_per_hr': 33,         # Column AH
-    'data_start_row': 4,     # Row 4 (0-based)
+    'machine_start': 9,      # Column J (machines start)
+    'machine_end': 24,       # Column Y (machines end)
+    'data_start_row': 4,     # Row 5 (0-based)
     'data_end_row': 131      # Row 132 (0-based)
 }
 
@@ -4514,9 +4516,21 @@ class SubrecipeDataExtractor:
     def __init__(self, df):
         self.df = df
     
+    def get_machine_names(self):
+        """Extract machine names from row 4 (columns J to Y)"""
+        machine_names = []
+        if len(self.df) > 3:  # Row 4 exists (0-based index 3)
+            for col in range(SUBRECIPE_COLUMNS['machine_start'], SUBRECIPE_COLUMNS['machine_end'] + 1):
+                if col < len(self.df.columns):
+                    machine_name = str(self.df.iloc[3, col]).strip()  # Row 4 (0-based index 3)
+                    if machine_name:
+                        machine_names.append(machine_name)
+        return machine_names
+    
     def get_subrecipe_dataframe(self):
-        """Extract subrecipe data and return as DataFrame"""
+        """Extract subrecipe data with machine usage"""
         subrecipe_data = []
+        machine_names = self.get_machine_names()
         
         for row_idx in range(SUBRECIPE_COLUMNS['data_start_row'], SUBRECIPE_COLUMNS['data_end_row'] + 1):
             if row_idx < len(self.df):
@@ -4528,23 +4542,34 @@ class SubrecipeDataExtractor:
                 item_name = safe_value(SUBRECIPE_COLUMNS['item_name'])
                 
                 if item_name:
+                    # Extract machine usage
+                    machine_usage = []
+                    for col in range(SUBRECIPE_COLUMNS['machine_start'], SUBRECIPE_COLUMNS['machine_end'] + 1):
+                        if col < len(row):
+                            usage = safe_value(col)
+                            machine_usage.append(usage == "1")  # True if "1", False otherwise
+                        else:
+                            machine_usage.append(False)
+                    
                     subrecipe_data.append({
                         'Item Name': item_name,
-                        'Category': safe_value(SUBRECIPE_COLUMNS['category']),  # GET FROM COLUMN C
+                        'Category': safe_value(SUBRECIPE_COLUMNS['category']),
                         'Standard Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['standard_yield'])),
                         'Actual Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['actual_yield'])),
                         'Pack Qty': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_qty'])),
                         'Pack Size (kg/pack)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_size'])),
                         'Shelf Life (days)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['shelf_life'])),
-                        'Kg per Hr': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['kg_per_hr']))
+                        'Kg per Hr': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['kg_per_hr'])),
+                        'machine_usage': machine_usage,  # Store machine usage array
+                        'machine_names': machine_names   # Store machine names
                     })
         
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with filters and styled dataframe"""
+    """Render the Subrecipe Details page with expandable rows"""
     
-    # Add custom CSS for subrecipe page
+    # Add CSS for expandable rows
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4596,13 +4621,82 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
+    .expandable-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        font-size: 14px;
+        background: white;
+    }
+    
+    .expandable-table th {
+        background: #1e2323;
+        color: #f4d602;
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #3b3f46;
+    }
+    
+    .expandable-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .expandable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .expandable-row:hover {
+        background-color: rgba(244, 214, 2, 0.1);
+    }
+    
+    .expand-icon {
+        margin-right: 8px;
+        transition: transform 0.2s;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .machine-details {
+        background: #f8fafc;
+        padding: 20px;
+        border-left: 4px solid #f4d602;
+    }
+    
+    .machine-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        margin: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .machine-badge.used {
+        background: #22c55e;
+        color: white;
+    }
+    
+    .machine-badge.not-used {
+        background: #e5e7eb;
+        color: #6b7280;
+    }
+    
     .table-container {
         background: white;
         border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        max-height: 600px;
+        overflow-y: auto;
     }
     
     .table-header {
@@ -4612,67 +4706,26 @@ def render_subrecipe_details_page():
         font-size: 1.2rem;
         font-weight: 600;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
-    }
-    
-    /* Scrollable container for subrecipe table */
-    .scrollable-subrecipe-container {
-        max-height: 600px;
-        overflow-y: auto;
-        overflow-x: auto;
-        border-radius: 10px;
-        margin: 0;
-    }
-    
-    .subrecipe-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-        background: white;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        margin: 0;
-    }
-    
-    .subrecipe-table th {
-        background: #1e2323;
-        color: #f4d602;
-        font-weight: bold;
-        padding: 12px 8px;
-        text-align: center;
-        border-bottom: 2px solid #3b3f46;
         position: sticky;
         top: 0;
         z-index: 10;
     }
-    
-    .subrecipe-table td {
-        padding: 12px 8px;
-        border-bottom: 1px solid #e0e0e0;
-        vertical-align: middle;
-        text-align: center;
-        font-weight: 500;
-    }
-    
-    .subrecipe-table tr:hover {
-        background-color: rgba(244, 214, 2, 0.1);
-        transition: background-color 0.2s ease;
-    }
-    
-    .subrecipe-table tr:last-child td {
-        border-bottom: none;
-    }
-    
-    /* Item name column styling */
-    .subrecipe-table td:first-child {
-        text-align: left;
-        font-weight: 600;
-        min-width: 200px;
-    }
-    
-    /* Category column styling */
-    .subrecipe-table td:nth-child(2) {
-        min-width: 150px;
-    }
     </style>
+    
+    <script>
+    function toggleMachineDetails(rowId) {
+        const detailsRow = document.getElementById('details-' + rowId);
+        const icon = document.getElementById('icon-' + rowId);
+        
+        if (detailsRow.style.display === 'none' || !detailsRow.style.display) {
+            detailsRow.style.display = 'table-row';
+            icon.style.transform = 'rotate(90deg)';
+        } else {
+            detailsRow.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+    </script>
     """, unsafe_allow_html=True)
     
     st.markdown("""
@@ -4697,7 +4750,7 @@ def render_subrecipe_details_page():
         st.warning("No subrecipe data found")
         return
     
-    # Get unique categories from column C (no auto-categorization needed)
+    # Get unique categories from column C
     categories = ['All Categories'] + sorted([cat for cat in subrecipe_df['Category'].unique() if cat])
     
     # Filters section
@@ -4729,7 +4782,6 @@ def render_subrecipe_details_page():
         )
     
     with col3:
-        # Get unique item names for filter dropdown
         item_names = ['All Items'] + sorted(subrecipe_df['Item Name'].unique().tolist())
         item_filter = st.selectbox(
             "Filter Item Name",
@@ -4742,11 +4794,9 @@ def render_subrecipe_details_page():
     # Apply filters
     filtered_df = subrecipe_df.copy()
     
-    # Category filter
     if category_filter != "All Categories":
         filtered_df = filtered_df[filtered_df['Category'] == category_filter]
     
-    # Item name filter
     if item_filter != "All Items":
         filtered_df = filtered_df[filtered_df['Item Name'] == item_filter]
     
@@ -4756,13 +4806,7 @@ def render_subrecipe_details_page():
     else:
         filtered_df = filtered_df.sort_values(sort_by, ascending=False)
     
-    # Sort data
-    if sort_by == "Item Name":
-        filtered_df = filtered_df.sort_values(sort_by)
-    else:
-        filtered_df = filtered_df.sort_values(sort_by, ascending=False)
-    
-    # Station color mapping for category badges
+    # Station color mapping
     station_colors = {
         'Hot Kitchen Sauces': "#f26556",
         'Hot Kitchen Savory': "#f26556",
@@ -4773,56 +4817,78 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    # Add category badges to the dataframe for display
-    def create_category_badge(category):
-        # Get color from station colors, default to Unknown if not found
-        badge_color = station_colors.get(category, station_colors['Unknown'])
-        return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
-    
-    # Create display dataframe
-    display_df = filtered_df.copy()
-    display_df['Category'] = display_df['Category'].apply(create_category_badge)
-    
-    # Reorder columns to show category after item name
-    column_order = [
-        'Category', 'Item Name', 'Standard Yield (kg/batch)', 
-        'Actual Yield (kg/batch)', 'Pack Qty', 'Pack Size (kg/pack)', 
-        'Shelf Life (days)', 'Kg per Hr'
-    ]
-    display_df = display_df[column_order]
-    
-    # Display table with scrollable container
+    # Create expandable table HTML
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Details (Click to expand machine usage)</div>', unsafe_allow_html=True)
     
-    if not display_df.empty:
-        # Render as HTML table with scrollable container
-        html_table = display_df.to_html(
-            escape=False, 
-            index=False, 
-            classes='subrecipe-table',
-            table_id='subrecipe-table'
-        )
-        
-        # Wrap table in scrollable container
-        scrollable_html = f"""
-        <div class="scrollable-subrecipe-container">
-            {html_table}
-        </div>
+    if not filtered_df.empty:
+        table_html = """
+        <table class="expandable-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Category</th>
+                    <th>Item Name</th>
+                    <th>Standard Yield</th>
+                    <th>Actual Yield</th>
+                    <th>Pack Qty</th>
+                    <th>Shelf Life</th>
+                    <th>Kg per Hr</th>
+                </tr>
+            </thead>
+            <tbody>
         """
         
-        st.markdown(scrollable_html, unsafe_allow_html=True)
+        for idx, row in filtered_df.iterrows():
+            # Create category badge
+            badge_color = station_colors.get(row['Category'], station_colors['Unknown'])
+            category_badge = f'<span class="category-badge" style="background-color: {badge_color};">{row["Category"]}</span>'
+            
+            # Main row
+            table_html += f"""
+                <tr class="expandable-row" onclick="toggleMachineDetails({idx})">
+                    <td><span class="expand-icon" id="icon-{idx}">▶</span></td>
+                    <td>{category_badge}</td>
+                    <td style="text-align: left; font-weight: 600;">{row['Item Name']}</td>
+                    <td>{row['Standard Yield (kg/batch)']:.2f} kg</td>
+                    <td>{row['Actual Yield (kg/batch)']:.2f} kg</td>
+                    <td>{row['Pack Qty']:.0f}</td>
+                    <td>{row['Shelf Life (days)']:.0f} days</td>
+                    <td>{row['Kg per Hr']:.1f}</td>
+                </tr>
+            """
+            
+            # Machine details row
+            machine_badges = ""
+            if 'machine_names' in row and 'machine_usage' in row:
+                for machine_name, is_used in zip(row['machine_names'], row['machine_usage']):
+                    badge_class = "used" if is_used else "not-used"
+                    machine_badges += f'<span class="machine-badge {badge_class}">{machine_name}</span>'
+            
+            table_html += f"""
+                <tr id="details-{idx}" class="machine-details" style="display: none;">
+                    <td colspan="8">
+                        <div>
+                            <strong>Machine Requirements:</strong><br>
+                            {machine_badges}
+                        </div>
+                    </td>
+                </tr>
+            """
+        
+        table_html += """
+            </tbody>
+        </table>
+        """
+        
+        st.markdown(table_html, unsafe_allow_html=True)
         
         # Show count
-        st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
+        st.caption(f"Showing {len(filtered_df)} of {len(subrecipe_df)} items")
     else:
         st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Show last modified time
-    if last_modified:
-        st.caption(f"Data last updated: {last_modified}")
 
 
 def main():
