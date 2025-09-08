@@ -4567,7 +4567,7 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with machines used column"""
+    """Render the Subrecipe Details page with complete columns and machines used"""
     
     # Add CSS with grayish machine pills
     st.markdown("""
@@ -4696,9 +4696,9 @@ def render_subrecipe_details_page():
     }
     
     /* Wider machines column */
-    .subrecipe-table td:nth-child(6) {
-        min-width: 300px;
-        max-width: 350px;
+    .subrecipe-table td:last-child {
+        min-width: 280px;
+        max-width: 320px;
     }
     
     .machines-pills {
@@ -4843,17 +4843,27 @@ def render_subrecipe_details_page():
         display_df['Category'] = display_df['Category'].apply(create_category_badge)
         display_df['Machines Used'] = display_df.apply(create_machine_pills, axis=1)
         
-        # Select and reorder columns for display
+        # Select and reorder columns for display - ALL REQUESTED COLUMNS
         column_order = [
-            'Item Name', 'Category', 'Standard Yield (kg/batch)', 
-            'Actual Yield (kg/batch)', 'Shelf Life (days)', 'Machines Used'
+            'Item Name', 
+            'Category', 
+            'Standard Yield (kg/batch)', 
+            'Actual Yield (kg/batch)', 
+            'Pack Qty',
+            'Pack Size (kg/pack)', 
+            'Shelf Life (days)', 
+            'Kg per Hr',
+            'Machines Used'
         ]
         display_df = display_df[column_order]
         
         # Format numeric columns
         display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Actual Yield (kg/batch)'] = display_df['Actual Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
+        display_df['Pack Qty'] = display_df['Pack Qty'].apply(lambda x: f"{x:.0f}")
+        display_df['Pack Size (kg/pack)'] = display_df['Pack Size (kg/pack)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
+        display_df['Kg per Hr'] = display_df['Kg per Hr'].apply(lambda x: f"{x:.1f}")
         
         # Render as clean HTML table
         html_table = display_df.to_html(
@@ -4878,6 +4888,10 @@ def render_subrecipe_details_page():
         st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Show last modified time
+    if last_modified:
+        st.caption(f"Data last updated: {last_modified}")
 
 def main():
     """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
