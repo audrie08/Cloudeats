@@ -4695,9 +4695,11 @@ def render_subrecipe_details_page():
     
     # Station color mapping for category badges
     station_colors = {
-        'Hot Kitchen': "#f26556",
-        'Cold Sauce': "#7dbfea", 
-        'Fabrication': "#febc51",
+        'Hot Kitchen Sauces': "#f26556",
+        'Hot Kitchen Savory': "#f26556",
+        'Cold Sauces': "#7dbfea", 
+        'Fabrication Meats': "#febc51",
+        'Fabrication Poultry': "#febc51",
         'Pastry': "#ba85cf",
         'Unknown': "#94abad"
     }
