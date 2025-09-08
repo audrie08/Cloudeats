@@ -4692,32 +4692,12 @@ def render_subrecipe_details_page():
     }
     
     .subrecipe-table td:nth-child(2) {
-        min-width: 150px;
-    }
-    
-    /* Wider machines column */
-    .subrecipe-table td:last-child {
-        min-width: 280px;
-        max-width: 320px;
-    }
-    
-    .machines-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        justify-content: center;
-    }
-    
-    .machine-pill {
-        background: #6b7280;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 14px;
-        font-size: 10px;
+        text-align: left;
         font-weight: 600;
-        white-space: nowrap;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        min-width: 200px;
     }
+    
+    /* Column width adjustments */
     .subrecipe-table th:nth-child(3),
     .subrecipe-table th:nth-child(4),
     .subrecipe-table th:nth-child(5),
@@ -4739,6 +4719,24 @@ def render_subrecipe_details_page():
     .subrecipe-table th:last-child {
         min-width: 350px;
         max-width: 400px;
+    }
+    
+    .machines-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+    }
+    
+    .machine-pill {
+        background: #6b7280;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4764,6 +4762,29 @@ def render_subrecipe_details_page():
     if subrecipe_df.empty:
         st.warning("No subrecipe data found")
         return
+    
+    # Group categories into main categories
+    def group_category(category):
+        category_lower = category.lower()
+        if 'hot kitchen' in category_lower:
+            return 'Hot Kitchen'
+        elif 'fabrication' in category_lower:
+            return 'Fabrication'
+        elif 'cold sauce' in category_lower:
+            return 'Cold Sauce'
+        elif 'pastry' in category_lower:
+            return 'Pastry'
+        else:
+            return 'Other'
+    
+    # Update station colors for grouped categories
+    station_colors = {
+        'Hot Kitchen': "#f26556",
+        'Cold Sauce': "#7dbfea", 
+        'Fabrication': "#febc51",
+        'Pastry': "#ba85cf",
+        'Other': "#94abad"
+    }
     
     # Get unique categories from column C and group them
     unique_categories = sorted([group_category(cat) for cat in subrecipe_df['Category'].unique() if cat])
@@ -4810,6 +4831,7 @@ def render_subrecipe_details_page():
     # Apply filters
     filtered_df = subrecipe_df.copy()
     
+    # Category filter - apply grouping
     if category_filter != "All Categories":
         filtered_df = filtered_df[filtered_df['Category'].apply(group_category) == category_filter]
     
@@ -4822,29 +4844,6 @@ def render_subrecipe_details_page():
     else:
         filtered_df = filtered_df.sort_values(sort_by, ascending=False)
     
-    # Group categories into main categories
-    def group_category(category):
-        category_lower = category.lower()
-        if 'hot kitchen' in category_lower:
-            return 'Hot Kitchen'
-        elif 'fabrication' in category_lower:
-            return 'Fabrication'
-        elif 'cold sauce' in category_lower:
-            return 'Cold Sauce'
-        elif 'pastry' in category_lower:
-            return 'Pastry'
-        else:
-            return 'Other'
-    
-    # Update station colors for grouped categories
-    station_colors = {
-        'Hot Kitchen': "#f26556",
-        'Cold Sauce': "#7dbfea", 
-        'Fabrication': "#febc51",
-        'Pastry': "#ba85cf",
-        'Other': "#94abad"
-    }
-    
     # Display clean table
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
     st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
@@ -4853,10 +4852,10 @@ def render_subrecipe_details_page():
         # Create display dataframe with category badges and machine pills
         display_df = filtered_df.copy()
         
-    def create_category_badge(category):
-        grouped_category = group_category(category)
-        badge_color = station_colors.get(grouped_category, station_colors['Other'])
-        return f'<span class="category-badge" style="background-color: {badge_color};">{grouped_category}</span>'
+        def create_category_badge(category):
+            grouped_category = group_category(category)
+            badge_color = station_colors.get(grouped_category, station_colors['Other'])
+            return f'<span class="category-badge" style="background-color: {badge_color};">{grouped_category}</span>'
         
         def create_machine_pills(row):
             if 'machine_names' in row and 'machine_usage' in row:
@@ -4879,10 +4878,10 @@ def render_subrecipe_details_page():
         display_df['Category'] = display_df['Category'].apply(create_category_badge)
         display_df['Machines Used'] = display_df.apply(create_machine_pills, axis=1)
         
-        # Select and reorder columns for display - ALL REQUESTED COLUMNS
+        # Select and reorder columns for display - Category first
         column_order = [
             'Category',
-            'Item Name',  
+            'Item Name', 
             'Standard Yield (kg/batch)', 
             'Actual Yield (kg/batch)', 
             'Pack Qty',
@@ -4924,10 +4923,6 @@ def render_subrecipe_details_page():
         st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Show last modified time
-    if last_modified:
-        st.caption(f"Data last updated: {last_modified}")
 
 def main():
     """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
