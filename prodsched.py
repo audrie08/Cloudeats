@@ -4567,9 +4567,9 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with modern styling and separated containers"""
+    """Render the Subrecipe Details page with clean dataframe only"""
     
-    # Add modern CSS styling
+    # Add CSS for clean styling
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4606,44 +4606,6 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .main-container {
-        display: flex;
-        gap: 24px;
-        margin-top: 20px;
-    }
-    
-    .table-panel {
-        flex: 2;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-    }
-    
-    .side-panel {
-        flex: 1;
-        background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        backdrop-filter: blur(10px);
-        height: fit-content;
-        position: sticky;
-        top: 20px;
-    }
-    
-    .side-panel h3 {
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0 0 20px 0;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #f4d602;
-    }
-    
     .category-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -4659,20 +4621,30 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
     .table-header {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: white;
-        padding: 24px 30px;
-        font-size: 1.3rem;
-        font-weight: 700;
+        padding: 20px 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        text-align: center;
     }
     
     .scrollable-subrecipe-container {
-        max-height: 520px;
+        max-height: 600px;
         overflow-y: auto;
         overflow-x: auto;
+        border-radius: 10px;
+        margin: 0;
     }
     
     .subrecipe-table {
@@ -4685,103 +4657,42 @@ def render_subrecipe_details_page():
     }
     
     .subrecipe-table th {
-        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        background: #1e2323;
         color: #f4d602;
-        font-weight: 700;
-        padding: 16px 12px;
+        font-weight: bold;
+        padding: 12px 8px;
         text-align: center;
-        border-bottom: 3px solid #f4d602;
+        border-bottom: 2px solid #3b3f46;
         position: sticky;
         top: 0;
         z-index: 10;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
     
     .subrecipe-table td {
-        padding: 16px 12px;
-        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
         vertical-align: middle;
         text-align: center;
         font-weight: 500;
-        transition: all 0.2s ease;
     }
     
     .subrecipe-table tr:hover {
-        background: linear-gradient(90deg, rgba(244, 214, 2, 0.08) 0%, rgba(244, 214, 2, 0.12) 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(244, 214, 2, 0.15);
+        background-color: rgba(244, 214, 2, 0.1);
+        transition: background-color 0.2s ease;
+    }
+    
+    .subrecipe-table tr:last-child td {
+        border-bottom: none;
     }
     
     .subrecipe-table td:first-child {
         text-align: left;
         font-weight: 600;
         min-width: 200px;
-        color: #1e293b;
     }
     
-    .selected-item-card {
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        border-left: 4px solid #f4d602;
-    }
-    
-    .selected-item-name {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 8px;
-    }
-    
-    .machine-pill {
-        display: block;
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 13px;
-        margin: 8px 0;
-        font-weight: 600;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .machine-pill:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
-    }
-    
-    .no-selection {
-        text-align: center;
-        color: #64748b;
-        font-style: italic;
-        padding: 40px 20px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-    
-    .filter-dropdown {
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 8px 12px;
-        width: 100%;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        font-size: 14px;
-        transition: all 0.3s ease;
-    }
-    
-    .filter-dropdown:focus {
-        border-color: #f4d602;
-        box-shadow: 0 0 0 3px rgba(244, 214, 2, 0.1);
-        outline: none;
+    .subrecipe-table td:nth-child(2) {
+        min-width: 150px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4875,103 +4786,57 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    # Create two-panel layout with containers
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    # Display clean table
+    st.markdown('<div class="table-container">', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
     
-    # Left panel - Table
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown('<div class="table-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
+    if not filtered_df.empty:
+        # Create display dataframe with category badges
+        display_df = filtered_df.copy()
         
-        if not filtered_df.empty:
-            # Create display dataframe with category badges
-            display_df = filtered_df.copy()
-            
-            def create_category_badge(category):
-                badge_color = station_colors.get(category, station_colors['Unknown'])
-                return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
-            
-            display_df['Category'] = display_df['Category'].apply(create_category_badge)
-            
-            # Select and reorder columns for display
-            column_order = [
-                'Item Name', 'Category', 'Standard Yield (kg/batch)', 'Shelf Life (days)'
-            ]
-            display_df = display_df[column_order]
-            
-            # Format numeric columns
-            display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
-            display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
-            
-            # Render as clean HTML table
-            html_table = display_df.to_html(
-                escape=False, 
-                index=False, 
-                classes='subrecipe-table',
-                table_id='subrecipe-table'
-            )
-            
-            # Wrap table in scrollable container
-            scrollable_html = f"""
-            <div class="scrollable-subrecipe-container">
-                {html_table}
-            </div>
-            """
-            
-            st.markdown(scrollable_html, unsafe_allow_html=True)
-            
-            # Show count
-            st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
-        else:
-            st.warning("No items match the current filters.")
+        def create_category_badge(category):
+            badge_color = station_colors.get(category, station_colors['Unknown'])
+            return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
         
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col2:
-        # Right panel - Machines Used
-        st.markdown('<div class="side-panel">', unsafe_allow_html=True)
-        st.markdown('<h3>Machines Used</h3>', unsafe_allow_html=True)
+        display_df['Category'] = display_df['Category'].apply(create_category_badge)
         
-        # Item selection dropdown
-        if not filtered_df.empty:
-            item_options = ["Select an item..."] + [f"{row['Item Name']}" for _, row in filtered_df.iterrows()]
-            selected_item = st.selectbox("", item_options, key="side_panel_selector")
-            
-            if selected_item != "Select an item...":
-                # Find the selected row
-                selected_row = filtered_df[filtered_df['Item Name'] == selected_item].iloc[0]
-                
-                # Show selected item card
-                badge_color = station_colors.get(selected_row['Category'], station_colors['Unknown'])
-                st.markdown(f"""
-                <div class="selected-item-card">
-                    <div class="selected-item-name">{selected_row['Item Name']}</div>
-                    <span style='background: {badge_color}; color: white; padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600;'>{selected_row['Category']}</span>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Show ONLY machines that are used
-                if 'machine_names' in selected_row and 'machine_usage' in selected_row:
-                    used_machines = []
-                    for machine_name, is_used in zip(selected_row['machine_names'], selected_row['machine_usage']):
-                        if is_used:
-                            used_machines.append(machine_name)
-                    
-                    if used_machines:
-                        for machine in used_machines:
-                            st.markdown(f'<div class="machine-pill">{machine}</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="no-selection">No machines required</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown('<div class="no-selection">Machine data not available</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="no-selection">Select an item above to see machines used</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="no-selection">No items available</div>', unsafe_allow_html=True)
+        # Select and reorder columns for display
+        column_order = [
+            'Item Name', 'Category', 'Standard Yield (kg/batch)', 
+            'Actual Yield (kg/batch)', 'Pack Qty', 'Pack Size (kg/pack)', 
+            'Shelf Life (days)', 'Kg per Hr'
+        ]
+        display_df = display_df[column_order]
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Format numeric columns
+        display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
+        display_df['Actual Yield (kg/batch)'] = display_df['Actual Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
+        display_df['Pack Qty'] = display_df['Pack Qty'].apply(lambda x: f"{x:.0f}")
+        display_df['Pack Size (kg/pack)'] = display_df['Pack Size (kg/pack)'].apply(lambda x: f"{x:.2f} kg")
+        display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
+        display_df['Kg per Hr'] = display_df['Kg per Hr'].apply(lambda x: f"{x:.1f}")
+        
+        # Render as clean HTML table
+        html_table = display_df.to_html(
+            escape=False, 
+            index=False, 
+            classes='subrecipe-table',
+            table_id='subrecipe-table'
+        )
+        
+        # Wrap table in scrollable container
+        scrollable_html = f"""
+        <div class="scrollable-subrecipe-container">
+            {html_table}
+        </div>
+        """
+        
+        st.markdown(scrollable_html, unsafe_allow_html=True)
+        
+        # Show count
+        st.caption(f"Showing {len(display_df)} of {len(subrecipe_df)} items")
+    else:
+        st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
