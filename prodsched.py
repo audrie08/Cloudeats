@@ -4621,62 +4621,33 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .expandable-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        font-size: 14px;
+    .table-container {
         background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .expandable-table th {
-        background: #1e2323;
-        color: #f4d602;
-        font-weight: bold;
-        padding: 12px 8px;
-        text-align: center;
-        border-bottom: 2px solid #3b3f46;
-    }
-    
-    .expandable-table td {
-        padding: 12px 8px;
-        border-bottom: 1px solid #e0e0e0;
-        vertical-align: middle;
-        text-align: center;
-        font-weight: 500;
-    }
-    
-    .expandable-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    
-    .expandable-row:hover {
-        background-color: rgba(244, 214, 2, 0.1);
-    }
-    
-    .expand-icon {
-        margin-right: 8px;
-        transition: transform 0.2s;
-        font-size: 12px;
-        color: #666;
-    }
-    
-    .machine-details {
-        background: #f8fafc;
-        padding: 20px;
-        border-left: 4px solid #f4d602;
+    .table-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 20px 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
     .machine-badge {
         display: inline-block;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
         font-weight: 600;
-        margin: 3px;
+        margin: 2px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
     
     .machine-badge.used {
@@ -4688,44 +4659,7 @@ def render_subrecipe_details_page():
         background: #e5e7eb;
         color: #6b7280;
     }
-    
-    .table-container {
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e2e8f0;
-        max-height: 600px;
-        overflow-y: auto;
-    }
-    
-    .table-header {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        color: white;
-        padding: 20px 30px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
     </style>
-    
-    <script>
-    function toggleMachineDetails(rowId) {
-        const detailsRow = document.getElementById('details-' + rowId);
-        const icon = document.getElementById('icon-' + rowId);
-        
-        if (detailsRow.style.display === 'none' || !detailsRow.style.display) {
-            detailsRow.style.display = 'table-row';
-            icon.style.transform = 'rotate(90deg)';
-        } else {
-            detailsRow.style.display = 'none';
-            icon.style.transform = 'rotate(0deg)';
-        }
-    }
-    </script>
     """, unsafe_allow_html=True)
     
     st.markdown("""
@@ -4817,71 +4751,48 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    # Create expandable table HTML
+    # Display using Streamlit components instead of complex HTML
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<div class="table-header">Recipe Details (Click to expand machine usage)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-        table_html = """
-        <table class="expandable-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Category</th>
-                    <th>Item Name</th>
-                    <th>Standard Yield</th>
-                    <th>Actual Yield</th>
-                    <th>Pack Qty</th>
-                    <th>Shelf Life</th>
-                    <th>Kg per Hr</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
-        
         for idx, row in filtered_df.iterrows():
             # Create category badge
             badge_color = station_colors.get(row['Category'], station_colors['Unknown'])
             category_badge = f'<span class="category-badge" style="background-color: {badge_color};">{row["Category"]}</span>'
             
-            # Main row
-            table_html += f"""
-                <tr class="expandable-row" onclick="toggleMachineDetails({idx})">
-                    <td><span class="expand-icon" id="icon-{idx}">▶</span></td>
-                    <td>{category_badge}</td>
-                    <td style="text-align: left; font-weight: 600;">{row['Item Name']}</td>
-                    <td>{row['Standard Yield (kg/batch)']:.2f} kg</td>
-                    <td>{row['Actual Yield (kg/batch)']:.2f} kg</td>
-                    <td>{row['Pack Qty']:.0f}</td>
-                    <td>{row['Shelf Life (days)']:.0f} days</td>
-                    <td>{row['Kg per Hr']:.1f}</td>
-                </tr>
-            """
-            
-            # Machine details row
-            machine_badges = ""
-            if 'machine_names' in row and 'machine_usage' in row:
-                for machine_name, is_used in zip(row['machine_names'], row['machine_usage']):
-                    badge_class = "used" if is_used else "not-used"
-                    machine_badges += f'<span class="machine-badge {badge_class}">{machine_name}</span>'
-            
-            table_html += f"""
-                <tr id="details-{idx}" class="machine-details" style="display: none;">
-                    <td colspan="8">
-                        <div>
-                            <strong>Machine Requirements:</strong><br>
-                            {machine_badges}
-                        </div>
-                    </td>
-                </tr>
-            """
-        
-        table_html += """
-            </tbody>
-        </table>
-        """
-        
-        st.markdown(table_html, unsafe_allow_html=True)
+            # Create expandable section
+            with st.expander(f"{row['Item Name']} - {row['Category']}", expanded=False):
+                # Basic info in columns
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric("Standard Yield", f"{row['Standard Yield (kg/batch)']:.2f} kg")
+                    st.metric("Actual Yield", f"{row['Actual Yield (kg/batch)']:.2f} kg")
+                
+                with col2:
+                    st.metric("Pack Qty", f"{row['Pack Qty']:.0f}")
+                    st.metric("Pack Size", f"{row['Pack Size (kg/pack)']:.2f} kg")
+                
+                with col3:
+                    st.metric("Shelf Life", f"{row['Shelf Life (days)']:.0f} days")
+                    st.metric("Kg per Hr", f"{row['Kg per Hr']:.1f}")
+                
+                with col4:
+                    st.markdown(f"**Category:** {category_badge}", unsafe_allow_html=True)
+                
+                # Machine requirements
+                st.markdown("**Machine Requirements:**")
+                
+                if 'machine_names' in row and 'machine_usage' in row:
+                    machine_html = ""
+                    for machine_name, is_used in zip(row['machine_names'], row['machine_usage']):
+                        badge_class = "used" if is_used else "not-used"
+                        machine_html += f'<span class="machine-badge {badge_class}">{machine_name}</span>'
+                    
+                    st.markdown(machine_html, unsafe_allow_html=True)
+                else:
+                    st.write("No machine data available")
         
         # Show count
         st.caption(f"Showing {len(filtered_df)} of {len(subrecipe_df)} items")
@@ -4889,7 +4800,10 @@ def render_subrecipe_details_page():
         st.warning("No items match the current filters.")
     
     st.markdown('</div>', unsafe_allow_html=True)
-
+    
+    # Show last modified time
+    if last_modified:
+        st.caption(f"Data last updated: {last_modified}")
 
 def main():
     """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
