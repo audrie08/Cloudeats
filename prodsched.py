@@ -4718,6 +4718,28 @@ def render_subrecipe_details_page():
         white-space: nowrap;
         box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
+    .subrecipe-table th:nth-child(3),
+    .subrecipe-table th:nth-child(4),
+    .subrecipe-table th:nth-child(5),
+    .subrecipe-table th:nth-child(6),
+    .subrecipe-table th:nth-child(7),
+    .subrecipe-table th:nth-child(8),
+    .subrecipe-table td:nth-child(3),
+    .subrecipe-table td:nth-child(4),
+    .subrecipe-table td:nth-child(5),
+    .subrecipe-table td:nth-child(6),
+    .subrecipe-table td:nth-child(7),
+    .subrecipe-table td:nth-child(8) {
+        max-width: 90px;
+        min-width: 80px;
+    }
+    
+    /* Machines column - make it wider */
+    .subrecipe-table td:last-child,
+    .subrecipe-table th:last-child {
+        min-width: 350px;
+        max-width: 400px;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -4845,8 +4867,8 @@ def render_subrecipe_details_page():
         
         # Select and reorder columns for display - ALL REQUESTED COLUMNS
         column_order = [
-            'Item Name', 
-            'Category', 
+            'Category',
+            'Item Name',  
             'Standard Yield (kg/batch)', 
             'Actual Yield (kg/batch)', 
             'Pack Qty',
