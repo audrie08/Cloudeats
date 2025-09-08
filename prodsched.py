@@ -4567,7 +4567,7 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with row selection and machine details"""
+    """Render the Subrecipe Details page with modal popup functionality"""
     
     # Add CSS
     st.markdown("""
@@ -4606,18 +4606,40 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .machine-details-container {
-        background: #f8fafc;
-        border: 2px solid #f4d602;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 20px 0;
+    .category-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        color: white;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .info-button {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .machine-pill {
         display: inline-block;
-        background: #f4d602;
-        color: #1e293b;
+        background: #22c55e;
+        color: white;
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 11px;
@@ -4625,16 +4647,6 @@ def render_subrecipe_details_page():
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-    }
-    
-    .machine-pill.used {
-        background: #22c55e;
-        color: white;
-    }
-    
-    .machine-pill.not-used {
-        background: #64748b;
-        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4728,71 +4740,71 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    if not filtered_df.empty:
-        # Create display dataframe for table
-        display_df = filtered_df.copy()
+    # Modal function
+    @st.dialog("Machine Requirements")
+    def show_machine_modal(row_data):
+        st.markdown(f"### {row_data['Item Name']}")
         
-        # Format columns for display
-        display_columns = [
-            'Item Name',
-            'Category', 
-            'Standard Yield (kg/batch)',
-            'Shelf Life (days)'
-        ]
+        # Show item details
+        col1, col2 = st.columns(2)
+        with col1:
+            badge_color = station_colors.get(row_data['Category'], station_colors['Unknown'])
+            st.markdown(f"**Category:** <span style='background: {badge_color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;'>{row_data['Category']}</span>", unsafe_allow_html=True)
+            st.markdown(f"**Standard Yield:** {row_data['Standard Yield (kg/batch)']:.2f} kg")
+            st.markdown(f"**Actual Yield:** {row_data['Actual Yield (kg/batch)']:.2f} kg")
         
-        table_df = display_df[display_columns].copy()
-        table_df['Standard Yield (kg/batch)'] = table_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
-        table_df['Shelf Life (days)'] = table_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
+        with col2:
+            st.markdown(f"**Pack Qty:** {row_data['Pack Qty']:.0f}")
+            st.markdown(f"**Shelf Life:** {row_data['Shelf Life (days)']:.0f} days")
+            st.markdown(f"**Kg per Hr:** {row_data['Kg per Hr']:.1f}")
         
-        # Display the dataframe with selection
-        st.markdown("### Recipe Details")
-        st.markdown("*Click on a row to see machine requirements below*")
+        st.markdown("---")
+        st.markdown("### Machines Used:")
         
-        event = st.dataframe(
-            table_df,
-            use_container_width=True,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single-row",
-            column_config={
-                "Item Name": st.column_config.TextColumn("Item Name", width="medium"),
-                "Category": st.column_config.TextColumn("Category", width="medium"),
-                "Standard Yield (kg/batch)": st.column_config.TextColumn("Standard Yield", width="small"),
-                "Shelf Life (days)": st.column_config.TextColumn("Shelf Life", width="small")
-            }
-        )
-        
-        # Show machine details if a row is selected
-        if len(event.selection["rows"]) > 0:
-            selected_idx = event.selection["rows"][0]
-            selected_row = filtered_df.iloc[selected_idx]
+        # Show machine requirements
+        if 'machine_names' in row_data and 'machine_usage' in row_data:
+            used_machines = []
+            for machine_name, is_used in zip(row_data['machine_names'], row_data['machine_usage']):
+                if is_used:
+                    used_machines.append(machine_name)
             
-            st.markdown('<div class="machine-details-container">', unsafe_allow_html=True)
-            st.markdown(f"### Machine Requirements for: {selected_row['Item Name']}")
-            
-            # Show category badge
-            badge_color = station_colors.get(selected_row['Category'], station_colors['Unknown'])
-            st.markdown(f"**Category:** <span style='background: {badge_color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;'>{selected_row['Category']}</span>", unsafe_allow_html=True)
-            
-            # Show only machines that are used
-            if 'machine_names' in selected_row and 'machine_usage' in selected_row:
-                used_machines = []
-                for machine_name, is_used in zip(selected_row['machine_names'], selected_row['machine_usage']):
-                    if is_used:
-                        used_machines.append(machine_name)
-                
-                if used_machines:
-                    st.markdown("**Machines Used:**")
-                    machine_html = ""
-                    for machine in used_machines:
-                        machine_html += f'<span class="machine-pill used">{machine}</span>'
-                    st.markdown(machine_html, unsafe_allow_html=True)
-                else:
-                    st.markdown("**No machines required for this item**")
+            if used_machines:
+                machine_html = ""
+                for machine in used_machines:
+                    machine_html += f'<span class="machine-pill">{machine}</span>'
+                st.markdown(machine_html, unsafe_allow_html=True)
             else:
-                st.markdown("**Machine data not available**")
+                st.markdown("**No machines required for this item**")
+        else:
+            st.markdown("**Machine data not available**")
+    
+    # Display table with info buttons
+    if not filtered_df.empty:
+        st.markdown("### Recipe Details")
+        st.markdown("*Click the info button (i) to see machine requirements*")
+        
+        # Create table data with info buttons
+        for idx, row in filtered_df.iterrows():
+            col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 1])
             
-            st.markdown('</div>', unsafe_allow_html=True)
+            with col1:
+                st.write(row['Item Name'])
+            
+            with col2:
+                badge_color = station_colors.get(row['Category'], station_colors['Unknown'])
+                st.markdown(f"<span style='background: {badge_color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;'>{row['Category']}</span>", unsafe_allow_html=True)
+            
+            with col3:
+                st.write(f"{row['Standard Yield (kg/batch)']:.2f} kg")
+            
+            with col4:
+                st.write(f"{row['Shelf Life (days)']:.0f} days")
+            
+            with col5:
+                if st.button("ℹ️", key=f"info_{idx}", help="Show machine details"):
+                    show_machine_modal(row)
+            
+            st.divider()
         
         # Show count
         st.caption(f"Showing {len(filtered_df)} of {len(subrecipe_df)} items")
