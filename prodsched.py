@@ -4553,8 +4553,8 @@ def render_subrecipe_details_page():
     # Extract and display dataframe
     extractor = SubrecipeDataExtractor(df_subrecipe)
     subrecipe_df = extractor.get_subrecipe_dataframe()
-    
-    st.dataframe(subrecipe_df, use_container_width=True)
+        
+    st.dataframe(subrecipe_df, width="stretch")
 
 
 def main():
