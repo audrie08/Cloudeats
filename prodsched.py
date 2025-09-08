@@ -4567,9 +4567,9 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with side panel functionality"""
+    """Render the Subrecipe Details page with minimal side panel"""
     
-    # Add CSS for side panel layout
+    # Add CSS for clean minimal styling
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4695,58 +4695,18 @@ def render_subrecipe_details_page():
         min-width: 150px;
     }
     
-    .side-panel {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 20px;
-        height: fit-content;
-        font-family: 'TT Norms', 'Segoe UI', sans-serif;
-    }
-    
-    .panel-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 15px;
-        color: #1e293b;
-    }
-    
-    .selected-item {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border-left: 4px solid #f4d602;
-    }
-    
-    .machine-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-    
-    .machine-item {
-        display: flex;
-        align-items: center;
-        padding: 8px;
-        background: white;
-        border-radius: 6px;
-        font-size: 12px;
-    }
-    
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 8px;
-    }
-    
-    .status-dot.active {
+    .machine-pill {
+        display: inline-block;
         background: #22c55e;
-    }
-    
-    .status-dot.inactive {
-        background: #e5e7eb;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 12px;
+        margin: 6px 0;
+        font-weight: 600;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4893,14 +4853,13 @@ def render_subrecipe_details_page():
         st.markdown('</div>', unsafe_allow_html=True)
     
     with side_col:
-        # Side panel
-        st.markdown('<div class="side-panel">', unsafe_allow_html=True)
-        st.markdown('<div class="panel-title">Machine Requirements</div>', unsafe_allow_html=True)
+        # Minimal side panel
+        st.markdown("### Machine Requirements")
         
         # Item selection for side panel
         if not filtered_df.empty:
             item_options = ["Select an item..."] + [f"{row['Item Name']}" for _, row in filtered_df.iterrows()]
-            selected_item = st.selectbox("", item_options, key="side_panel_selector")
+            selected_item = st.selectbox("Choose item:", item_options, key="side_panel_selector")
             
             if selected_item != "Select an item...":
                 # Find the selected row
@@ -4908,41 +4867,30 @@ def render_subrecipe_details_page():
                 
                 # Show selected item info
                 badge_color = station_colors.get(selected_row['Category'], station_colors['Unknown'])
-                st.markdown(f"""
-                <div class="selected-item">
-                    <strong>{selected_row['Item Name']}</strong><br>
-                    <span style='background: {badge_color}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;'>{selected_row['Category']}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"**{selected_row['Item Name']}**")
+                st.markdown(f"<span style='background: {badge_color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;'>{selected_row['Category']}</span>", unsafe_allow_html=True)
                 
-                # Show machine grid
+                st.markdown("---")
+                
+                # Show ONLY machines that are used
                 if 'machine_names' in selected_row and 'machine_usage' in selected_row:
-                    machine_html = '<div class="machine-grid">'
-                    
+                    used_machines = []
                     for machine_name, is_used in zip(selected_row['machine_names'], selected_row['machine_usage']):
-                        status_class = "active" if is_used else "inactive"
-                        machine_html += f'''
-                        <div class="machine-item">
-                            <span class="status-dot {status_class}"></span>
-                            <span>{machine_name}</span>
-                        </div>
-                        '''
+                        if is_used:  # Only add machines that are actually used
+                            used_machines.append(machine_name)
                     
-                    machine_html += '</div>'
-                    st.markdown(machine_html, unsafe_allow_html=True)
+                    if used_machines:
+                        st.markdown("**Machines Used:**")
+                        for machine in used_machines:
+                            st.markdown(f'<div class="machine-pill">{machine}</div>', unsafe_allow_html=True)
+                    else:
+                        st.info("No machines required")
                 else:
-                    st.markdown("**Machine data not available**")
+                    st.warning("Machine data not available")
             else:
-                st.markdown("""
-                <div class="selected-item">
-                    <strong>No item selected</strong><br>
-                    <small>Choose an item from the dropdown above</small>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("Select an item to see machine requirements")
         else:
-            st.markdown("**No items available**")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.warning("No items available")
     
     # Show last modified time
     if last_modified:
