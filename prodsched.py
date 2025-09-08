@@ -4567,9 +4567,9 @@ class SubrecipeDataExtractor:
         return pd.DataFrame(subrecipe_data)
 
 def render_subrecipe_details_page():
-    """Render the Subrecipe Details page with expandable rows"""
+    """Render the Subrecipe Details page with expandable table rows"""
     
-    # Add CSS for expandable rows
+    # Add CSS for expandable table
     st.markdown("""
     <style>
     .subrecipe-header {
@@ -4639,25 +4639,15 @@ def render_subrecipe_details_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
-    .machine-badge {
+    .machine-pill {
         display: inline-block;
+        background: #22c55e;
+        color: white;
         padding: 4px 8px;
         border-radius: 12px;
         font-size: 10px;
-        font-weight: 600;
         margin: 2px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    
-    .machine-badge.used {
-        background: #22c55e;
-        color: white;
-    }
-    
-    .machine-badge.not-used {
-        background: #e5e7eb;
-        color: #6b7280;
+        font-weight: 600;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4751,48 +4741,75 @@ def render_subrecipe_details_page():
         'Unknown': "#94abad"
     }
     
-    # Display using Streamlit components instead of complex HTML
+    # Display table with machine details
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
     st.markdown('<div class="table-header">Recipe Details</div>', unsafe_allow_html=True)
     
     if not filtered_df.empty:
-        for idx, row in filtered_df.iterrows():
-            # Create category badge
-            badge_color = station_colors.get(row['Category'], station_colors['Unknown'])
-            category_badge = f'<span class="category-badge" style="background-color: {badge_color};">{row["Category"]}</span>'
+        # Create the display dataframe for the main table
+        display_df = filtered_df.copy()
+        
+        # Add category badges
+        def create_category_badge(category):
+            badge_color = station_colors.get(category, station_colors['Unknown'])
+            return f'<span class="category-badge" style="background-color: {badge_color};">{category}</span>'
+        
+        display_df['Category'] = display_df['Category'].apply(create_category_badge)
+        
+        # Select columns for main table display
+        main_columns = [
+            'Item Name', 'Category', 'Standard Yield (kg/batch)', 'Shelf Life (days)'
+        ]
+        
+        # Show main table
+        main_display_df = display_df[main_columns].copy()
+        
+        # Add click functionality using streamlit-aggrid or simple dataframe with selection
+        if 'selected_row' not in st.session_state:
+            st.session_state.selected_row = None
+        
+        # Display main table
+        st.markdown(
+            main_display_df.to_html(escape=False, index=False),
+            unsafe_allow_html=True
+        )
+        
+        # Row selection using buttons
+        st.markdown("**Click on an item to see machine requirements:**")
+        
+        cols = st.columns(min(len(filtered_df), 4))  # Max 4 columns
+        
+        for idx, (_, row) in enumerate(filtered_df.iterrows()):
+            col_idx = idx % 4
+            with cols[col_idx]:
+                if st.button(f"▶ {row['Item Name']}", key=f"btn_{idx}"):
+                    st.session_state.selected_row = idx
+        
+        # Show machine details for selected row
+        if st.session_state.selected_row is not None and st.session_state.selected_row < len(filtered_df):
+            selected_idx = st.session_state.selected_row
+            selected_row = filtered_df.iloc[selected_idx]
             
-            # Create expandable section
-            with st.expander(f"{row['Item Name']} - {row['Category']}", expanded=False):
-                # Basic info in columns
-                col1, col2, col3, col4 = st.columns(4)
+            st.markdown("---")
+            st.markdown(f"**Machine Requirements for: {selected_row['Item Name']}**")
+            
+            # Show only machines that are used (value = 1)
+            if 'machine_names' in selected_row and 'machine_usage' in selected_row:
+                used_machines = []
+                for machine_name, is_used in zip(selected_row['machine_names'], selected_row['machine_usage']):
+                    if is_used:  # Only show machines that are used
+                        used_machines.append(machine_name)
                 
-                with col1:
-                    st.metric("Standard Yield", f"{row['Standard Yield (kg/batch)']:.2f} kg")
-                    st.metric("Actual Yield", f"{row['Actual Yield (kg/batch)']:.2f} kg")
-                
-                with col2:
-                    st.metric("Pack Qty", f"{row['Pack Qty']:.0f}")
-                    st.metric("Pack Size", f"{row['Pack Size (kg/pack)']:.2f} kg")
-                
-                with col3:
-                    st.metric("Shelf Life", f"{row['Shelf Life (days)']:.0f} days")
-                    st.metric("Kg per Hr", f"{row['Kg per Hr']:.1f}")
-                
-                with col4:
-                    st.markdown(f"**Category:** {category_badge}", unsafe_allow_html=True)
-                
-                # Machine requirements
-                st.markdown("**Machine Requirements:**")
-                
-                if 'machine_names' in row and 'machine_usage' in row:
-                    machine_html = ""
-                    for machine_name, is_used in zip(row['machine_names'], row['machine_usage']):
-                        badge_class = "used" if is_used else "not-used"
-                        machine_html += f'<span class="machine-badge {badge_class}">{machine_name}</span>'
+                if used_machines:
+                    machine_pills = ""
+                    for machine in used_machines:
+                        machine_pills += f'<span class="machine-pill">{machine}</span>'
                     
-                    st.markdown(machine_html, unsafe_allow_html=True)
+                    st.markdown(machine_pills, unsafe_allow_html=True)
                 else:
-                    st.write("No machine data available")
+                    st.write("No machines required for this item")
+            else:
+                st.write("Machine data not available")
         
         # Show count
         st.caption(f"Showing {len(filtered_df)} of {len(subrecipe_df)} items")
