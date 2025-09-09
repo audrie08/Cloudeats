@@ -4,7 +4,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from oauth2client.service_account import ServiceAccountCredentials
 from streamlit_gsheets import GSheetsConnection
-from streamlit_option_menu import option_menuz
+from streamlit_option_menu import option_menu
 from google.oauth2.service_account import Credentials
 import plotly.express as px
 import plotly.graph_objects as go
