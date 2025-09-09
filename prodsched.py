@@ -4,7 +4,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from oauth2client.service_account import ServiceAccountCredentials
 from streamlit_gsheets import GSheetsConnection
-from streamlit_option_menu import option_menu
+from streamlit_option_menu import option_menuz
 from google.oauth2.service_account import Credentials
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1090,7 +1090,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
             "Attendance": (9, "percentage"),
             "Overtime": (10, "percentage"),
             "Labor cost per kilo (₱)": (11, "currency"),
-            "Availability": (12, "percentage"),
+            "Machine Availability": (12, "percentage"),
             "Efficiency": (13, "percentage"),
             "Quality": (14, "percentage"),
             "OEE": (15, "percentage"),
@@ -1282,7 +1282,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
             "Attendance": (9, "percentage"),
             "Overtime": (10, "percentage"),
             "Labor cost per kilo (₱)": (11, "currency"),
-            "Availability": (12, "percentage"),
+            "Machine Availability": (12, "percentage"),
             "Efficiency": (13, "percentage"),
             "Quality": (14, "percentage"),
             "OEE": (15, "percentage"),
@@ -1484,7 +1484,7 @@ def create_kpi_scatter_chart(kpi_data, week_column):
             "Attendance": (9, "percentage"),
             "Overtime": (10, "percentage"),
             "Labor cost per kilo (₱)": (11, "currency"),
-            "Availability": (12, "percentage"),
+            "Machine Availability": (12, "percentage"),
             "Efficiency": (13, "percentage"),
             "Quality": (14, "percentage"),
             "OEE": (15, "percentage"),
@@ -1727,13 +1727,13 @@ def display_kpi_dashboard():
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
             font-family: 'Segoe UI', sans-serif;
-            text-align: left;
+            text-align: center;
         }
         
         .kpi-card::before {
@@ -1944,7 +1944,7 @@ def display_kpi_dashboard():
              target_row.iloc[7] if len(target_row) > 7 else '', "percentage"),
             ("Yield", week_row.iloc[8] if len(week_row) > 8 else '', 
              target_row.iloc[8] if len(target_row) > 8 else '', "percentage"),
-            ("Availability", week_row.iloc[12] if len(week_row) > 12 else '', 
+            ("Machine Availability", week_row.iloc[12] if len(week_row) > 12 else '', 
              target_row.iloc[12] if len(target_row) > 12 else '', "percentage"),
             ("Efficiency", week_row.iloc[13] if len(week_row) > 13 else '', 
              target_row.iloc[13] if len(target_row) > 13 else '', "percentage"),
@@ -4565,7 +4565,7 @@ class SubrecipeDataExtractor:
                         'Pack Qty': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_qty'])),
                         'Pack Size (kg/pack)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_size'])),
                         'Shelf Life (days)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['shelf_life'])),
-                        'Kg per Hr': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['kg_per_hr'])),
+                        'Kg per ManHr': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['kg_per_hr'])),
                         'machine_usage': machine_usage,  # Store machine usage array
                         'machine_names': machine_names   # Store machine names
                     })
@@ -4816,7 +4816,7 @@ def render_subrecipe_details_page():
             "Actual Yield (kg/batch)",
             "Pack Qty",
             "Shelf Life (days)",
-            "Kg per Hr"
+            "Kg per ManHr"
         ]
         sort_by = st.selectbox(
             "Sort By",
@@ -4893,7 +4893,7 @@ def render_subrecipe_details_page():
             'Pack Qty',
             'Pack Size (kg/pack)', 
             'Shelf Life (days)', 
-            'Kg per Hr',
+            'Kg per ManHr',
             'Machines Used'
         ]
         display_df = display_df[column_order]
@@ -4904,7 +4904,7 @@ def render_subrecipe_details_page():
         display_df['Pack Qty'] = display_df['Pack Qty'].apply(lambda x: f"{x:.0f}")
         display_df['Pack Size (kg/pack)'] = display_df['Pack Size (kg/pack)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
-        display_df['Kg per Hr'] = display_df['Kg per Hr'].apply(lambda x: f"{x:.1f}")
+        display_df['Kg per ManHr'] = display_df['Kg per ManHr'].apply(lambda x: f"{x:.1f}")
         
         # Render as clean HTML table
         html_table = display_df.to_html(
