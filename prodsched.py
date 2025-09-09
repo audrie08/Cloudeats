@@ -4561,7 +4561,6 @@ class SubrecipeDataExtractor:
                         'Item Name': item_name,
                         'Category': safe_value(SUBRECIPE_COLUMNS['category']),
                         'Standard Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['standard_yield'])),
-                        'Actual Yield (kg/batch)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['actual_yield'])),
                         'Pack Qty': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_qty'])),
                         'Pack Size (kg/pack)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['pack_size'])),
                         'Shelf Life (days)': safe_float_convert(safe_value(SUBRECIPE_COLUMNS['shelf_life'])),
@@ -4813,7 +4812,6 @@ def render_subrecipe_details_page():
         sort_options = [
             "Item Name",
             "Standard Yield (kg/batch)",
-            "Actual Yield (kg/batch)",
             "Pack Qty",
             "Shelf Life (days)",
             "Kg per ManHr"
@@ -4889,7 +4887,6 @@ def render_subrecipe_details_page():
             'Category',
             'Item Name', 
             'Standard Yield (kg/batch)', 
-            'Actual Yield (kg/batch)', 
             'Pack Qty',
             'Pack Size (kg/pack)', 
             'Shelf Life (days)', 
@@ -4900,7 +4897,6 @@ def render_subrecipe_details_page():
         
         # Format numeric columns
         display_df['Standard Yield (kg/batch)'] = display_df['Standard Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
-        display_df['Actual Yield (kg/batch)'] = display_df['Actual Yield (kg/batch)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Pack Qty'] = display_df['Pack Qty'].apply(lambda x: f"{x:.0f}")
         display_df['Pack Size (kg/pack)'] = display_df['Pack Size (kg/pack)'].apply(lambda x: f"{x:.2f} kg")
         display_df['Shelf Life (days)'] = display_df['Shelf Life (days)'].apply(lambda x: f"{x:.0f} days")
