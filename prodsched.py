@@ -771,6 +771,8 @@ def format_kpi_value(value, kpi_type):
             return f"{num_value:.2f}%"
         elif kpi_type in ['currency', 'labor_cost']:
             return f"₱{num_value:,.2f}"
+        elif kpi_type == 'volume':  # Special handling for volume
+            return f"{num_value:,.2f}"
         elif kpi_type in ['count', 'manpower']:
             return f"{int(num_value):,}"
         else:
@@ -1802,12 +1804,12 @@ def display_kpi_dashboard():
         big_kpis = [
             ("Volume", week_row.iloc[2] if len(week_row) > 2 else '', 
              target_row.iloc[2] if len(target_row) > 2 else '', "count"),
+            ("Spoilage vs Revenue", week_row.iloc[21] if len(week_row) > 21 else '', 
+             target_row.iloc[21] if len(target_row) > 21 else '', "percentage"),
             ("Capacity Utilization", week_row.iloc[4] if len(week_row) > 4 else '', 
              target_row.iloc[4] if len(target_row) > 4 else '', "percentage"),
             ("Overall Equipment Effectiveness", week_row.iloc[15] if len(week_row) > 15 else '', 
              target_row.iloc[15] if len(target_row) > 15 else '', "percentage"),
-            ("Spoilage vs Revenue", week_row.iloc[21] if len(week_row) > 21 else '', 
-             target_row.iloc[21] if len(target_row) > 21 else '', "percentage"),
         ]
         
         for i, (title, value, target, kpi_type) in enumerate(big_kpis):
