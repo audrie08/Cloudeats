@@ -1806,10 +1806,10 @@ def display_kpi_dashboard():
              target_row.iloc[2] if len(target_row) > 2 else '', "volume"),
             ("Spoilage vs Revenue", week_row.iloc[21] if len(week_row) > 21 else '', 
              target_row.iloc[21] if len(target_row) > 21 else '', "percentage"),
-            ("Capacity Utilization", week_row.iloc[4] if len(week_row) > 4 else '', 
-             target_row.iloc[4] if len(target_row) > 4 else '', "percentage"),
             ("Overall Equipment Effectiveness", week_row.iloc[15] if len(week_row) > 15 else '', 
              target_row.iloc[15] if len(target_row) > 15 else '', "percentage"),
+            ("Capacity Utilization", week_row.iloc[4] if len(week_row) > 4 else '', 
+             target_row.iloc[4] if len(target_row) > 4 else '', "percentage"),
         ]
         
         for i, (title, value, target, kpi_type) in enumerate(big_kpis):
