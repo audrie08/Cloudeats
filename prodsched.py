@@ -1089,7 +1089,7 @@ def create_multi_kpi_chart(kpi_data, week_column):
         # Define KPI mappings (display name -> column index, format type)
         kpi_mappings = {
             "Volume": (2, "count"),
-            "Production Plan Performance": (3, "percentage"),
+            "Prod Plan Performance": (3, "percentage"),
             "Capacity Utilization": (4, "percentage"),
             "Production Plan Compliance": (5, "percentage"),
             "Spoilage": (6, "percentage"),
@@ -1288,7 +1288,7 @@ def create_kpi_scatter_chart(kpi_data, week_column):
         # Define KPI mappings (display name -> column index, format type)
         kpi_mappings = {
             "Volume": (2, "count"),
-            "Production Plan Performance": (3, "percentage"),
+            "Prod Plan Performance": (3, "percentage"),
             "Capacity Utilization": (4, "percentage"),
             "Production Plan Compliance": (5, "percentage"),
             "Spoilage": (6, "percentage"),
@@ -1751,7 +1751,7 @@ def display_kpi_dashboard():
         cols = st.columns(6)
         
         kpi_metrics = [
-            ("Production Plan Performance", week_row.iloc[3] if len(week_row) > 3 else '', 
+            ("Prod Plan Performance", week_row.iloc[3] if len(week_row) > 3 else '', 
              target_row.iloc[3] if len(target_row) > 3 else '', "percentage"),
             ("Variance", week_row.iloc[7] if len(week_row) > 7 else '', 
              target_row.iloc[7] if len(target_row) > 7 else '', "percentage"),
