@@ -3567,11 +3567,6 @@ def summary_page():
         st.info("Please check your spreadsheet connection and data format.")
 
     # Create Trend Analysis section - MOVED HERE (INSIDE SUCCESS BLOCK)
-    st.markdown("""
-    <div style="text-align: center; margin: 30px 0 20px 0;">
-        <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
-    </div>
-    """, unsafe_allow_html=True)
     
     # Prepare data for line graphs
     graph_data = prepare_graph_data(df)
