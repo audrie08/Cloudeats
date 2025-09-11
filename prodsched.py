@@ -3576,13 +3576,6 @@ def summary_page():
         all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
         available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
         
-        # Center the KPI selection
-        st.markdown("""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
         # Create centered selectbox for KPI selection
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
