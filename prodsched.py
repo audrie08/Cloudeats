@@ -3444,45 +3444,6 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # Create Trend Analysis section
-        st.markdown("""
-        <div style="text-align: center; margin: 30px 0 20px 0;">
-            <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Prepare data for line graphs
-        graph_data = prepare_graph_data(df)
-        
-        if graph_data is not None and not graph_data.empty:
-            # Create filter for KPI selection - styled like the image
-            all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
-            available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
-            
-            # Center the KPI selection
-            st.markdown("""
-            <div style="text-align: center; margin-bottom: 20px;">
-                <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Create centered selectbox for KPI selection
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                selected_kpi = st.selectbox(
-                    label="",  # Hide label since we have custom text above
-                    options=available_metrics,
-                    index=1 if len(available_metrics) > 1 else 0,  # Default to Volume
-                    key="kpi_selector"
-                )
-            
-            if selected_kpi:
-                # Create single metric trend graph
-                fig = create_single_kpi_trend_graph(graph_data, selected_kpi)
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Please select a KPI to display the trend.")
-        
         # Display main data table
         st.subheader("📋 Weekly Production Data")
         
@@ -3605,6 +3566,45 @@ def summary_page():
         st.error("❌ Failed to load data from the spreadsheet.")
         st.info("Please check your spreadsheet connection and data format.")
 
+        # Create Trend Analysis section
+        st.markdown("""
+        <div style="text-align: center; margin: 30px 0 20px 0;">
+            <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Prepare data for line graphs
+        graph_data = prepare_graph_data(df)
+        
+        if graph_data is not None and not graph_data.empty:
+            # Create filter for KPI selection - styled like the image
+            all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
+            available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
+            
+            # Center the KPI selection
+            st.markdown("""
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Create centered selectbox for KPI selection
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                selected_kpi = st.selectbox(
+                    label="",  # Hide label since we have custom text above
+                    options=available_metrics,
+                    index=1 if len(available_metrics) > 1 else 0,  # Default to Volume
+                    key="kpi_selector"
+                )
+            
+            if selected_kpi:
+                # Create single metric trend graph
+                fig = create_single_kpi_trend_graph(graph_data, selected_kpi)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Please select a KPI to display the trend.")
+
 
 def prepare_graph_data(df):
     """Prepare data for line graphs from the DataFrame"""
@@ -3680,13 +3680,16 @@ def create_single_kpi_trend_graph(graph_data, selected_kpi):
     ))
     
     # Determine y-axis title based on KPI type
-    y_axis_title = selected_kpi
-    if selected_kpi in ['%OT', 'Capacity Utilization']:
-        y_axis_title = selected_kpi
+    if selected_kpi == 'Batches':
+        y_axis_title = "Batches"
+    elif selected_kpi == 'Volume':
+        y_axis_title = "Volume (kgs)"
     elif selected_kpi in ['Total Run Mhrs', 'Total OT Manhrs']:
-        y_axis_title = selected_kpi
+        y_axis_title = "Hours (Mhrs)"
     elif selected_kpi == 'Total Manpower Required':
-        y_axis_title = selected_kpi
+        y_axis_title = "Manpower Count"
+    elif selected_kpi in ['%OT', 'Capacity Utilization']:
+        y_axis_title = "Percentage (%)"
     else:
         y_axis_title = selected_kpi
     
