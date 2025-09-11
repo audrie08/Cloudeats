@@ -3636,109 +3636,90 @@ def prepare_graph_data(df):
         return None
 
 
-def create_unified_metrics_graph(graph_data, selected_metrics):
-    """Create unified line graph for all selected production metrics with dual y-axis"""
-    # Filter for selected metrics
-    filtered_data = graph_data[graph_data['Category'].isin(selected_metrics)]
+def create_single_kpi_trend_graph(graph_data, selected_kpi):
+    """Create single KPI trend graph similar to the reference image"""
+    # Filter for selected KPI
+    kpi_data = graph_data[graph_data['Category'] == selected_kpi]
     
-    if filtered_data.empty:
-        st.warning("No data found for selected metrics")
+    if kpi_data.empty:
+        st.warning(f"No data found for {selected_kpi}")
         return go.Figure()
     
-    # Create subplots with secondary y-axis
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    # Sort by date to ensure proper line connection
+    kpi_data = kpi_data.sort_values('Date')
     
-    # Define color palette
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2']
+    fig = go.Figure()
     
-    # Define which metrics go on which axis
-    primary_axis_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total OT Manhrs']
-    secondary_axis_metrics = ['Total Manpower Required', '%OT', 'Capacity Utilization']
+    # Add the trend line with markers - orange color like the reference
+    fig.add_trace(go.Scatter(
+        x=kpi_data['Date'],
+        y=kpi_data['Value'],
+        mode='lines+markers',
+        name=selected_kpi,
+        line=dict(color='#FF8C00', width=3),  # Orange color
+        marker=dict(
+            size=8, 
+            color='#FF8C00',
+            line=dict(color='white', width=1)
+        ),
+        hovertemplate=f'<b>{selected_kpi}</b><br>Date: %{{x}}<br>Value: %{{y:,.1f}}<extra></extra>'
+    ))
     
-    color_index = 0
+    # Determine y-axis title based on KPI type
+    y_axis_title = selected_kpi
+    if selected_kpi in ['%OT', 'Capacity Utilization']:
+        y_axis_title = selected_kpi
+    elif selected_kpi in ['Total Run Mhrs', 'Total OT Manhrs']:
+        y_axis_title = selected_kpi
+    elif selected_kpi == 'Total Manpower Required':
+        y_axis_title = selected_kpi
+    else:
+        y_axis_title = selected_kpi
     
-    # Add traces for primary y-axis metrics
-    for metric in selected_metrics:
-        if metric in primary_axis_metrics:
-            metric_data = filtered_data[filtered_data['Category'] == metric]
-            if not metric_data.empty:
-                # Determine line style
-                line_style = 'solid'
-                if metric in ['Total OT Manhrs']:
-                    line_style = 'dash'
-                
-                fig.add_trace(go.Scatter(
-                    x=metric_data['Date'],
-                    y=metric_data['Value'],
-                    mode='lines+markers',
-                    name=metric,
-                    line=dict(color=colors[color_index % len(colors)], width=3, dash=line_style),
-                    marker=dict(size=8, color=colors[color_index % len(colors)]),
-                    hovertemplate=f'<b>{metric}</b><br>Date: %{{x}}<br>Value: %{{y:,.1f}}<extra></extra>'
-                ), secondary_y=False)
-                color_index += 1
-    
-    # Add traces for secondary y-axis metrics
-    for metric in selected_metrics:
-        if metric in secondary_axis_metrics:
-            metric_data = filtered_data[filtered_data['Category'] == metric]
-            if not metric_data.empty:
-                # Determine line style and hover format
-                line_style = 'solid'
-                hover_format = 'Value: %{y:,.1f}'
-                
-                if metric in ['%OT', 'Capacity Utilization']:
-                    line_style = 'dot'
-                    hover_format = 'Value: %{y:.1f}%'
-                elif metric == 'Total Manpower Required':
-                    line_style = 'dashdot'
-                    hover_format = 'Count: %{y:,.0f}'
-                
-                fig.add_trace(go.Scatter(
-                    x=metric_data['Date'],
-                    y=metric_data['Value'],
-                    mode='lines+markers',
-                    name=metric,
-                    line=dict(color=colors[color_index % len(colors)], width=3, dash=line_style),
-                    marker=dict(size=8, color=colors[color_index % len(colors)]),
-                    hovertemplate=f'<b>{metric}</b><br>Date: %{{x}}<br>{hover_format}<extra></extra>'
-                ), secondary_y=True)
-                color_index += 1
-    
-    # Update layout
+    # Update layout to match the reference style
     fig.update_layout(
         title=dict(
-            text="Production Metrics Daily Trends",
-            font=dict(size=22, family="Arial Black"),
-            x=0.5
-        ),
-        hovermode='x unified',
-        template='plotly_white',
-        height=500,
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
+            text=f"{selected_kpi} Trend",
+            font=dict(size=20, family="Arial", color="#333"),
             x=0.5,
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor="rgba(0,0,0,0.2)",
-            borderwidth=1
+            y=0.95
         ),
-        margin=dict(t=80, b=50, l=60, r=60)
+        xaxis=dict(
+            title="Week",
+            title_font=dict(size=14, color="#666"),
+            tickfont=dict(size=12, color="#666"),
+            gridcolor='rgba(200,200,200,0.3)',
+            showgrid=True
+        ),
+        yaxis=dict(
+            title=y_axis_title,
+            title_font=dict(size=14, color="#666"),
+            tickfont=dict(size=12, color="#666"),
+            gridcolor='rgba(200,200,200,0.3)',
+            showgrid=True
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        height=400,
+        showlegend=False,  # Hide legend for single line
+        margin=dict(t=60, b=60, l=60, r=60),
+        hovermode='x'
     )
     
-    # Update y-axes titles based on what metrics are selected
-    primary_metrics_present = any(metric in primary_axis_metrics for metric in selected_metrics)
-    secondary_metrics_present = any(metric in secondary_axis_metrics for metric in selected_metrics)
+    # Style the axes to match reference
+    fig.update_xaxes(
+        showline=True,
+        linewidth=1,
+        linecolor='rgba(200,200,200,0.5)',
+        mirror=True
+    )
     
-    if primary_metrics_present:
-        fig.update_yaxes(title_text="Count / Hours / Volume", secondary_y=False)
-    if secondary_metrics_present:
-        fig.update_yaxes(title_text="Manpower Count / Percentage (%)", secondary_y=True)
-    
-    fig.update_xaxes(title_text="Date")
+    fig.update_yaxes(
+        showline=True,
+        linewidth=1,
+        linecolor='rgba(200,200,200,0.5)',
+        mirror=True
+    )
     
     return fig
         
