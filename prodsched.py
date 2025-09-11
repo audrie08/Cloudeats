@@ -3310,7 +3310,7 @@ def format_dataframe(df):
 
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
-    """Summary page showing weekly production data as DataFrame with line graphs"""
+    """Summary page showing weekly production data as DataFrame with single KPI trend graph"""
     
     st.markdown("""
     <div class="main-header">
@@ -3444,30 +3444,44 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # Create line graphs for production factors
-        st.subheader("📈 Daily Production Trends")
+        # Create Trend Analysis section
+        st.markdown("""
+        <div style="text-align: center; margin: 30px 0 20px 0;">
+            <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Prepare data for line graphs
         graph_data = prepare_graph_data(df)
         
         if graph_data is not None and not graph_data.empty:
-            # Create tabs for different graph categories
-            tab1, tab2, tab3 = st.tabs(["📊 Production Metrics", "👥 Manpower & Hours", "⚡ Efficiency Metrics"])
+            # Create filter for KPI selection - styled like the image
+            all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
+            available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
             
-            with tab1:
-                # Production metrics: Batches, Volume
-                fig1 = create_production_metrics_graph(graph_data)
-                st.plotly_chart(fig1, use_container_width=True)
+            # Center the KPI selection
+            st.markdown("""
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
+            </div>
+            """, unsafe_allow_html=True)
             
-            with tab2:
-                # Manpower and hours: Total Run Mhrs, Total Manpower Required, Total OT Manhrs
-                fig2 = create_manpower_metrics_graph(graph_data)
-                st.plotly_chart(fig2, use_container_width=True)
+            # Create centered selectbox for KPI selection
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                selected_kpi = st.selectbox(
+                    label="",  # Hide label since we have custom text above
+                    options=available_metrics,
+                    index=1 if len(available_metrics) > 1 else 0,  # Default to Volume
+                    key="kpi_selector"
+                )
             
-            with tab3:
-                # Efficiency metrics: %OT, Capacity Utilization
-                fig3 = create_efficiency_metrics_graph(graph_data)
-                st.plotly_chart(fig3, use_container_width=True)
+            if selected_kpi:
+                # Create single metric trend graph
+                fig = create_single_kpi_trend_graph(graph_data, selected_kpi)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Please select a KPI to display the trend.")
         
         # Display main data table
         st.subheader("📋 Weekly Production Data")
