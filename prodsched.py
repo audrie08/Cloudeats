@@ -3310,7 +3310,7 @@ def format_dataframe(df):
 
 # --- Updated Summary Page - DataFrame Only ---
 def summary_page():
-    """Summary page showing weekly production data as DataFrame"""
+    """Summary page showing weekly production data as DataFrame with line graphs"""
     
     st.markdown("""
     <div class="main-header">
@@ -3443,9 +3443,34 @@ def summary_page():
                 </h3>
             </div>
             """, unsafe_allow_html=True)
-                
+        
+        # Create line graphs for production factors
+        st.subheader("📈 Daily Production Trends")
+        
+        # Prepare data for line graphs
+        graph_data = prepare_graph_data(df)
+        
+        if graph_data is not None and not graph_data.empty:
+            # Create tabs for different graph categories
+            tab1, tab2, tab3 = st.tabs(["📊 Production Metrics", "👥 Manpower & Hours", "⚡ Efficiency Metrics"])
+            
+            with tab1:
+                # Production metrics: Batches, Volume
+                fig1 = create_production_metrics_graph(graph_data)
+                st.plotly_chart(fig1, use_container_width=True)
+            
+            with tab2:
+                # Manpower and hours: Total Run Mhrs, Total Manpower Required, Total OT Manhrs
+                fig2 = create_manpower_metrics_graph(graph_data)
+                st.plotly_chart(fig2, use_container_width=True)
+            
+            with tab3:
+                # Efficiency metrics: %OT, Capacity Utilization
+                fig3 = create_efficiency_metrics_graph(graph_data)
+                st.plotly_chart(fig3, use_container_width=True)
+        
         # Display main data table
-        st.subheader("Weekly Production Data")
+        st.subheader("📋 Weekly Production Data")
         
         # Format the DataFrame for better display
         formatted_df = format_dataframe(df)
@@ -3559,12 +3584,163 @@ def summary_page():
         st.markdown(scrollable_html, unsafe_allow_html=True)
 
         # Display staff metrics as cards
-        st.subheader("Staff Details")
+        st.subheader("👥 Staff Details")
         create_metric_cards(staff_metrics)
         
     else:
         st.error("❌ Failed to load data from the spreadsheet.")
         st.info("Please check your spreadsheet connection and data format.")
+
+
+def prepare_graph_data(df):
+    """Prepare data for line graphs from the DataFrame"""
+    try:
+        # Create a copy of the DataFrame
+        graph_df = df.copy()
+        
+        # Get date columns (assuming they are in the format like "1Sep", "2Sep", etc.)
+        date_columns = [col for col in graph_df.columns if any(char.isdigit() for char in col) and 'Sep' in col]
+        
+        if not date_columns:
+            # Fallback: get all columns except Category, UOM, Standard, WTD
+            date_columns = [col for col in graph_df.columns if col not in ['Category', 'UOM', 'Standard', 'WTD']]
+        
+        if not date_columns:
+            return None
+        
+        # Reset index to make categories a column
+        if 'Category' not in graph_df.columns:
+            graph_df = graph_df.reset_index()
+            if 'index' in graph_df.columns:
+                graph_df = graph_df.rename(columns={'index': 'Category'})
+        
+        # Melt the DataFrame to long format for plotting
+        melted_df = pd.melt(
+            graph_df, 
+            id_vars=['Category'], 
+            value_vars=date_columns,
+            var_name='Date', 
+            value_name='Value'
+        )
+        
+        # Convert values to numeric, handling any string values
+        melted_df['Value'] = pd.to_numeric(melted_df['Value'], errors='coerce')
+        
+        # Remove rows with NaN values
+        melted_df = melted_df.dropna(subset=['Value'])
+        
+        return melted_df
+        
+    except Exception as e:
+        st.error(f"Error preparing graph data: {e}")
+        return None
+
+
+def create_unified_metrics_graph(graph_data, selected_metrics):
+    """Create unified line graph for all selected production metrics with dual y-axis"""
+    # Filter for selected metrics
+    filtered_data = graph_data[graph_data['Category'].isin(selected_metrics)]
+    
+    if filtered_data.empty:
+        st.warning("No data found for selected metrics")
+        return go.Figure()
+    
+    # Create subplots with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Define color palette
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2']
+    
+    # Define which metrics go on which axis
+    primary_axis_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total OT Manhrs']
+    secondary_axis_metrics = ['Total Manpower Required', '%OT', 'Capacity Utilization']
+    
+    color_index = 0
+    
+    # Add traces for primary y-axis metrics
+    for metric in selected_metrics:
+        if metric in primary_axis_metrics:
+            metric_data = filtered_data[filtered_data['Category'] == metric]
+            if not metric_data.empty:
+                # Determine line style
+                line_style = 'solid'
+                if metric in ['Total OT Manhrs']:
+                    line_style = 'dash'
+                
+                fig.add_trace(go.Scatter(
+                    x=metric_data['Date'],
+                    y=metric_data['Value'],
+                    mode='lines+markers',
+                    name=metric,
+                    line=dict(color=colors[color_index % len(colors)], width=3, dash=line_style),
+                    marker=dict(size=8, color=colors[color_index % len(colors)]),
+                    hovertemplate=f'<b>{metric}</b><br>Date: %{{x}}<br>Value: %{{y:,.1f}}<extra></extra>'
+                ), secondary_y=False)
+                color_index += 1
+    
+    # Add traces for secondary y-axis metrics
+    for metric in selected_metrics:
+        if metric in secondary_axis_metrics:
+            metric_data = filtered_data[filtered_data['Category'] == metric]
+            if not metric_data.empty:
+                # Determine line style and hover format
+                line_style = 'solid'
+                hover_format = 'Value: %{y:,.1f}'
+                
+                if metric in ['%OT', 'Capacity Utilization']:
+                    line_style = 'dot'
+                    hover_format = 'Value: %{y:.1f}%'
+                elif metric == 'Total Manpower Required':
+                    line_style = 'dashdot'
+                    hover_format = 'Count: %{y:,.0f}'
+                
+                fig.add_trace(go.Scatter(
+                    x=metric_data['Date'],
+                    y=metric_data['Value'],
+                    mode='lines+markers',
+                    name=metric,
+                    line=dict(color=colors[color_index % len(colors)], width=3, dash=line_style),
+                    marker=dict(size=8, color=colors[color_index % len(colors)]),
+                    hovertemplate=f'<b>{metric}</b><br>Date: %{{x}}<br>{hover_format}<extra></extra>'
+                ), secondary_y=True)
+                color_index += 1
+    
+    # Update layout
+    fig.update_layout(
+        title=dict(
+            text="Production Metrics Daily Trends",
+            font=dict(size=22, family="Arial Black"),
+            x=0.5
+        ),
+        hovermode='x unified',
+        template='plotly_white',
+        height=500,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="rgba(0,0,0,0.2)",
+            borderwidth=1
+        ),
+        margin=dict(t=80, b=50, l=60, r=60)
+    )
+    
+    # Update y-axes titles based on what metrics are selected
+    primary_metrics_present = any(metric in primary_axis_metrics for metric in selected_metrics)
+    secondary_metrics_present = any(metric in secondary_axis_metrics for metric in selected_metrics)
+    
+    if primary_metrics_present:
+        fig.update_yaxes(title_text="Count / Hours / Volume", secondary_y=False)
+    if secondary_metrics_present:
+        fig.update_yaxes(title_text="Manpower Count / Percentage (%)", secondary_y=True)
+    
+    fig.update_xaxes(title_text="Date")
+    
+    return fig
         
 def weekly_prod_schedule():
 
