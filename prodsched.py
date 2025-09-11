@@ -3444,6 +3444,45 @@ def summary_page():
             </div>
             """, unsafe_allow_html=True)
         
+        # Create Trend Analysis section - MOVED HERE (INSIDE SUCCESS BLOCK)
+        st.markdown("""
+        <div style="text-align: center; margin: 30px 0 20px 0;">
+            <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Prepare data for line graphs
+        graph_data = prepare_graph_data(df)
+        
+        if graph_data is not None and not graph_data.empty:
+            # Create filter for KPI selection - styled like the image
+            all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
+            available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
+            
+            # Center the KPI selection
+            st.markdown("""
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Create centered selectbox for KPI selection
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                selected_kpi = st.selectbox(
+                    label="",  # Hide label since we have custom text above
+                    options=available_metrics,
+                    index=1 if len(available_metrics) > 1 else 0,  # Default to Volume
+                    key="kpi_selector"
+                )
+            
+            if selected_kpi:
+                # Create single metric trend graph
+                fig = create_single_kpi_trend_graph(graph_data, selected_kpi)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Please select a KPI to display the trend.")
+        
         # Display main data table
         st.subheader("📋 Weekly Production Data")
         
@@ -3566,62 +3605,12 @@ def summary_page():
         st.error("❌ Failed to load data from the spreadsheet.")
         st.info("Please check your spreadsheet connection and data format.")
 
-    # Create Trend Analysis section
-    st.markdown("""
-    <div style="text-align: center; margin: 30px 0 20px 0;">
-        <h2 style="color: #333; font-weight: 600; margin-bottom: 5px;">Trend Analysis 🔗</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Prepare data for line graphs
-    graph_data = prepare_graph_data(df)
-    
-    if graph_data is not None and not graph_data.empty:
-        # Create filter for KPI selection - styled like the image
-        all_metrics = ['Batches', 'Volume', 'Total Run Mhrs', 'Total Manpower Required', 'Total OT Manhrs', '%OT', 'Capacity Utilization']
-        available_metrics = [metric for metric in all_metrics if metric in graph_data['Category'].values]
-        
-        # Center the KPI selection
-        st.markdown("""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <p style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px; letter-spacing: 1px;">SELECT KPI TO VIEW</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Create centered selectbox for KPI selection
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            selected_kpi = st.selectbox(
-                label="",  # Hide label since we have custom text above
-                options=available_metrics,
-                index=1 if len(available_metrics) > 1 else 0,  # Default to Volume
-                key="kpi_selector"
-            )
-        
-        if selected_kpi:
-            # Create single metric trend graph
-            fig = create_single_kpi_trend_graph(graph_data, selected_kpi)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Please select a KPI to display the trend.")
-
 
 def prepare_graph_data(df):
-    """Prepare data for line graphs from the DataFrame with debugging"""
+    """Prepare data for line graphs from the DataFrame"""
     try:
-        st.write("🔍 **Debug: Original DataFrame**")
-        st.write(f"DataFrame shape: {df.shape}")
-        st.write(f"DataFrame columns: {list(df.columns)}")
-        st.write("First few rows:")
-        st.write(df.head())
-        
         # Create a copy of the DataFrame
         graph_df = df.copy()
-        
-        # Check if DataFrame has index as categories
-        st.write(f"\n🔍 **Debug: DataFrame Index**")
-        st.write(f"Index name: {graph_df.index.name}")
-        st.write(f"Index values: {list(graph_df.index)}")
         
         # Get date columns (assuming they are in the format like "1Sep", "2Sep", etc.)
         date_columns = [col for col in graph_df.columns if any(char.isdigit() for char in col) and 'Sep' in col]
@@ -3630,11 +3619,7 @@ def prepare_graph_data(df):
             # Fallback: get all columns except Category, UOM, Standard, WTD
             date_columns = [col for col in graph_df.columns if col not in ['Category', 'UOM', 'Standard', 'WTD']]
         
-        st.write(f"\n🔍 **Debug: Date Columns Found**")
-        st.write(f"Date columns: {date_columns}")
-        
         if not date_columns:
-            st.error("❌ No date columns found!")
             return None
         
         # Reset index to make categories a column
@@ -3642,25 +3627,6 @@ def prepare_graph_data(df):
             graph_df = graph_df.reset_index()
             if 'index' in graph_df.columns:
                 graph_df = graph_df.rename(columns={'index': 'Category'})
-        
-        st.write(f"\n🔍 **Debug: After Processing**")
-        st.write(f"Columns after processing: {list(graph_df.columns)}")
-        st.write("DataFrame after processing:")
-        st.write(graph_df)
-        
-        # Check Volume row specifically
-        if 'Volume' in graph_df['Category'].values:
-            volume_row = graph_df[graph_df['Category'] == 'Volume']
-            st.write(f"\n🔍 **Debug: Volume Row**")
-            st.write(volume_row)
-            
-            # Check the actual values in date columns for Volume
-            st.write(f"\n🔍 **Debug: Volume Values in Date Columns**")
-            for col in date_columns:
-                if col in volume_row.columns:
-                    value = volume_row[col].iloc[0] if not volume_row.empty else "No data"
-                    value_type = type(value).__name__
-                    st.write(f"  {col}: {value} (type: {value_type})")
         
         # Melt the DataFrame to long format for plotting
         melted_df = pd.melt(
@@ -3671,96 +3637,37 @@ def prepare_graph_data(df):
             value_name='Value'
         )
         
-        st.write(f"\n🔍 **Debug: Melted DataFrame**")
-        st.write(f"Melted shape: {melted_df.shape}")
-        st.write("Melted data sample:")
-        st.write(melted_df.head(10))
+        # Convert values to numeric, handling comma-separated values and strings
+        def convert_to_numeric(value):
+            """Convert value to numeric, handling commas and various formats"""
+            if pd.isna(value) or value == '' or value is None:
+                return None
+            
+            # Convert to string first
+            str_value = str(value).strip()
+            
+            # Handle percentage values (remove % sign)
+            if str_value.endswith('%'):
+                str_value = str_value[:-1]
+            
+            # Remove commas from numbers
+            str_value = str_value.replace(',', '')
+            
+            # Try to convert to float
+            try:
+                return float(str_value)
+            except (ValueError, TypeError):
+                return None
         
-        # Check Volume data specifically in melted format
-        volume_melted = melted_df[melted_df['Category'] == 'Volume']
-        st.write(f"\n🔍 **Debug: Volume Data in Melted Format**")
-        st.write(volume_melted)
-        
-        # Convert values to numeric, handling any string values
-        st.write(f"\n🔍 **Debug: Before Numeric Conversion**")
-        st.write(f"Value column data types: {melted_df['Value'].dtype}")
-        st.write(f"Sample values: {melted_df['Value'].head().tolist()}")
-        
-        melted_df['Value'] = pd.to_numeric(melted_df['Value'], errors='coerce')
-        
-        st.write(f"\n🔍 **Debug: After Numeric Conversion**")
-        st.write(f"Value column data types: {melted_df['Value'].dtype}")
-        st.write(f"Sample values: {melted_df['Value'].head().tolist()}")
-        st.write(f"NaN count: {melted_df['Value'].isna().sum()}")
-        
-        # Check Volume data after numeric conversion
-        volume_after_numeric = melted_df[melted_df['Category'] == 'Volume']
-        st.write(f"\n🔍 **Debug: Volume Data After Numeric Conversion**")
-        st.write(volume_after_numeric)
+        melted_df['Value'] = melted_df['Value'].apply(convert_to_numeric)
         
         # Remove rows with NaN values
-        original_length = len(melted_df)
         melted_df = melted_df.dropna(subset=['Value'])
-        final_length = len(melted_df)
-        
-        st.write(f"\n🔍 **Debug: After Removing NaN**")
-        st.write(f"Rows before: {original_length}, Rows after: {final_length}")
-        st.write(f"Rows removed: {original_length - final_length}")
-        
-        # Final Volume data check
-        final_volume = melted_df[melted_df['Category'] == 'Volume']
-        st.write(f"\n🔍 **Debug: Final Volume Data**")
-        st.write(final_volume)
         
         return melted_df
         
     except Exception as e:
         st.error(f"Error preparing graph data: {e}")
-        st.write(f"Error details: {str(e)}")
-        import traceback
-        st.code(traceback.format_exc())
-        return None
-
-
-# Alternative function to check data extraction
-def debug_data_extraction(df):
-    """Debug function to check how data is being extracted"""
-    st.write("🔧 **Alternative Data Extraction Method**")
-    
-    # Method 1: Check if Volume is in the index
-    if 'Volume' in df.index:
-        st.write("✅ Volume found in DataFrame index")
-        volume_data = df.loc['Volume']
-        st.write(f"Volume row data: {volume_data}")
-        
-        # Get numeric columns (date columns)
-        numeric_cols = [col for col in df.columns if col not in ['UOM', 'Standard', 'WTD']]
-        st.write(f"Numeric columns: {numeric_cols}")
-        
-        volume_values = {}
-        for col in numeric_cols:
-            try:
-                val = volume_data[col]
-                volume_values[col] = val
-                st.write(f"  {col}: {val} (type: {type(val).__name__})")
-            except Exception as e:
-                st.write(f"  {col}: Error - {e}")
-        
-        return volume_values
-    
-    # Method 2: Check if Volume is in a Category column
-    elif 'Category' in df.columns and 'Volume' in df['Category'].values:
-        st.write("✅ Volume found in Category column")
-        volume_row = df[df['Category'] == 'Volume']
-        st.write(f"Volume row: {volume_row}")
-        return volume_row
-    
-    else:
-        st.write("❌ Volume not found in expected locations")
-        st.write("Available data:")
-        st.write(f"Index: {list(df.index)}")
-        if 'Category' in df.columns:
-            st.write(f"Categories: {list(df['Category'].unique())}")
         return None
 
 
