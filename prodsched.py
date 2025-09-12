@@ -3559,7 +3559,7 @@ def summary_page():
         st.markdown(scrollable_html, unsafe_allow_html=True)
 
         # Display staff metrics as cards
-        st.subheader("👥 Staff Details")
+        st.subheader("Staff Details")
         create_metric_cards(staff_metrics)
         
     else:
