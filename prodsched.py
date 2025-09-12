@@ -4724,7 +4724,7 @@ def render_subrecipe_details_page():
     }
     
     .subrecipe-table td:nth-child(2) {
-        text-align: left;
+        text-align: center;
         font-weight: 600;
         min-width: 200px;
     }
@@ -5109,9 +5109,9 @@ def prod_seq_main_page():
     }
     
     .subrecipe-table td:nth-child(2) {
-        text-align: left;
+        text-align: center;
         font-weight: 600;
-        min-width: 200px;
+        min-width: 150px;
     }
     
     .station-pill {
