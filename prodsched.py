@@ -5010,7 +5010,7 @@ def load_prodsequence_data(sheet_index=1):
 
 # --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
 def prod_seq_main_page():
-    """Production sequence main page content - simple dataframe display"""
+    """Production sequence main page content - display columns B to J from row 5 onwards"""
     st.markdown("""
     <div class="main-header">
         <h1><b>Production Sequence</b></h1>
@@ -5029,8 +5029,15 @@ def prod_seq_main_page():
     if last_modified:
         st.info(f"Data last updated: {last_modified}")
     
-    # Simply display the dataframe
-    st.dataframe(df, use_container_width=True)
+    # Extract only columns B to J (indices 1 to 9) starting from row 5 (index 4)
+    if len(df) > 4 and len(df.columns) > 9:
+        # Select columns B to J (indices 1-9) and rows from 5 onwards (index 4+)
+        filtered_df = df.iloc[4:, 1:10]  # Row 5+ (index 4+), Columns B-J (indices 1-9)
+        
+        # Display the filtered dataframe
+        st.dataframe(filtered_df, use_container_width=True)
+    else:
+        st.warning("Insufficient data in the spreadsheet to display columns B to J from row 5.")
 
 def machine_calendar():
     """Machine calendar page content"""
