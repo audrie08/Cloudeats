@@ -5168,16 +5168,15 @@ def prod_seq_main_page():
     
     # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
     week_numbers = []
-    week_dates = []
+    week_dates_map = {}
     
     try:
-        if len(df_weeks) > 1:  # Make sure we have row 2 (index 1)
+        if len(df_weeks) > 2:  # Make sure we have rows 2 and 3 (indices 1 and 2)
             # Extract week numbers from row 2 (index 1), starting from column K (index 10)
             week_row = df_weeks.iloc[1, 10:]  # Row 2, columns K onwards
             date_row = df_weeks.iloc[2, 10:]  # Row 3, columns K onwards
             
             current_week = None
-            week_dates_map = {}
             
             for col_idx, (week_val, date_val) in enumerate(zip(week_row, date_row)):
                 week_str = str(week_val).strip()
@@ -5192,12 +5191,14 @@ def prod_seq_main_page():
                             if current_week not in week_numbers:
                                 week_numbers.append(current_week)
                                 week_dates_map[current_week] = []
+                    except (ValueError, TypeError):
+                        continue
                 
                 # Add date to current week if we have both week and date
                 if current_week and date_str and date_str != '' and date_str != 'nan':
                     if date_str not in week_dates_map[current_week]:
                         week_dates_map[current_week].append(date_str)
-            
+                        
     except Exception as e:
         st.error(f"Error extracting week data: {str(e)}")
         week_numbers = [1]  # Fallback
