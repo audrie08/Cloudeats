@@ -5008,6 +5008,31 @@ def load_prodsequence_data(sheet_index=1):
         st.error(f"Error loading production sequence data: {str(e)}")
         return pd.DataFrame(), None
 
+def update_spreadsheet_selection(week_number, selected_date):
+    """Update the spreadsheet with selected week and date"""
+    try:
+        credentials = load_credentials_prodsequence()
+        if not credentials:
+            return False
+        
+        gc = gspread.authorize(credentials)
+        spreadsheet_id = "19ptsyX5bwYiOhCddRPuz721_KtSwimeEyAToJRQQOrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        worksheet = sh.get_worksheet(1)  # Sheet index 1
+        
+        # Update J1 with week number and J2 with selected date
+        worksheet.update('J1', str(week_number))
+        worksheet.update('J2', str(selected_date))
+        
+        # Clear cache to force reload of updated data
+        load_prodsequence_data.clear()
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Error updating spreadsheet: {str(e)}")
+        return False
+
 def prod_seq_main_page():
     """Production sequence main page content - display specific columns with styling, station pills, and dynamic week/date filters"""
     
@@ -5204,11 +5229,17 @@ def prod_seq_main_page():
         week_numbers = [1]  # Fallback
         week_dates_map = {1: ["No dates available"]}
     
+    # Initialize session state for selections if not exists
+    if 'selected_week_num' not in st.session_state:
+        st.session_state.selected_week_num = week_numbers[0] if week_numbers else 1
+    if 'selected_date' not in st.session_state:
+        st.session_state.selected_date = "All Dates"
+    
     # Week Selection Filter
     st.markdown('<div class="filters-container">', unsafe_allow_html=True)
     st.markdown("#### Week & Date Selection")
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
         # Week dropdown with extracted week numbers
@@ -5218,9 +5249,14 @@ def prod_seq_main_page():
         selected_week_num = st.selectbox(
             "Select Week Number",
             options=week_numbers,
-            index=0,
+            index=week_numbers.index(st.session_state.selected_week_num) if st.session_state.selected_week_num in week_numbers else 0,
             key="prod_seq_week_number_filter"
         )
+        
+        # Update session state if selection changed
+        if selected_week_num != st.session_state.selected_week_num:
+            st.session_state.selected_week_num = selected_week_num
+            st.session_state.selected_date = "All Dates"  # Reset date when week changes
     
     with col2:
         # Date dropdown based on selected week
@@ -5232,9 +5268,26 @@ def prod_seq_main_page():
         selected_date = st.selectbox(
             "Select Date",
             options=date_options,
-            index=0,
+            index=date_options.index(st.session_state.selected_date) if st.session_state.selected_date in date_options else 0,
             key="prod_seq_date_filter"
         )
+        
+        # Update session state if selection changed
+        if selected_date != st.session_state.selected_date:
+            st.session_state.selected_date = selected_date
+    
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)  # Add spacing to align with dropdowns
+        if st.button("Update Spreadsheet", type="primary", key="update_spreadsheet_btn"):
+            # Determine what date to send to spreadsheet
+            date_to_update = selected_date if selected_date != "All Dates" else available_dates[0] if available_dates and available_dates[0] != "No dates available" else ""
+            
+            with st.spinner("Updating spreadsheet..."):
+                if update_spreadsheet_selection(selected_week_num, date_to_update):
+                    st.success("Spreadsheet updated successfully!")
+                    st.rerun()  # Refresh to show updated data
+                else:
+                    st.error("Failed to update spreadsheet")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
