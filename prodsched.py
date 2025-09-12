@@ -5108,7 +5108,7 @@ def main():
             key="sub_navigation",
             styles={
                 "container": {
-                    "max-width": "800px",  # Width for 4 options
+                    "max-width": "900px",  # Width for 4 options
                     "text-align": "center",
                     "border-radius": "20px",
                     "color": "#ffffff"
