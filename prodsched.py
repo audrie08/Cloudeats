@@ -5009,7 +5009,7 @@ def load_prodsequence_data(sheet_index=1):
         return pd.DataFrame(), None
 
 def prod_seq_main_page():
-    """Production sequence main page content - display specific columns with styling, station pills, and week filter"""
+    """Production sequence main page content - display specific columns with styling, station pills, and dynamic week/date filters"""
     
     # Add CSS styling (same as subrecipe page)
     st.markdown("""
@@ -5148,63 +5148,96 @@ def prod_seq_main_page():
     </div>
     """, unsafe_allow_html=True)
     
-    # Load data
+    # Load data from sheet index 1 (main data)
     df, last_modified = load_prodsequence_data(sheet_index=1)
     
     if df.empty:
         st.warning("No production sequence data available.")
         return
     
+    # Load week/date data from sheet index 6
+    df_weeks, _ = load_prodsequence_data(sheet_index=6)
+    
+    if df_weeks.empty:
+        st.warning("No week/date reference data available from sheet 6.")
+        return
+    
     # Display last modified time if available
     if last_modified:
         st.info(f"Data last updated: {last_modified}")
     
-    # Check if we have enough data
-    if len(df) <= 4:
-        st.warning("Not enough data rows in the spreadsheet.")
-        return
-    
-    # Extract week number and date from J1 and J2 (column index 9)
-    current_week_no = ""
-    current_date = ""
+    # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
+    week_numbers = []
+    week_dates = []
     
     try:
-        if len(df) > 0 and len(df.columns) > 9:
-            current_week_no = str(df.iloc[0, 9]).strip()  # J1 - Week No.
-        if len(df) > 1 and len(df.columns) > 9:
-            current_date = str(df.iloc[1, 9]).strip()     # J2 - Date
-    except:
-        current_week_no = "N/A"
-        current_date = "N/A"
+        if len(df_weeks) > 1:  # Make sure we have row 2 (index 1)
+            # Extract week numbers from row 2 (index 1), starting from column K (index 10)
+            week_row = df_weeks.iloc[1, 10:]  # Row 2, columns K onwards
+            date_row = df_weeks.iloc[2, 10:]  # Row 3, columns K onwards
+            
+            current_week = None
+            week_dates_map = {}
+            
+            for col_idx, (week_val, date_val) in enumerate(zip(week_row, date_row)):
+                week_str = str(week_val).strip()
+                date_str = str(date_val).strip()
+                
+                # Check if we have a new week number
+                if week_str and week_str != '' and week_str != 'nan':
+                    try:
+                        week_num = int(float(week_str))
+                        if week_num != current_week:
+                            current_week = week_num
+                            if current_week not in week_numbers:
+                                week_numbers.append(current_week)
+                                week_dates_map[current_week] = []
+                
+                # Add date to current week if we have both week and date
+                if current_week and date_str and date_str != '' and date_str != 'nan':
+                    if date_str not in week_dates_map[current_week]:
+                        week_dates_map[current_week].append(date_str)
+            
+    except Exception as e:
+        st.error(f"Error extracting week data: {str(e)}")
+        week_numbers = [1]  # Fallback
+        week_dates_map = {1: ["No dates available"]}
     
     # Week Selection Filter
     st.markdown('<div class="filters-container">', unsafe_allow_html=True)
-    st.markdown("#### Week Selection")
+    st.markdown("#### Week & Date Selection")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Display current week info from spreadsheet
-        st.info(f"**Current Week:** {current_week_no}")
+        # Week dropdown with extracted week numbers
+        if not week_numbers:
+            week_numbers = [1]  # Fallback
+            
+        selected_week_num = st.selectbox(
+            "Select Week Number",
+            options=week_numbers,
+            index=0,
+            key="prod_seq_week_number_filter"
+        )
     
     with col2:
-        # Display current date info from spreadsheet
-        st.info(f"**Current Date:** {current_date}")
-    
-    # Week dropdown selector (you can expand this to show multiple weeks if needed)
-    week_display = f"Week {current_week_no} - {current_date}" if current_week_no != "N/A" and current_date != "N/A" else "Current Week"
-    
-    selected_week = st.selectbox(
-        "Select Week to Display",
-        options=[week_display],
-        index=0,
-        key="prod_seq_week_filter",
-        help="This shows the current week from the spreadsheet (J1 and J2)"
-    )
+        # Date dropdown based on selected week
+        available_dates = week_dates_map.get(selected_week_num, ["No dates available"])
+        if not available_dates:
+            available_dates = ["No dates available"]
+            
+        date_options = ["All Dates"] + available_dates
+        selected_date = st.selectbox(
+            "Select Date",
+            options=date_options,
+            index=0,
+            key="prod_seq_date_filter"
+        )
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Station colors mapping - updated with specific categories
+    # Station colors mapping
     station_colors = {
         'Hot Kitchen Sauce': "#f26556",      # Red
         'Hot Kitchen Savory': "#fa8072",     # Salmon Pink  
@@ -5220,14 +5253,13 @@ def prod_seq_main_page():
         station_str = str(station).strip()
         station_lower = station_str.lower()
         
-        # More specific matching for different station types
         if 'hot kitchen' in station_lower:
             if 'sauce' in station_lower:
                 return station_colors['Hot Kitchen Sauce']
             elif 'savory' in station_lower:
                 return station_colors['Hot Kitchen Savory']
             else:
-                return station_colors['Hot Kitchen Sauce']  # Default to sauce
+                return station_colors['Hot Kitchen Sauce']
         elif 'cold sauce' in station_lower:
             return station_colors['Cold Sauce']
         elif 'fabrication' in station_lower:
@@ -5236,7 +5268,7 @@ def prod_seq_main_page():
             elif 'poultry' in station_lower:
                 return station_colors['Fabrication Poultry']
             else:
-                return station_colors['Fabrication Meats']  # Default to meats
+                return station_colors['Fabrication Meats']
         elif 'pastry' in station_lower:
             return station_colors['Pastry']
         else:
@@ -5246,6 +5278,11 @@ def prod_seq_main_page():
         """Create station pill HTML with specific colors"""
         color = get_station_color(station)
         return f'<span class="station-pill" style="background-color: {color};">{station}</span>'
+    
+    # Check if we have enough data in main sheet
+    if len(df) <= 4:
+        st.warning("Not enough data rows in the main spreadsheet.")
+        return
     
     # Extract specific columns: B(1), C(2), E(4), G(6), H(7), I(8), J(9)
     column_indices = [1, 2, 4, 6, 7, 8, 9]  # B, C, E, G, H, I, J
@@ -5270,13 +5307,19 @@ def prod_seq_main_page():
     # Filter out empty rows
     display_df = display_df[display_df['Station'].astype(str).str.strip() != '']
     
+    # TODO: Add date filtering logic here based on selected_date
+    # This would require understanding how dates in the main sheet correspond to the week/date structure
+    
     if not display_df.empty:
         # Apply station pills to the Station column
         display_df['Station'] = display_df['Station'].apply(create_station_pill)
         
         # Display styled table
         st.markdown('<div class="table-container">', unsafe_allow_html=True)
-        st.markdown(f'<div class="table-header">Production Sequence Details - {week_display}</div>', unsafe_allow_html=True)
+        header_text = f'Production Sequence Details - Week {selected_week_num}'
+        if selected_date != "All Dates":
+            header_text += f' - {selected_date}'
+        st.markdown(f'<div class="table-header">{header_text}</div>', unsafe_allow_html=True)
         
         # Create HTML table
         html_table = display_df.to_html(
