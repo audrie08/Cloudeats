@@ -5057,7 +5057,7 @@ def main():
         key="main_navigation",
         styles={
             "container": {
-                "max-width": "600px",  # Increased width to accommodate fourth option
+                "max-width": "900px",  # Increased width to accommodate fourth option
                 "text-align": "center",
                 "border-radius": "20px", 
                 "color": "#ffffff",
