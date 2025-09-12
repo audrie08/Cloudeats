@@ -124,6 +124,35 @@ def load_credentials_subrecipe():
         st.error(f"Error loading subrecipe credentials: {str(e)}")
         return None
 
+# --- CREDENTIALS HANDLING PRODUCTION SEQUENCE---
+def load_credentials_prodsequence():
+    """Load Google credentials from Streamlit secrets for subrecipe data"""
+    try:
+        # Convert secrets to the format expected by google-auth
+        credentials_dict = {
+            "type": st.secrets["google_credentials3"]["type"],
+            "project_id": st.secrets["google_credentials3"]["project_id"],
+            "private_key_id": st.secrets["google_credentials3"]["private_key_id"],
+            "private_key": st.secrets["google_credentials3"]["private_key"].replace('\\n', '\n'),
+            "client_email": st.secrets["google_credentials3"]["client_email"],
+            "client_id": st.secrets["google_credentials3"]["client_id"],
+            "auth_uri": st.secrets["google_credentials3"]["auth_uri"],
+            "token_uri": st.secrets["google_credentials3"]["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_credentials3"]["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_credentials3"]["client_x509_cert_url"]
+        }
+        
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+        return credentials
+        
+    except Exception as e:
+        st.error(f"Error loading subrecipe credentials: {str(e)}")
+        return None
 
 
 # --- CUSTOM CSS ---
@@ -4932,8 +4961,80 @@ def render_subrecipe_details_page():
         </div>
     """, unsafe_allow_html=True)
 
+# --- LOAD PRODUCTION SEQUENCE DATA ---
+@st.cache_data(ttl=60)
+def load_prodsequence_data(sheet_index=1):
+    """Load production sequence data from Google Sheets with last modified time"""
+    credentials = load_credentials_prodsequence()
+    if not credentials:
+        return pd.DataFrame(), None
+    
+    try:
+        gc = gspread.authorize(credentials)
+        spreadsheet_id = "19ptsyX5bwYiOhCddRPuz721_KtSwimeEyAToJRQQOrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        
+        # Get the spreadsheet metadata for last modified time
+        last_modified_time = None
+        
+        # Method 1: Try using the drive API for file metadata
+        try:
+            drive_service = build('drive', 'v3', credentials=credentials)
+            file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
+            last_modified_time = file_metadata.get('modifiedTime')
+        except Exception as e:
+            pass        
+        # Method 2: Try the spreadsheet metadata (fallback)
+        if last_modified_time is None:
+            try:
+                spreadsheet_metadata = sh.fetch_sheet_metadata()
+                last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+            except Exception as e:
+                pass        
+        # Method 3: If still None, use current time as fallback
+        if last_modified_time is None:
+            last_modified_time = datetime.now().isoformat() + 'Z'
+        
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df, last_modified_time
+        
+    except Exception as e:
+        st.error(f"Error loading production sequence data: {str(e)}")
+        return pd.DataFrame(), None
+
+# --- PRODUCTION SEQUENCE PAGE FUNCTION ---
+def render_production_sequence_page():
+    st.markdown("""
+    <div class="subrecipe-header">
+        <h1><b>Subrecipe Details</b></h1>
+        <p><b>Comprehensive Breakdown of Subrecipe Details</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load data
+    df, last_modified = load_prodsequence_data()
+    
+    if df.empty:
+        st.warning("No production sequence data available.")
+        return
+    
+    # Display last modified time if available
+    if last_modified:
+        st.info(f"Data last updated: {last_modified}")
+    
+    # Display the data
+    st.dataframe(df, use_container_width=True)
+
+# ----------------------------------------------------------------------------
+
 def main():
-    """Main application function - UPDATED WITH SUBRECIPE DETAILS"""
+    """Main application function - UPDATED WITH PRODUCTION SEQUENCE"""
     
     # Create modern navigation header
     create_navigation()
@@ -4944,17 +5045,19 @@ def main():
     if 'sub_tab' not in st.session_state:
         st.session_state.sub_tab = "Summary"  # Default to Summary page
     
-    # Main navigation with three options including Subrecipe Details
+    # Main navigation with four options including Production Sequence
     main_page_selection = option_menu(
         menu_title=None,
-        options=["KPI Dashboard", "Production Details", "Subrecipe Details"],
-        icons=["house-fill", "clipboard-data-fill", "list-ul"],
-        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else (1 if st.session_state.main_tab == "Production Details" else 2),
+        options=["KPI Dashboard", "Subrecipe Details", "Production Details", "Production Sequence"],
+        icons=["house-fill", "clipboard-data-fill", "list-ul", "arrow-right-circle-fill"],  # Added icon for Production Sequence
+        default_index=0 if st.session_state.main_tab == "KPI Dashboard" else (
+                      1 if st.session_state.main_tab == "Subrecipe Details" else (
+                      2 if st.session_state.main_tab == "Production Details" else 3)),
         orientation="horizontal",
         key="main_navigation",
         styles={
             "container": {
-                "max-width": "500px",  # Increased width to accommodate third option
+                "max-width": "600px",  # Increased width to accommodate fourth option
                 "text-align": "center",
                 "border-radius": "20px", 
                 "color": "#ffffff",
@@ -4995,7 +5098,7 @@ def main():
     # Show sub-navigation only if Production Details is selected
     if main_page_selection == "Production Details":
         
-        # UPDATED: Added Summary to the sub-navigation options
+        # Sub-navigation for Production Details
         sub_page_selection = option_menu(
             menu_title=None,
             options=["Summary", "Weekly Production Schedule", "Machine Utilization", "YTD Production Schedule"],
@@ -5005,7 +5108,7 @@ def main():
             key="sub_navigation",
             styles={
                 "container": {
-                    "max-width": "800px",  # Increased width for 4 options
+                    "max-width": "800px",  # Width for 4 options
                     "text-align": "center",
                     "border-radius": "20px",
                     "color": "#ffffff"
@@ -5045,11 +5148,10 @@ def main():
     
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "KPI Dashboard":
-        # FIXED: Call the existing main_page() function instead of display_kpi_dashboard()
         display_kpi_dashboard()
         
     elif main_page_selection == "Production Details":
-        # Your existing Production Details code
+        # Production Details sub-pages
         if st.session_state.sub_tab == "Summary":
             summary_page()
         elif st.session_state.sub_tab == "Weekly Production Schedule":
@@ -5061,6 +5163,9 @@ def main():
 
     elif main_page_selection == "Subrecipe Details":
         render_subrecipe_details_page()
-            
+
+    elif main_page_selection == "Production Sequence":
+        render_production_sequence_page()  # Added missing function call
+
 if __name__ == "__main__":
     main()
