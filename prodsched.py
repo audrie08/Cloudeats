@@ -5022,7 +5022,7 @@ def render_production_sequence_page():
     if 'prod_seq_sub_tab' not in st.session_state:
         st.session_state.prod_seq_sub_tab = "Main Page"
     
-    # Sub-navigation for Production Sequence
+    # Sub-navigation for Production Sequence - this should appear
     prod_seq_sub_selection = option_menu(
         menu_title=None,
         options=["Main Page", "Machine Calendar"],
@@ -5070,14 +5070,14 @@ def render_production_sequence_page():
     # Store the sub page selection in session state
     st.session_state.prod_seq_sub_tab = prod_seq_sub_selection
     
-    # Display content based on selection
-    if st.session_state.prod_seq_sub_tab == "Main Page":
+    # Display content based on selection - remove the content from here
+    if prod_seq_sub_selection == "Main Page":
         prod_seq_main_page()
-    elif st.session_state.prod_seq_sub_tab == "Machine Calendar":
+    elif prod_seq_sub_selection == "Machine Calendar":
         machine_calendar()
 
 def prod_seq_main_page():
-    """Placeholder for production sequence main page"""
+    """Production sequence main page content"""
     st.markdown("### Production Sequence Main Page")
     
     # Load data
@@ -5107,7 +5107,7 @@ def prod_seq_main_page():
     st.dataframe(df, use_container_width=True)
 
 def machine_calendar():
-    """Placeholder for machine calendar page"""
+    """Machine calendar page content"""
     st.markdown("### Machine Calendar")
     
     # Placeholder content
@@ -5121,8 +5121,6 @@ def machine_calendar():
     - Production booking system
     - Conflict resolution tools
     """)
-    
-    # Add some placeholder visual elements
     
     # Placeholder for calendar widget
     st.info("📅 Interactive machine calendar widget will be implemented here")
@@ -5261,7 +5259,8 @@ def main():
         render_subrecipe_details_page()
 
     elif main_page_selection == "Production Sequence":
-        prod_seq_main_page()
+        # Simply call the main function - it handles its own sub-navigation
+        render_production_sequence_page()
         
 if __name__ == "__main__":
     main()
