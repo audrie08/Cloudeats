@@ -5008,14 +5008,77 @@ def load_prodsequence_data(sheet_index=1):
         st.error(f"Error loading production sequence data: {str(e)}")
         return pd.DataFrame(), None
 
-# --- PRODUCTION SEQUENCE PAGE FUNCTION ---
+# --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
 def render_production_sequence_page():
+    """Main production sequence page with sub-navigation"""
     st.markdown("""
     <div class="subrecipe-header">
-        <h1><b>Subrecipe Details</b></h1>
-        <p><b>Comprehensive Breakdown of Subrecipe Details</b></p>
+        <h1><b>Production Sequence</b></h1>
+        <p><b>Production and Machine Sequence</b></p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Initialize sub_tab for production sequence if not exists
+    if 'prod_seq_sub_tab' not in st.session_state:
+        st.session_state.prod_seq_sub_tab = "Main Page"
+    
+    # Sub-navigation for Production Sequence
+    prod_seq_sub_selection = option_menu(
+        menu_title=None,
+        options=["Main Page", "Machine Calendar"],
+        icons=["house-fill", "calendar3"],
+        default_index=0 if st.session_state.prod_seq_sub_tab == "Main Page" else 1,
+        orientation="horizontal",
+        key="prod_seq_sub_navigation",
+        styles={
+            "container": {
+                "max-width": "400px",
+                "text-align": "center",
+                "border-radius": "20px",
+                "color": "#ffffff"
+            },
+            "icon": {
+                "color": "#ffe712",
+                "font-size": "12px",
+                "margin-right": "4px"
+            },
+            "nav-link": {
+                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                "font-size": "11px",
+                "font-weight": "500",
+                "text-align": "center",
+                "color": "#543559",
+                "margin": "0.1rem",
+                "padding": "0.4rem 0.6rem",
+                "border-radius": "17px",
+                "transition": "all 0.3s ease",
+                "border": "1px solid transparent",
+                "background": "rgba(248, 249, 250, 0.5)",
+                "white-space": "nowrap"
+            },
+            "nav-link-selected": {
+                "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
+                "color": "#ffffff",
+                "font-weight": "600",
+                "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                "border": "2px solid rgba(255,255,255,0.1)",
+                "transform": "translateY(-1px)"
+            }
+        }
+    )
+    
+    # Store the sub page selection in session state
+    st.session_state.prod_seq_sub_tab = prod_seq_sub_selection
+    
+    # Display content based on selection
+    if st.session_state.prod_seq_sub_tab == "Main Page":
+        prod_seq_main_page()
+    elif st.session_state.prod_seq_sub_tab == "Machine Calendar":
+        machine_calendar()
+
+def prod_seq_main_page():
+    """Placeholder for production sequence main page"""
+    st.markdown("### Production Sequence Main Page")
     
     # Load data
     df, last_modified = load_prodsequence_data()
@@ -5028,8 +5091,41 @@ def render_production_sequence_page():
     if last_modified:
         st.info(f"Data last updated: {last_modified}")
     
-    # Display the data
+    # Placeholder content
+    st.markdown("""
+    **This is a placeholder for the Production Sequence Main Page.**
+    
+    Features to be implemented:
+    - Production schedule overview
+    - Sequence optimization tools
+    - Real-time production tracking
+    - Resource allocation display
+    """)
+    
+    # Display the raw data for now
+    st.subheader("Raw Production Sequence Data")
     st.dataframe(df, use_container_width=True)
+
+def machine_calendar():
+    """Placeholder for machine calendar page"""
+    st.markdown("### Machine Calendar")
+    
+    # Placeholder content
+    st.markdown("""
+    **This is a placeholder for the Machine Calendar Page.**
+    
+    Features to be implemented:
+    - Interactive calendar view of machine schedules
+    - Machine availability tracking
+    - Maintenance scheduling
+    - Production booking system
+    - Conflict resolution tools
+    """)
+    
+    # Add some placeholder visual elements
+    
+    # Placeholder for calendar widget
+    st.info("📅 Interactive machine calendar widget will be implemented here")
 
 # ----------------------------------------------------------------------------
 
@@ -5165,7 +5261,7 @@ def main():
         render_subrecipe_details_page()
 
     elif main_page_selection == "Production Sequence":
-        render_production_sequence_page()  # Added missing function call
-
+        prod_seq_main_page()
+        
 if __name__ == "__main__":
     main()
