@@ -5010,7 +5010,7 @@ def load_prodsequence_data(sheet_index=1):
 
 # --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
 def prod_seq_main_page():
-    """Production sequence main page content - display columns B to J from row 5 onwards"""
+    """Production sequence main page content - display specific columns with proper headers"""
     st.markdown("""
     <div class="main-header">
         <h1><b>Production Sequence</b></h1>
@@ -5029,15 +5029,33 @@ def prod_seq_main_page():
     if last_modified:
         st.info(f"Data last updated: {last_modified}")
     
-    # Extract only columns B to J (indices 1 to 9) starting from row 5 (index 4)
-    if len(df) > 4 and len(df.columns) > 9:
-        # Select columns B to J (indices 1-9) and rows from 5 onwards (index 4+)
-        filtered_df = df.iloc[4:, 1:10]  # Row 5+ (index 4+), Columns B-J (indices 1-9)
-        
-        # Display the filtered dataframe
-        st.dataframe(filtered_df, use_container_width=True)
-    else:
-        st.warning("Insufficient data in the spreadsheet to display columns B to J from row 5.")
+    # Check if we have enough data
+    if len(df) <= 4:
+        st.warning("Not enough data rows in the spreadsheet.")
+        return
+    
+    # Extract specific columns: B(1), C(2), E(4), G(6), H(7), I(8), J(9)
+    column_indices = [1, 2, 4, 6, 7, 8, 9]  # B, C, E, G, H, I, J
+    column_names = ['Station', 'Subrecipe', 'Volume (kg)', 'Manpower', 'Duration (hrs)', 'Start Time', 'End Time']
+    
+    # Create new dataframe with selected columns
+    selected_data = []
+    
+    # Get data starting from row 6 (index 5) - data rows
+    for row_idx in range(5, len(df)):
+        row_data = []
+        for col_idx in column_indices:
+            if col_idx < len(df.columns):
+                row_data.append(df.iloc[row_idx, col_idx])
+            else:
+                row_data.append('')
+        selected_data.append(row_data)
+    
+    # Create dataframe with proper column names
+    display_df = pd.DataFrame(selected_data, columns=column_names)
+    
+    # Display the dataframe
+    st.dataframe(display_df, use_container_width=True)
 
 def machine_calendar():
     """Machine calendar page content"""
