@@ -5008,8 +5008,9 @@ def load_prodsequence_data(sheet_index=1):
         st.error(f"Error loading production sequence data: {str(e)}")
         return pd.DataFrame(), None
 
+# --- FUNCTION TO UPDATE SPREADSHEET WITH SELECTED WEEK/DATE ---
 def update_spreadsheet_selection(week_number, selected_date):
-    """Update the spreadsheet with selected week and date"""
+    """Update the spreadsheet with selected week and date - without apostrophe formatting"""
     try:
         credentials = load_credentials_prodsequence()
         if not credentials:
@@ -5020,9 +5021,11 @@ def update_spreadsheet_selection(week_number, selected_date):
         sh = gc.open_by_key(spreadsheet_id)
         worksheet = sh.get_worksheet(1)  # Sheet index 1
         
-        # Update J1 with week number and J2 with selected date
-        worksheet.update('J1', str(week_number))
-        worksheet.update('J2', str(selected_date))
+        # Update J1 with week number as a number (not text with apostrophe)
+        worksheet.update('J1', [[int(week_number)]], value_input_option='RAW')
+        
+        # Update J2 with selected date as text but without forcing apostrophe
+        worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
         
         # Clear cache to force reload of updated data
         load_prodsequence_data.clear()
