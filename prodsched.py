@@ -3396,7 +3396,7 @@ def summary_page():
         # Add some spacing to match the selectbox label
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("🔄 Update Data", key="update_button"):
+        if st.button("Click to Update Data", key="update_button"):
             with st.spinner("Updating spreadsheet and fetching data..."):
                 # Update the week in the spreadsheet
                 success = extractor.update_week_dropdown(selected_week)
