@@ -5009,7 +5009,7 @@ def load_prodsequence_data(sheet_index=1):
         return pd.DataFrame(), None
 
 def prod_seq_main_page():
-    """Production sequence main page content - display specific columns with styling and station pills"""
+    """Production sequence main page content - display specific columns with styling, station pills, and week filter"""
     
     # Add CSS styling (same as subrecipe page)
     st.markdown("""
@@ -5036,6 +5036,16 @@ def prod_seq_main_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         font-weight: normal;
         margin: 0.5rem 0 0 0;
+    }
+    
+    .filters-container {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
     }
     
     .table-container {
@@ -5111,7 +5121,7 @@ def prod_seq_main_page():
     .subrecipe-table td:nth-child(2) {
         text-align: center;
         font-weight: 600;
-        min-width: 150px;
+        min-width: 200px;
     }
     
     .station-pill {
@@ -5153,6 +5163,46 @@ def prod_seq_main_page():
     if len(df) <= 4:
         st.warning("Not enough data rows in the spreadsheet.")
         return
+    
+    # Extract week number and date from J1 and J2 (column index 9)
+    current_week_no = ""
+    current_date = ""
+    
+    try:
+        if len(df) > 0 and len(df.columns) > 9:
+            current_week_no = str(df.iloc[0, 9]).strip()  # J1 - Week No.
+        if len(df) > 1 and len(df.columns) > 9:
+            current_date = str(df.iloc[1, 9]).strip()     # J2 - Date
+    except:
+        current_week_no = "N/A"
+        current_date = "N/A"
+    
+    # Week Selection Filter
+    st.markdown('<div class="filters-container">', unsafe_allow_html=True)
+    st.markdown("#### Week Selection")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Display current week info from spreadsheet
+        st.info(f"**Current Week:** {current_week_no}")
+    
+    with col2:
+        # Display current date info from spreadsheet
+        st.info(f"**Current Date:** {current_date}")
+    
+    # Week dropdown selector (you can expand this to show multiple weeks if needed)
+    week_display = f"Week {current_week_no} - {current_date}" if current_week_no != "N/A" and current_date != "N/A" else "Current Week"
+    
+    selected_week = st.selectbox(
+        "Select Week to Display",
+        options=[week_display],
+        index=0,
+        key="prod_seq_week_filter",
+        help="This shows the current week from the spreadsheet (J1 and J2)"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Station colors mapping - updated with specific categories
     station_colors = {
@@ -5226,7 +5276,7 @@ def prod_seq_main_page():
         
         # Display styled table
         st.markdown('<div class="table-container">', unsafe_allow_html=True)
-        st.markdown('<div class="table-header">Production Sequence Details</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="table-header">Production Sequence Details - {week_display}</div>', unsafe_allow_html=True)
         
         # Create HTML table
         html_table = display_df.to_html(
