@@ -5010,7 +5010,7 @@ def load_prodsequence_data(sheet_index=1):
 
 # --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
 def prod_seq_main_page():
-    """Production sequence main page content"""
+    """Production sequence main page content - simple dataframe display"""
     st.markdown("""
     <div class="main-header">
         <h1><b>Production Sequence</b></h1>
@@ -5018,10 +5018,8 @@ def prod_seq_main_page():
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### Production Sequence Main Page")
-    
     # Load data
-    df, last_modified = load_prodsequence_data()
+    df, last_modified = load_prodsequence_data(sheet_index=1)
     
     if df.empty:
         st.warning("No production sequence data available.")
@@ -5031,19 +5029,7 @@ def prod_seq_main_page():
     if last_modified:
         st.info(f"Data last updated: {last_modified}")
     
-    # Placeholder content
-    st.markdown("""
-    **This is a placeholder for the Production Sequence Main Page.**
-    
-    Features to be implemented:
-    - Production schedule overview
-    - Sequence optimization tools
-    - Real-time production tracking
-    - Resource allocation display
-    """)
-    
-    # Display the raw data for now
-    st.subheader("Raw Production Sequence Data")
+    # Simply display the dataframe
     st.dataframe(df, use_container_width=True)
 
 def machine_calendar():
