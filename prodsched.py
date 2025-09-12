@@ -5008,11 +5008,131 @@ def load_prodsequence_data(sheet_index=1):
         st.error(f"Error loading production sequence data: {str(e)}")
         return pd.DataFrame(), None
 
-# --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
 def prod_seq_main_page():
-    """Production sequence main page content - display specific columns with proper headers"""
+    """Production sequence main page content - display specific columns with styling and station pills"""
+    
+    # Add CSS styling (same as subrecipe page)
     st.markdown("""
-    <div class="main-header">
+    <style>
+    .subrecipe-header {
+        background: #f7d42c;
+        padding: 1rem 1rem;
+        border-radius: 40px;
+        color: #1E2328;
+        text-align: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .subrecipe-header h1 {
+        font-family:'TT Norms', 'Segoe UI', sans-serif;
+        font-weight: normal;
+        font-size: 2.5em;
+        margin: 0;
+        letter-spacing: 2px;
+    }
+
+    .subrecipe-header p {
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        font-weight: normal;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .table-header {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 20px 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+    }
+    
+    .scrollable-subrecipe-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border-radius: 10px;
+        margin: 0;
+    }
+    
+    .subrecipe-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: white;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif;
+        margin: 0;
+    }
+    
+    .subrecipe-table th {
+        background: #1e2323;
+        color: #f4d602;
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #3b3f46;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .subrecipe-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        text-align: center;
+        font-weight: 500;
+    }
+    
+    .subrecipe-table tr:hover {
+        background-color: rgba(244, 214, 2, 0.1);
+        transition: background-color 0.2s ease;
+    }
+    
+    .subrecipe-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .subrecipe-table td:first-child {
+        text-align: center;
+        font-weight: 600;
+        min-width: 150px;
+    }
+    
+    .subrecipe-table td:nth-child(2) {
+        text-align: left;
+        font-weight: 600;
+        min-width: 200px;
+    }
+    
+    .station-pill {
+        background-color: #6b7280;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="subrecipe-header">
         <h1><b>Production Sequence</b></h1>
         <p><b>Production and Machine Sequence</b></p>
     </div>
@@ -5034,6 +5154,49 @@ def prod_seq_main_page():
         st.warning("Not enough data rows in the spreadsheet.")
         return
     
+    # Station colors mapping - updated with specific categories
+    station_colors = {
+        'Hot Kitchen Sauce': "#f26556",      # Red
+        'Hot Kitchen Savory': "#fa8072",     # Salmon Pink  
+        'Cold Sauce': "#7dbfea",             # Blue
+        'Fabrication Meats': "#febc51",      # Yellow
+        'Fabrication Poultry': "#ff8c00",    # Yellow Orange
+        'Pastry': "#ba85cf",                 # Purple
+        'Other': "#6b7280"                   # Gray (default)
+    }
+    
+    def get_station_color(station):
+        """Get color for station with more specific matching"""
+        station_str = str(station).strip()
+        station_lower = station_str.lower()
+        
+        # More specific matching for different station types
+        if 'hot kitchen' in station_lower:
+            if 'sauce' in station_lower:
+                return station_colors['Hot Kitchen Sauce']
+            elif 'savory' in station_lower:
+                return station_colors['Hot Kitchen Savory']
+            else:
+                return station_colors['Hot Kitchen Sauce']  # Default to sauce
+        elif 'cold sauce' in station_lower:
+            return station_colors['Cold Sauce']
+        elif 'fabrication' in station_lower:
+            if 'meat' in station_lower:
+                return station_colors['Fabrication Meats']
+            elif 'poultry' in station_lower:
+                return station_colors['Fabrication Poultry']
+            else:
+                return station_colors['Fabrication Meats']  # Default to meats
+        elif 'pastry' in station_lower:
+            return station_colors['Pastry']
+        else:
+            return station_colors['Other']
+    
+    def create_station_pill(station):
+        """Create station pill HTML with specific colors"""
+        color = get_station_color(station)
+        return f'<span class="station-pill" style="background-color: {color};">{station}</span>'
+    
     # Extract specific columns: B(1), C(2), E(4), G(6), H(7), I(8), J(9)
     column_indices = [1, 2, 4, 6, 7, 8, 9]  # B, C, E, G, H, I, J
     column_names = ['Station', 'Subrecipe', 'Volume (kg)', 'Manpower', 'Duration (hrs)', 'Start Time', 'End Time']
@@ -5054,8 +5217,40 @@ def prod_seq_main_page():
     # Create dataframe with proper column names
     display_df = pd.DataFrame(selected_data, columns=column_names)
     
-    # Display the dataframe
-    st.dataframe(display_df, use_container_width=True)
+    # Filter out empty rows
+    display_df = display_df[display_df['Station'].astype(str).str.strip() != '']
+    
+    if not display_df.empty:
+        # Apply station pills to the Station column
+        display_df['Station'] = display_df['Station'].apply(create_station_pill)
+        
+        # Display styled table
+        st.markdown('<div class="table-container">', unsafe_allow_html=True)
+        st.markdown('<div class="table-header">Production Sequence Details</div>', unsafe_allow_html=True)
+        
+        # Create HTML table
+        html_table = display_df.to_html(
+            escape=False, 
+            index=False, 
+            classes='subrecipe-table',
+            table_id='production-sequence-table'
+        )
+        
+        # Wrap table in scrollable container
+        scrollable_html = f"""
+        <div class="scrollable-subrecipe-container">
+            {html_table}
+        </div>
+        """
+        
+        st.markdown(scrollable_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Show count
+        st.caption(f"Showing {len(display_df)} production sequence items")
+        
+    else:
+        st.warning("No production sequence data found.")
 
 def machine_calendar():
     """Machine calendar page content"""
