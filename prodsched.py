@@ -5009,75 +5009,15 @@ def load_prodsequence_data(sheet_index=1):
         return pd.DataFrame(), None
 
 # --- PRODUCTION SEQUENCE PAGE FUNCTIONS ---
-def render_production_sequence_page():
-    """Main production sequence page with sub-navigation"""
+def prod_seq_main_page():
+    """Production sequence main page content"""
     st.markdown("""
-    <div class="subrecipe-header">
+    <div class="main-header">
         <h1><b>Production Sequence</b></h1>
         <p><b>Production and Machine Sequence</b></p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Initialize sub_tab for production sequence if not exists
-    if 'prod_seq_sub_tab' not in st.session_state:
-        st.session_state.prod_seq_sub_tab = "Main Page"
-    
-    # Sub-navigation for Production Sequence - this should appear
-    prod_seq_sub_selection = option_menu(
-        menu_title=None,
-        options=["Main Page", "Machine Calendar"],
-        icons=["house-fill", "calendar3"],
-        default_index=0 if st.session_state.prod_seq_sub_tab == "Main Page" else 1,
-        orientation="horizontal",
-        key="prod_seq_sub_navigation",
-        styles={
-            "container": {
-                "max-width": "400px",
-                "text-align": "center",
-                "border-radius": "20px",
-                "color": "#ffffff"
-            },
-            "icon": {
-                "color": "#ffe712",
-                "font-size": "12px",
-                "margin-right": "4px"
-            },
-            "nav-link": {
-                "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
-                "font-size": "11px",
-                "font-weight": "500",
-                "text-align": "center",
-                "color": "#543559",
-                "margin": "0.1rem",
-                "padding": "0.4rem 0.6rem",
-                "border-radius": "17px",
-                "transition": "all 0.3s ease",
-                "border": "1px solid transparent",
-                "background": "rgba(248, 249, 250, 0.5)",
-                "white-space": "nowrap"
-            },
-            "nav-link-selected": {
-                "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
-                "color": "#ffffff",
-                "font-weight": "600",
-                "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
-                "border": "2px solid rgba(255,255,255,0.1)",
-                "transform": "translateY(-1px)"
-            }
-        }
-    )
-    
-    # Store the sub page selection in session state
-    st.session_state.prod_seq_sub_tab = prod_seq_sub_selection
-    
-    # Display content based on selection - remove the content from here
-    if prod_seq_sub_selection == "Main Page":
-        prod_seq_main_page()
-    elif prod_seq_sub_selection == "Machine Calendar":
-        machine_calendar()
-
-def prod_seq_main_page():
-    """Production sequence main page content"""
     st.markdown("### Production Sequence Main Page")
     
     # Load data
@@ -5108,6 +5048,13 @@ def prod_seq_main_page():
 
 def machine_calendar():
     """Machine calendar page content"""
+    st.markdown("""
+    <div class="main-header">
+        <h1><b>Machine Calendar</b></h1>
+        <p><b>Machine Scheduling and Availability</b></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("### Machine Calendar")
     
     # Placeholder content
@@ -5240,6 +5187,57 @@ def main():
         # Store the sub page selection in session state
         st.session_state.sub_tab = sub_page_selection
     
+    # Show sub-navigation only if Production Sequence is selected
+    elif main_page_selection == "Production Sequence":
+        
+        # Sub-navigation for Production Sequence
+        prod_seq_sub_selection = option_menu(
+            menu_title=None,
+            options=["Main Page", "Machine Calendar"],
+            icons=["house-fill", "calendar3"],
+            default_index=0 if st.session_state.get('prod_seq_sub_tab', 'Main Page') == "Main Page" else 1,
+            orientation="horizontal",
+            key="prod_seq_sub_navigation",
+            styles={
+                "container": {
+                    "max-width": "400px",
+                    "text-align": "center",
+                    "border-radius": "20px",
+                    "color": "#ffffff"
+                },
+                "icon": {
+                    "color": "#ffe712",
+                    "font-size": "12px",
+                    "margin-right": "4px"
+                },
+                "nav-link": {
+                    "font-family": "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
+                    "font-size": "11px",
+                    "font-weight": "500",
+                    "text-align": "center",
+                    "color": "#543559",
+                    "margin": "0.1rem",
+                    "padding": "0.4rem 0.6rem",
+                    "border-radius": "17px",
+                    "transition": "all 0.3s ease",
+                    "border": "1px solid transparent",
+                    "background": "rgba(248, 249, 250, 0.5)",
+                    "white-space": "nowrap"
+                },
+                "nav-link-selected": {
+                    "background": "linear-gradient(135deg, #495057 0%, #6c757d 100%)",
+                    "color": "#ffffff",
+                    "font-weight": "600",
+                    "box-shadow": "0 4px 15px rgba(73, 80, 87, 0.3)",
+                    "border": "2px solid rgba(255,255,255,0.1)",
+                    "transform": "translateY(-1px)"
+                }
+            }
+        )
+
+        # Store the sub page selection in session state
+        st.session_state.prod_seq_sub_tab = prod_seq_sub_selection
+    
     # Display the appropriate content based on navigation
     if st.session_state.main_tab == "KPI Dashboard":
         display_kpi_dashboard()
@@ -5259,8 +5257,11 @@ def main():
         render_subrecipe_details_page()
 
     elif main_page_selection == "Production Sequence":
-        # Simply call the main function - it handles its own sub-navigation
-        render_production_sequence_page()
+        # Production Sequence sub-pages
+        if st.session_state.prod_seq_sub_tab == "Main Page":
+            prod_seq_main_page()
+        elif st.session_state.prod_seq_sub_tab == "Machine Calendar":
+            machine_calendar()
         
 if __name__ == "__main__":
     main()
