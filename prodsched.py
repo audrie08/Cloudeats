@@ -5519,6 +5519,10 @@ def prod_seq_main_page():
 def machine_calendar():
     """Machine calendar page content - display machine data from sheet index 0 with enhanced calendar styling"""
     
+
+def machine_calendar():
+    """Machine calendar page content - display machine data from sheet index 0 with enhanced calendar styling"""
+    
     # Add enhanced CSS styling for calendar view
     st.markdown("""
     <style>
@@ -5548,36 +5552,40 @@ def machine_calendar():
     
     .calendar-container {
         background: white;
-        border-radius: 16px;
+        border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
         border: 1px solid #e2e8f0;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         margin-bottom: 2rem;
+        backdrop-filter: blur(20px);
     }
     
     .calendar-header {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: white;
-        padding: 20px 30px;
-        font-size: 1.3rem;
-        font-weight: 600;
+        padding: 24px 30px;
+        font-size: 1.4rem;
+        font-weight: 700;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         text-align: center;
         position: relative;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     
     .calendar-header::before {
-        font-size: 1.5rem;
-        margin-right: 10px;
+        content: '🗓️';
+        font-size: 1.6rem;
+        margin-right: 12px;
     }
     
     .scrollable-calendar-container {
         max-height: 700px;
         overflow-y: auto;
         overflow-x: auto;
-        border-radius: 0 0 16px 16px;
+        border-radius: 0 0 20px 20px;
         margin: 0;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     }
     
     .calendar-table {
@@ -5587,102 +5595,157 @@ def machine_calendar():
         background: white;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         margin: 0;
+        table-layout: fixed;
     }
     
     .calendar-table th {
-        background: linear-gradient(135deg, #1e2323 0%, #2d3748 100%);
-        color: #f4d602;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f1f5f9;
         font-weight: 700;
-        padding: 16px 12px;
+        padding: 16px 8px;
         text-align: center;
-        border-bottom: 3px solid #f4d602;
+        border-bottom: 2px solid #3b82f6;
         position: sticky;
         top: 0;
         z-index: 10;
         text-transform: uppercase;
         letter-spacing: 1px;
         font-size: 11px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     
     .calendar-table th:first-child {
-        background: linear-gradient(135deg, #f4d602 0%, #ffd700 100%);
-        color: #1e2323;
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
         font-weight: 800;
         font-size: 12px;
-        min-width: 180px;
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
         text-transform: none;
         letter-spacing: 0;
+        padding: 16px 12px;
+    }
+    
+    .calendar-table th:not(:first-child) {
+        width: 80px;
+        min-width: 80px;
+        max-width: 80px;
     }
     
     .calendar-table td {
-        padding: 14px 10px;
+        padding: 8px 4px;
         border-bottom: 1px solid #f1f5f9;
         border-right: 1px solid #f1f5f9;
         vertical-align: middle;
         text-align: center;
         font-weight: 500;
         position: relative;
-        transition: all 0.2s ease;
-        min-height: 50px;
+        transition: all 0.3s ease;
+        min-height: 60px;
     }
     
     .calendar-table td:first-child {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         text-align: left;
         font-weight: 700;
         color: #1e293b;
-        border-right: 2px solid #e2e8f0;
-        padding-left: 20px;
+        border-right: 2px solid #cbd5e1;
+        padding: 12px 20px;
         position: sticky;
         left: 0;
         z-index: 5;
-        box-shadow: 2px 0 4px rgba(0,0,0,0.05);
-        min-width: 180px;
+        box-shadow: 4px 0 8px rgba(0,0,0,0.08);
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
         font-size: 14px;
     }
     
+    .calendar-table td:not(:first-child) {
+        width: 80px;
+        min-width: 80px;
+        max-width: 80px;
+    }
+    
     .calendar-table tr:hover {
-        background-color: rgba(244, 214, 2, 0.08);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        background-color: rgba(59, 130, 246, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
     }
     
     .calendar-table tr:hover td:first-child {
-        background: linear-gradient(135deg, #f4d602 0%, #ffd700 100%);
-        color: #1e2323;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
     }
     
     .calendar-table tr:last-child td {
         border-bottom: none;
     }
     
-    /* Calendar cell styling for numeric-based states */
+    /* Modern calendar cell styling with consistent width and no borders */
     .calendar-cell {
         position: relative;
-        min-height: 45px;
-        border-radius: 6px;
-        margin: 2px;
+        min-height: 50px;
+        border-radius: 10px;
+        margin: 3px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        width: calc(100% - 6px);
+        border: none;
     }
     
-    .calendar-cell.single {
+    .calendar-cell:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    .calendar-cell.available {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        color: #64748b;
+    }
+    
+    .calendar-cell.available:hover {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    }
+    
+    .calendar-cell.low_usage {
         background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
         color: #166534;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
     
-    .calendar-cell.double {
+    .calendar-cell.low_usage:hover {
+        background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+    }
+    
+    .calendar-cell.moderate_usage {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         color: #92400e;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
     
-    .calendar-cell.multiple {
+    .calendar-cell.moderate_usage:hover {
+        background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    }
+    
+    .calendar-cell.max_usage {
         background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
         color: #1e40af;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .calendar-cell.max_usage:hover {
+        background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
     }
     
     .calendar-stats {
@@ -5719,30 +5782,28 @@ def machine_calendar():
         display: flex;
         justify-content: center;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        padding: 16px 24px;
+        gap: 16px;
+        padding: 12px 20px;
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-radius: 10px;
+        margin: 0 auto 20px auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         backdrop-filter: blur(10px);
         border: 1px solid #e2e8f0;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
+        width: fit-content;
+        max-width: 90%;
     }
     
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 12px;
+        gap: 6px;
+        font-size: 11px;
         font-weight: 600;
         color: #374151;
         transition: all 0.2s ease;
-        padding: 6px 10px;
-        border-radius: 6px;
+        padding: 4px 8px;
+        border-radius: 4px;
         white-space: nowrap;
     }
     
@@ -5752,10 +5813,10 @@ def machine_calendar():
     }
     
     .legend-color {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         flex-shrink: 0;
     }
     </style>
