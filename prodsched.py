@@ -5568,7 +5568,6 @@ def machine_calendar():
     }
     
     .calendar-header::before {
-        content: '📅';
         font-size: 1.5rem;
         margin-right: 10px;
     }
@@ -5884,10 +5883,6 @@ def machine_calendar():
             # Add updated legend for usage-based system
             st.markdown("""
             <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: white;"></div>
-                    <span>Available</span>
-                </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);"></div>
                     <span>Low Usage</span>
