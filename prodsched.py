@@ -5296,8 +5296,6 @@ def prod_seq_main_page():
     # Initialize session state for selections if not exists
     if 'selected_week_num' not in st.session_state:
         st.session_state.selected_week_num = week_numbers[0] if week_numbers else 1
-    if 'selected_date' not in st.session_state:
-        st.session_state.selected_date = "All Dates"
     
     # Week Selection Filter
     st.markdown('<div class="filters-container">', unsafe_allow_html=True)
