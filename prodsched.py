@@ -5199,6 +5199,29 @@ def prod_seq_main_page():
         letter-spacing: 0.5px;
         white-space: nowrap;
     }
+    
+    /* Custom button styling */
+    .stButton > button {
+        background-color: #6b7280 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 0.625rem 1rem !important;
+        font-weight: 500 !important;
+        width: 100% !important;
+        transition: all 0.3s ease !important;
+        font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #5a6268 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .stButton > button:focus {
+        box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -5222,7 +5245,11 @@ def prod_seq_main_page():
     if df_weeks.empty:
         st.warning("No week/date reference data available from sheet 6.")
         return
-
+    
+    # Display last modified time if available
+    if last_modified:
+        st.info(f"Data last updated: {last_modified}")
+    
     # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
     week_numbers = []
     week_dates_map = {}
