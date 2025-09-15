@@ -5728,27 +5728,38 @@ def machine_calendar():
     .legend {
         display: flex;
         justify-content: center;
-        gap: 20px;
-        padding: 15px;
-        background: white;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        gap: 24px;
+        padding: 20px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        backdrop-filter: blur(10px);
+        border: 1px solid #e2e8f0;
     }
     
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 12px;
+        gap: 10px;
+        font-size: 13px;
         font-weight: 600;
+        color: #374151;
+        transition: all 0.2s ease;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    
+    .legend-item:hover {
+        background: rgba(59, 130, 246, 0.05);
+        transform: translateY(-1px);
     }
     
     .legend-color {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
-        border: 1px solid rgba(0,0,0,0.1);
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -5874,24 +5885,24 @@ def machine_calendar():
                 
                 return ''.join(html_parts)
             
-            # Add updated legend for numeric system
+            # Add updated legend for usage-based system
             st.markdown("""
             <div class="legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background: white; border-color: #e2e8f0;"></div>
-                    <span>Empty (0 jobs)</span>
+                    <span>Available</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #16a34a;"></div>
-                    <span>Single (1 job)</span>
+                    <span>Low Usage</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b;"></div>
-                    <span>Double (2 jobs)</span>
+                    <span>Moderate Usage</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-color: #3b82f6;"></div>
-                    <span>Multiple (3+ jobs)</span>
+                    <span>Max Usage (3+)</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
