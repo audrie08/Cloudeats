@@ -4961,6 +4961,53 @@ def render_subrecipe_details_page():
         </div>
     """, unsafe_allow_html=True)
 
+# --- LOAD PRODUCTION SEQUENCE DATA ---
+@st.cache_data(ttl=60)
+def load_prodsequence_data(sheet_index=1):
+    """Load production sequence data from Google Sheets with last modified time"""
+    credentials = load_credentials_prodsequence()
+    if not credentials:
+        return pd.DataFrame(), None
+    
+    try:
+        gc = gspread.authorize(credentials)
+        spreadsheet_id = "19ptsyX5bwYiOhCddRPuz721_KtSwimeEyAToJRQQOrI"
+        sh = gc.open_by_key(spreadsheet_id)
+        
+        # Get the spreadsheet metadata for last modified time
+        last_modified_time = None
+        
+        # Method 1: Try using the drive API for file metadata
+        try:
+            drive_service = build('drive', 'v3', credentials=credentials)
+            file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
+            last_modified_time = file_metadata.get('modifiedTime')
+        except Exception as e:
+            pass        
+        # Method 2: Try the spreadsheet metadata (fallback)
+        if last_modified_time is None:
+            try:
+                spreadsheet_metadata = sh.fetch_sheet_metadata()
+                last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
+            except Exception as e:
+                pass        
+        # Method 3: If still None, use current time as fallback
+        if last_modified_time is None:
+            last_modified_time = datetime.now().isoformat() + 'Z'
+        
+        worksheet = sh.get_worksheet(sheet_index)
+        data = worksheet.get_all_values()
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        df = df.fillna('')
+        
+        return df, last_modified_time
+        
+    except Exception as e:
+        st.error(f"Error loading production sequence data: {str(e)}")
+        return pd.DataFrame(), None
+
 # --- FUNCTION TO UPDATE SPREADSHEET WITH SELECTED WEEK/DATE ---
 def update_spreadsheet_selection(week_number, selected_date):
     """Update the spreadsheet with selected week and date - preventing apostrophe formatting"""
