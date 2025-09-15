@@ -5838,8 +5838,10 @@ def machine_calendar():
             if machine_name and machine_name != '' and machine_name.lower() != 'nan':
                 row_data = [machine_name]  # Start with machine name
                 
-                # Extract data from columns C to P (indices 2 to 16, excluding Q - Manual Labor)
-                for col_idx in range(2, 17):
+                # Extract data from columns C to R (indices 2 to 17, excluding Q - Manual Labor at index 17)
+                for col_idx in range(2, 18):
+                    if col_idx == 17:  # Skip column Q (Manual Labor) - index 17
+                        continue
                     if col_idx < len(df_machines.columns):
                         cell_value = str(df_machines.iloc[row_idx, col_idx]).strip()
                         row_data.append(cell_value if cell_value else "")
