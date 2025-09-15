@@ -5346,7 +5346,7 @@ def prod_seq_main_page():
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)  # Add spacing to align with dropdowns
-        if st.button("Update Spreadsheet", type="primary", key="update_spreadsheet_btn"):
+        if st.button("Click to Update Data", type="primary", key="update_spreadsheet_btn"):
             # Determine what date to send to spreadsheet
             date_to_update = selected_date if selected_date != "All Dates" else available_dates[0] if available_dates and available_dates[0] != "No dates available" else ""
             
@@ -5355,7 +5355,7 @@ def prod_seq_main_page():
                     st.success("Spreadsheet updated successfully!")
                     st.rerun()  # Refresh to show updated data
                 else:
-                    st.error("Failed to update spreadsheet")
+                    st.error("Failed to update data")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
