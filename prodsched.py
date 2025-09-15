@@ -5670,11 +5670,6 @@ def machine_calendar():
         font-weight: 600;
     }
     
-    .calendar-cell.empty {
-        background: white;
-        color: #64748b;
-    }
-    
     .calendar-cell.single {
         background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
         color: #166534;
@@ -5883,6 +5878,10 @@ def machine_calendar():
             # Add updated legend for usage-based system
             st.markdown("""
             <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: white;</div>
+                    <span>Available</span>
+                </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);"></div>
                     <span>Low Usage</span>
