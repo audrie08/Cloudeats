@@ -5328,7 +5328,6 @@ def prod_seq_main_page():
         st.session_state.selected_date = current_date_from_sheet if current_date_from_sheet else "All Dates"
     
     # Week Selection Filter
-    st.markdown('<div class="filters-container">', unsafe_allow_html=True)
     st.markdown("#### Week & Date Selection")
     
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -5509,6 +5508,14 @@ def prod_seq_main_page():
         
     else:
         st.warning("No production sequence data found.")
+
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 Production Sequence</p>
+        </div>
+    """, unsafe_allow_html=True)
         
 def machine_calendar():
     """Machine calendar page content"""
