@@ -922,6 +922,89 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
         title_size = "12px"
         value_size = "32px"
 
+    # Check if target is empty and conditionally include target line or unit
+    target_html = ""
+    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
+        target_html = f"""<div style="
+            color: #acb4bf;
+            font-size: 14px;
+            font-weight: 500;
+        ">Target: {formatted_target}</div>"""
+    else:
+        # Show unit of measurement for cards without targets
+        unit_text = ""
+        if title.lower() in ['man-hr', 'man hr', 'manhour', 'man hour']:
+            unit_text = "(hrs)"
+        elif title.lower() in ['manpower', 'headcount']:
+            unit_text = "(count)"
+        elif title.lower() in ['volume', 'production volume']:
+            unit_text = "(kg)"
+        
+        if unit_text:
+            target_html = f"""<div style="
+                color: #acb4bf;
+                font-size: 14px;
+                font-weight: 500;
+            ">{unit_text}</div>"""
+        else:
+            # Add empty space if no target and no unit for consistent spacing
+            target_html = f"""<div style="
+                color: #acb4bf;
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0;
+            ">&nbsp;</div>"""
+    
+    card_html = f"""
+    <div class="kpi-card" style="height: {card_height};">
+        <div style="
+            color: #94a3b8;
+            font-size: {title_size};
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        ">{title}</div>
+        <div class="kpi-number" style="
+            color: {color};
+            font-size: {value_size};
+            font-weight: 700;
+            line-height: 1;
+            margin: 10px 0;
+        ">{formatted_value}</div>
+        {target_html}
+    </div>
+    """
+    return card_html
+    
+    # Preserve the < and > symbols from the target
+    target_str = str(target)
+    if target_str.startswith(('<', '>')):
+        symbol = target_str[0]
+        numeric_part = target_str[1:]
+        try:
+            numeric_value = float(numeric_part.strip('%'))
+            if kpi_type == "percentage":
+                formatted_numeric = f"{numeric_value:.1f}%"
+            elif kpi_type == "currency":
+                formatted_numeric = f"₱{numeric_value:,.2f}" if kpi_type == "currency" else f"${numeric_value:,.2f}"
+            else:
+                formatted_numeric = f"{numeric_value:,.0f}"
+            formatted_target = f"{symbol}{formatted_numeric}"
+        except ValueError:
+            formatted_target = target_str
+    else:
+        formatted_target = format_kpi_value(target, kpi_type)
+        
+    if size == "large":
+        card_height = "200px"
+        title_size = "18px"
+        value_size = "50px"
+    else:
+        card_height = "140px"
+        title_size = "12px"
+        value_size = "32px"
+
     # Check if target is empty and conditionally include target line
     target_html = ""
     if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
@@ -1807,7 +1890,7 @@ def display_kpi_dashboard():
         
         kpi_metrics_2 = [
             ("Man-hr", week_row.iloc[16] if len(week_row) > 16 else '', 
-             "", "count"),  # Empty target
+             "", "count"),  # Will show (hrs)
             ("Attendance", week_row.iloc[9] if len(week_row) > 9 else '', 
              target_row.iloc[9] if len(target_row) > 9 else '', "percentage"),
             ("Overtime %", week_row.iloc[10] if len(week_row) > 10 else '', 
@@ -1817,8 +1900,9 @@ def display_kpi_dashboard():
             ("KGMH", week_row.iloc[17] if len(week_row) > 17 else '', 
              target_row.iloc[17] if len(target_row) > 17 else '', "count"),
             ("Manpower", week_row.iloc[18] if len(week_row) > 18 else '', 
-             "", "count"),  # Empty target
+             "", "count"),  # Will show (count)
         ]
+
         
         for i, (title, value, target, kpi_type) in enumerate(kpi_metrics_2):
             with cols2[i]:
@@ -1832,7 +1916,7 @@ def display_kpi_dashboard():
         
         big_kpis = [
             ("Volume", week_row.iloc[2] if len(week_row) > 2 else '', 
-             target_row.iloc[2] if len(target_row) > 2 else '', "volume"),
+             "", "volume"),  # CHANGED: Empty target to show (kg) unit
             ("Spoilage vs Revenue", week_row.iloc[21] if len(week_row) > 21 else '', 
              target_row.iloc[21] if len(target_row) > 21 else '', "percentage"),
             ("Overall Equipment Effectiveness", week_row.iloc[15] if len(week_row) > 15 else '', 
