@@ -5783,9 +5783,9 @@ def machine_calendar():
         return
     
     try:
-        # Get headers from row 3 (index 2), columns B-R
+        # Get headers from row 3 (index 2), columns B-P (excluding Q - Manual Labor)
         headers = ['Time']  # First column header
-        for col_idx in range(2, 18):  # Skip column B, start from C
+        for col_idx in range(2, 17):  # Skip column B, start from C, end at P (exclude Q)
             if col_idx < len(df_machines.columns):
                 header = str(df_machines.iloc[2, col_idx]).strip()
                 headers.append(header if header else f"Day {col_idx-1}")
@@ -5838,8 +5838,8 @@ def machine_calendar():
             if machine_name and machine_name != '' and machine_name.lower() != 'nan':
                 row_data = [machine_name]  # Start with machine name
                 
-                # Extract data from columns C to R (indices 2 to 17)
-                for col_idx in range(2, 18):
+                # Extract data from columns C to P (indices 2 to 16, excluding Q - Manual Labor)
+                for col_idx in range(2, 17):
                     if col_idx < len(df_machines.columns):
                         cell_value = str(df_machines.iloc[row_idx, col_idx]).strip()
                         row_data.append(cell_value if cell_value else "")
