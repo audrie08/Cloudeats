@@ -5517,7 +5517,7 @@ def prod_seq_main_page():
     """, unsafe_allow_html=True)
         
 def machine_calendar():
-    """Machine calendar page content"""
+    """Machine calendar page content - display machine data from sheet index 0"""
     st.markdown("""
     <div class="main-header">
         <h1><b>Machine Calendar</b></h1>
@@ -5525,22 +5525,94 @@ def machine_calendar():
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### Machine Calendar")
+    # Load data from sheet index 0
+    df_machines, last_modified = load_prodsequence_data(sheet_index=0)
     
-    # Placeholder content
-    st.markdown("""
-    **This is a placeholder for the Machine Calendar Page.**
+    if df_machines.empty:
+        st.warning("No machine calendar data available.")
+        return
     
-    Features to be implemented:
-    - Interactive calendar view of machine schedules
-    - Machine availability tracking
-    - Maintenance scheduling
-    - Production booking system
-    - Conflict resolution tools
-    """)
+    # Display last modified time if available
+    if last_modified:
+        st.info(f"Data last updated: {last_modified}")
     
-    # Placeholder for calendar widget
-    st.info("📅 Interactive machine calendar widget will be implemented here")
+    # Check if we have enough data (need at least 3 rows for header structure)
+    if len(df_machines) <= 2:
+        st.warning("Not enough data rows in the machine calendar sheet.")
+        return
+    
+    # Extract machine data from columns B to R (indices 1 to 17)
+    # Row 2 (index 1) = Available machines
+    # Row 3 (index 2) = Headers  
+    # Row 4+ (index 3+) = Machine data
+    
+    try:
+        # Get headers from row 3 (index 2), columns B-R
+        headers = []
+        for col_idx in range(1, 18):  # Columns B(1) to R(17)
+            if col_idx < len(df_machines.columns):
+                header = str(df_machines.iloc[2, col_idx]).strip()
+                headers.append(header if header else f"Column {chr(65+col_idx)}")
+            else:
+                headers.append(f"Column {chr(65+col_idx)}")
+        
+        # Extract machine data starting from row 4 (index 3)
+        machine_data = []
+        
+        for row_idx in range(3, len(df_machines)):
+            # Check if column B (machine name) has data
+            machine_name = str(df_machines.iloc[row_idx, 1]).strip()  # Column B
+            
+            # Only include rows where column B is not empty
+            if machine_name and machine_name != '' and machine_name.lower() != 'nan':
+                row_data = []
+                
+                # Extract data from columns B to R
+                for col_idx in range(1, 18):  # Columns B(1) to R(17)
+                    if col_idx < len(df_machines.columns):
+                        cell_value = str(df_machines.iloc[row_idx, col_idx]).strip()
+                        row_data.append(cell_value if cell_value else "")
+                    else:
+                        row_data.append("")
+                
+                machine_data.append(row_data)
+        
+        if machine_data:
+            # Create DataFrame with proper headers
+            display_df = pd.DataFrame(machine_data, columns=headers)
+            
+            # Display styled table
+            st.markdown('<div class="table-container">', unsafe_allow_html=True)
+            st.markdown('<div class="table-header">Machine Calendar Data</div>', unsafe_allow_html=True)
+            
+            # Create HTML table with same styling as production sequence
+            html_table = display_df.to_html(
+                escape=False, 
+                index=False, 
+                classes='subrecipe-table',
+                table_id='machine-calendar-table'
+            )
+            
+            # Wrap table in scrollable container
+            scrollable_html = f"""
+            <div class="scrollable-subrecipe-container">
+                {html_table}
+            </div>
+            """
+            
+            st.markdown(scrollable_html, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Show count
+            st.caption(f"Showing {len(display_df)} machines")
+        else:
+            st.warning("No machine data found with valid machine names in column B.")
+            
+    except Exception as e:
+        st.error(f"Error processing machine calendar data: {str(e)}")
+        # Show raw data as fallback
+        st.subheader("Raw Machine Data")
+        st.dataframe(df_machines, use_container_width=True)
 
 # ----------------------------------------------------------------------------
 
