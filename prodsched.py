@@ -5954,7 +5954,7 @@ def machine_calendar():
             # Complete HTML table
             html_table = f'''
             <div class="machine-calendar-container">
-                <div class="machine-calendar-header">Machine Usage Schedule</div>
+                <div class="machine-calendar-header">Machine Calendar Data</div>
                 <div class="scrollable-calendar-container">
                     <table class="machine-calendar-table">
                         {"".join(html_rows)}
@@ -5967,19 +5967,6 @@ def machine_calendar():
             
             # Show additional info
             st.caption(f"📊 Displaying {len(display_df)} time slots across {total_machines} machines")
-            
-            # Add filter options
-            with st.expander("🔧 Filter Options"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    time_values = ['All times'] + [str(val) for val in display_df['Time'].unique()]
-                    time_filter = st.selectbox("Filter by time range", time_values)
-                with col2:
-                    usage_filter = st.selectbox("Show usage level", 
-                                               ["All levels", "Available only", "In use only", "Heavy usage (3+)"])
-                
-                if st.button("Apply Filters"):
-                    st.info("Filter functionality can be implemented based on requirements")
         
         else:
             st.warning("No valid machine calendar data found.")
