@@ -5528,181 +5528,175 @@ def machine_calendar():
     </div>
     """, unsafe_allow_html=True)
     
-    # Enhanced CSS for machine calendar
+    # Clean CSS for machine calendar - NO GRADIENTS AT ALL
     st.markdown("""
     <style>
     .machine-calendar-container {
-        margin: 20px 0;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        background: white;
+        background: white !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        border: 1px solid #ddd !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        margin: 20px 0 !important;
     }
     
     .machine-calendar-header {
-        background: linear-gradient(135deg, #2c3e50, #3498db);
-        color: white;
-        padding: 15px 20px;
-        font-size: 18px;
-        font-weight: bold;
-        text-align: center;
+        background: #2c3e50 !important;
+        color: white !important;
+        padding: 15px 20px !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        text-align: center !important;
+        border: none !important;
     }
     
     .machine-calendar-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 13px;
-        background: white;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        font-size: 13px !important;
+        background: white !important;
+        margin: 0 !important;
     }
     
     .machine-calendar-table th {
-        background: linear-gradient(135deg, #34495e, #2c3e50);
-        color: white;
-        padding: 12px 8px;
-        text-align: center;
-        font-weight: 600;
-        border: 1px solid #2c3e50;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        min-width: 50px;
-        max-width: 80px;
-        height: 140px;
-        vertical-align: bottom;
+        background: #34495e !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 6px !important;
+        text-align: center !important;
+        border: 1px solid #2c3e50 !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        writing-mode: vertical-rl !important;
+        text-orientation: mixed !important;
+        min-width: 45px !important;
+        max-width: 70px !important;
+        height: 120px !important;
+        vertical-align: bottom !important;
     }
     
     .machine-calendar-table th:first-child {
-        writing-mode: horizontal-tb;
-        text-orientation: initial;
-        min-width: 80px;
-        height: auto;
-        vertical-align: middle;
+        writing-mode: horizontal-tb !important;
+        text-orientation: initial !important;
+        min-width: 80px !important;
+        height: auto !important;
+        vertical-align: middle !important;
+        background: #34495e !important;
+        color: white !important;
     }
     
     .machine-calendar-table td {
-        padding: 8px;
-        text-align: center;
-        border: 1px solid #ddd;
-        transition: all 0.2s ease;
-        font-weight: 500;
+        padding: 8px 4px !important;
+        text-align: center !important;
+        border: 1px solid #ddd !important;
+        vertical-align: middle !important;
+        font-weight: 500 !important;
+        background: white !important;
+        font-size: 12px !important;
     }
     
     .machine-calendar-table td:first-child {
-        background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
-        font-weight: bold;
-        color: #2c3e50;
-        position: sticky;
-        left: 0;
-        z-index: 5;
-        border-right: 2px solid #34495e;
-        min-width: 80px;
-        text-align: left;
-        padding-left: 12px;
-    }
-    
-    .machine-calendar-table tr:nth-child(even) {
-        background-color: #f8f9fa;
+        background: #f8f9fa !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 5 !important;
+        border-right: 2px solid #34495e !important;
+        min-width: 80px !important;
+        text-align: center !important;
+        padding: 8px 10px !important;
     }
     
     .machine-calendar-table tr:hover {
-        background-color: #e3f2fd;
-        transform: scale(1.01);
+        background-color: #f0f8ff !important;
+        transition: background-color 0.2s ease !important;
     }
     
+    .machine-calendar-table tr:hover td {
+        background-color: #f0f8ff !important;
+    }
+    
+    .machine-calendar-table tr:nth-child(even) {
+        background-color: #fafafa !important;
+    }
+    
+    .machine-calendar-table tr:nth-child(even):hover {
+        background-color: #f0f8ff !important;
+    }
+    
+    .machine-calendar-table tr:last-child td {
+        border-bottom: 1px solid #ddd !important;
+    }
+    
+    /* Clean usage level colors - NO GRADIENTS */
     .usage-0, .usage-empty {
-        background-color: #f1f3f4 !important;
-        color: #9e9e9e;
+        background-color: #ffffff !important;
+        color: #999 !important;
     }
     
     .usage-1 {
-        background: linear-gradient(135deg, #c8e6c9, #a5d6a7) !important;
-        color: #1b5e20;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(76, 175, 80, 0.3);
+        background-color: #28a745 !important;
+        color: white !important;
+        font-weight: 600 !important;
     }
     
     .usage-2 {
-        background: linear-gradient(135deg, #fff3e0, #ffcc02) !important;
-        color: #e65100;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(255, 193, 7, 0.3);
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+        font-weight: 600 !important;
     }
     
     .usage-3 {
-        background: linear-gradient(135deg, #ffebee, #ef5350) !important;
-        color: #b71c1c;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(244, 67, 54, 0.3);
+        background-color: #dc3545 !important;
+        color: white !important;
+        font-weight: 600 !important;
     }
     
     .usage-4, .usage-high {
-        background: linear-gradient(135deg, #e1bee7, #9c27b0) !important;
-        color: white;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(156, 39, 176, 0.4);
+        background-color: #6f42c1 !important;
+        color: white !important;
+        font-weight: 600 !important;
     }
     
     .scrollable-calendar-container {
-        max-height: 600px;
-        overflow: auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        max-height: 500px !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        margin: 0 !important;
     }
     
     .calendar-legend {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 15px 0;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        flex-wrap: wrap;
+        display: flex !important;
+        justify-content: center !important;
+        gap: 15px !important;
+        margin: 15px 0 !important;
+        padding: 10px !important;
+        background: #f8f9fa !important;
+        border-radius: 5px !important;
+        flex-wrap: wrap !important;
+        border: 1px solid #ddd !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     }
     
     .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        font-weight: 500;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        color: #495057 !important;
     }
     
     .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-    }
-    
-    .machine-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-    
-    .summary-card {
-        background: white;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #3498db;
-    }
-    
-    .summary-title {
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 5px;
-    }
-    
-    .summary-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #3498db;
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 3px !important;
+        border: 1px solid #aaa !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -5726,6 +5720,11 @@ def machine_calendar():
     try:
         # Debug: Show data structure
         st.write("Debug - Data shape:", df_machines.shape)
+        st.write("Debug - Column names:", list(df_machines.columns))
+        
+        # Show first few rows to understand structure
+        st.write("Debug - First 5 rows:")
+        st.dataframe(df_machines.head(), use_container_width=True)
         
         # Function to safely get cell value
         def safe_get_cell(df, row, col):
@@ -5747,6 +5746,29 @@ def machine_calendar():
                 return True
             str_val = str(val).strip().lower()
             return str_val in ['', 'nan', 'none', 'null']
+        
+        # Let's examine the structure more carefully
+        st.write("Debug - Row 2 (Headers row):")
+        if len(df_machines) > 2:
+            for i in range(min(10, len(df_machines.columns))):
+                val = safe_get_cell(df_machines, 2, i)
+                st.write(f"  Column {i} ({chr(65+i)}): '{val}'")
+        
+        st.write("Debug - Row 3 (First data row):")
+        if len(df_machines) > 3:
+            for i in range(min(10, len(df_machines.columns))):
+                val = safe_get_cell(df_machines, 3, i)
+                st.write(f"  Column {i} ({chr(65+i)}): '{val}'")
+        
+        # Check different columns for time data
+        st.write("Debug - Looking for time data in different columns:")
+        for col_idx in range(min(5, len(df_machines.columns))):
+            st.write(f"Column {col_idx} ({chr(65+col_idx)}) sample values:")
+            for row_idx in range(3, min(8, len(df_machines))):
+                val = safe_get_cell(df_machines, row_idx, col_idx)
+                if not is_empty_value(val):
+                    st.write(f"  Row {row_idx}: '{val}'")
+                    break
         
         # Auto-detect the time column and data structure
         time_col_idx = None
@@ -5834,7 +5856,7 @@ def machine_calendar():
         
         if len(machine_data) > 0:
             # Create DataFrame
-            display_df = pd.DataFrame(machine_data, columns=headers)
+            display_df = pd.DataFrame(machine_data, columns=headers[:len(machine_data[0])])
             
             st.write("Debug - Display DataFrame shape:", display_df.shape)
             st.write("Debug - Display DataFrame columns:", list(display_df.columns))
@@ -5861,46 +5883,28 @@ def machine_calendar():
                 if slot_has_activity:
                     active_slots += 1
             
-            # Display summary cards
-            st.markdown('<div class="machine-summary">', unsafe_allow_html=True)
-            st.markdown(f'''
-            <div class="summary-card">
-                <div class="summary-title">Total Machines</div>
-                <div class="summary-value">{total_machines}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Active Time Slots</div>
-                <div class="summary-value">{active_slots}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Peak Usage Level</div>
-                <div class="summary-value">{peak_usage}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Total Time Slots</div>
-                <div class="summary-value">{len(display_df)}</div>
-            </div>
-            ''', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Create legend
+            # Create legend (updated colors)
             st.markdown('''
             <div class="calendar-legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: #f1f3f4;"></div>
+                    <div class="legend-color" style="background: #ffffff; border: 1px solid #aaa;"></div>
                     <span>Available</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #c8e6c9, #a5d6a7);"></div>
+                    <div class="legend-color" style="background: #28a745;"></div>
                     <span>Light Usage (1)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #fff3e0, #ffcc02);"></div>
+                    <div class="legend-color" style="background: #ffc107;"></div>
                     <span>Moderate Usage (2)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #e1bee7, #9c27b0);"></div>
-                    <span>Max Usage (3+)</span>
+                    <div class="legend-color" style="background: #dc3545;"></div>
+                    <span>Heavy Usage (3)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6f42c1;"></div>
+                    <span>Max Usage (4+)</span>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -5924,41 +5928,36 @@ def machine_calendar():
                 except (ValueError, TypeError):
                     return 'usage-0'
             
-            # Create HTML table manually for better control
-            html_rows = []
+            # Create completely custom HTML table to ensure CSS applies
+            html_table = '<div class="machine-calendar-container">'
+            html_table += '<div class="machine-calendar-header">Machine Calendar Data</div>'
+            html_table += '<div class="scrollable-calendar-container">'
+            html_table += '<table class="machine-calendar-table">'
             
             # Header row
-            header_cells = []
+            html_table += '<thead><tr>'
             for col in display_df.columns:
-                header_cells.append(f'<th>{col}</th>')
-            html_rows.append(f'<tr>{"".join(header_cells)}</tr>')
+                html_table += f'<th>{col}</th>'
+            html_table += '</tr></thead>'
             
-            # Data rows
+            # Body rows
+            html_table += '<tbody>'
             for idx in range(len(display_df)):
-                cells = []
+                html_table += '<tr>'
                 for col_idx, col in enumerate(display_df.columns):
                     val = display_df.iloc[idx][col]
                     
                     if col_idx == 0:  # Time column
-                        cells.append(f'<td>{val}</td>')
+                        html_table += f'<td>{val}</td>'
                     else:  # Usage columns
                         css_class = apply_usage_styling(val)
                         display_val = val if not is_empty_value(val) else ''
-                        cells.append(f'<td class="{css_class}">{display_val}</td>')
-                html_rows.append(f'<tr>{"".join(cells)}</tr>')
+                        html_table += f'<td class="{css_class}">{display_val}</td>'
+                html_table += '</tr>'
             
-            # Complete HTML table
-            html_table = f'''
-            <div class="machine-calendar-container">
-                <div class="machine-calendar-header">Machine Calendar Data</div>
-                <div class="scrollable-calendar-container">
-                    <table class="machine-calendar-table">
-                        {"".join(html_rows)}
-                    </table>
-                </div>
-            </div>
-            '''
+            html_table += '</tbody></table></div></div>'
             
+            # Render the HTML directly
             st.markdown(html_table, unsafe_allow_html=True)
             
             # Show additional info
@@ -5980,7 +5979,8 @@ def machine_calendar():
             st.write("DataFrame info:")
             st.write(df_machines.info())
             st.dataframe(df_machines, use_container_width=True)
-            
+
+
 # ----------------------------------------------------------------------------
 
 def main():
