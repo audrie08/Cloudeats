@@ -5518,6 +5518,8 @@ def prod_seq_main_page():
         
 def machine_calendar():
     """Enhanced Machine calendar page content - display machine data from sheet index 0"""
+    import pandas as pd  # Make sure pandas is imported
+    
     st.markdown("""
     <div class="main-header">
         <h1><b>Machine Calendar</b></h1>
@@ -5913,7 +5915,7 @@ def machine_calendar():
         st.error(f"Error processing machine calendar data: {str(e)}")
         # Show raw data as fallback
         with st.expander("Debug: Raw Data"):
-            st.dataframe(df_machines, use_container_width=True)
+            st.dataframe(df_machines, use_container_width=True))
 
 # ----------------------------------------------------------------------------
 
