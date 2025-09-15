@@ -5674,25 +5674,21 @@ def machine_calendar():
     .calendar-cell.empty {
         background: white;
         color: #64748b;
-        border: 1px solid #e2e8f0;
     }
     
     .calendar-cell.single {
         background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
         color: #166534;
-        border: 1px solid #16a34a;
     }
     
     .calendar-cell.double {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         color: #92400e;
-        border: 1px solid #f59e0b;
     }
     
     .calendar-cell.multiple {
         background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
         color: #1e40af;
-        border: 1px solid #3b82f6;
     }
     
     .calendar-stats {
@@ -5889,19 +5885,19 @@ def machine_calendar():
             st.markdown("""
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: white; border-color: #e2e8f0;"></div>
+                    <div class="legend-color" style="background: white;"></div>
                     <span>Available</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #16a34a;"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);"></div>
                     <span>Low Usage</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b;"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></div>
                     <span>Moderate Usage</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-color: #3b82f6;"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);"></div>
                     <span>Max Usage (3+)</span>
                 </div>
             </div>
