@@ -5924,13 +5924,13 @@ def machine_calendar():
         st.subheader("Raw Machine Data")
         st.dataframe(df_machines, use_container_width=True)
 
-        # Simple Footer
-        st.markdown("---")
-        st.markdown("""
-            <div style="text-align: center; padding: 20px 0; color: #666;">
-                <p style="margin: 0; font-size: 14px;">© 2025 Machine Calendar</p>
-            </div>
-        """, unsafe_allow_html=True)
+    # Simple Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p style="margin: 0; font-size: 14px;">© 2025 Machine Calendar</p>
+        </div>
+    """, unsafe_allow_html=True)
         
 # ----------------------------------------------------------------------------
 
