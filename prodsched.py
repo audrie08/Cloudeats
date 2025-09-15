@@ -5213,7 +5213,7 @@ def prod_seq_main_page():
         font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
     }
     .stButton {
-        margin-top: 1.00rem !important;
+        margin-top: 0.5rem !important;
     }
     
     .stButton > button:hover {
