@@ -5206,7 +5206,7 @@ def prod_seq_main_page():
         color: white !important;
         border: none !important;
         border-radius: 20px !important;
-        padding: 0.625rem 1rem !important;
+        padding: 0.4rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
         transition: all 0.3s ease !important;
@@ -5245,10 +5245,6 @@ def prod_seq_main_page():
     if df_weeks.empty:
         st.warning("No week/date reference data available from sheet 6.")
         return
-    
-    # Display last modified time if available
-    if last_modified:
-        st.info(f"Data last updated: {last_modified}")
     
     # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
     week_numbers = []
