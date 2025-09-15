@@ -4961,56 +4961,9 @@ def render_subrecipe_details_page():
         </div>
     """, unsafe_allow_html=True)
 
-# --- LOAD PRODUCTION SEQUENCE DATA ---
-@st.cache_data(ttl=60)
-def load_prodsequence_data(sheet_index=1):
-    """Load production sequence data from Google Sheets with last modified time"""
-    credentials = load_credentials_prodsequence()
-    if not credentials:
-        return pd.DataFrame(), None
-    
-    try:
-        gc = gspread.authorize(credentials)
-        spreadsheet_id = "19ptsyX5bwYiOhCddRPuz721_KtSwimeEyAToJRQQOrI"
-        sh = gc.open_by_key(spreadsheet_id)
-        
-        # Get the spreadsheet metadata for last modified time
-        last_modified_time = None
-        
-        # Method 1: Try using the drive API for file metadata
-        try:
-            drive_service = build('drive', 'v3', credentials=credentials)
-            file_metadata = drive_service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
-            last_modified_time = file_metadata.get('modifiedTime')
-        except Exception as e:
-            pass        
-        # Method 2: Try the spreadsheet metadata (fallback)
-        if last_modified_time is None:
-            try:
-                spreadsheet_metadata = sh.fetch_sheet_metadata()
-                last_modified_time = spreadsheet_metadata.get('properties', {}).get('modifiedTime')
-            except Exception as e:
-                pass        
-        # Method 3: If still None, use current time as fallback
-        if last_modified_time is None:
-            last_modified_time = datetime.now().isoformat() + 'Z'
-        
-        worksheet = sh.get_worksheet(sheet_index)
-        data = worksheet.get_all_values()
-        
-        # Create DataFrame
-        df = pd.DataFrame(data)
-        df = df.fillna('')
-        
-        return df, last_modified_time
-        
-    except Exception as e:
-        st.error(f"Error loading production sequence data: {str(e)}")
-        return pd.DataFrame(), None
-
 # --- FUNCTION TO UPDATE SPREADSHEET WITH SELECTED WEEK/DATE ---
 def update_spreadsheet_selection(week_number, selected_date):
-    """Update the spreadsheet with selected week and date - without apostrophe formatting"""
+    """Update the spreadsheet with selected week and date - preventing apostrophe formatting"""
     try:
         credentials = load_credentials_prodsequence()
         if not credentials:
@@ -5021,11 +4974,44 @@ def update_spreadsheet_selection(week_number, selected_date):
         sh = gc.open_by_key(spreadsheet_id)
         worksheet = sh.get_worksheet(1)  # Sheet index 1
         
-        # Update J1 with week number as a number (not text with apostrophe)
+        # Update J1 with week number as a number
         worksheet.update('J1', [[int(week_number)]], value_input_option='RAW')
         
-        # Update J2 with selected date as text but without forcing apostrophe
-        worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
+        # Try different approaches for J2 to prevent apostrophe
+        try:
+            # Method 1: Use USER_ENTERED to let Sheets interpret naturally
+            worksheet.update('J2', [[str(selected_date)]], value_input_option='USER_ENTERED')
+        except:
+            try:
+                # Method 2: Format as date if possible
+                from datetime import datetime
+                # Try to parse and format as a proper date
+                if any(month in selected_date for month in ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']):
+                    # Extract day and month
+                    import re
+                    match = re.search(r'(\d+)(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', selected_date)
+                    if match:
+                        day = match.group(1)
+                        month = match.group(2)
+                        
+                        # Create a proper date format
+                        month_map = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                                   'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+                        
+                        if month in month_map:
+                            date_obj = datetime(2024, month_map[month], int(day))
+                            formatted_date = date_obj.strftime('%d %b')
+                            worksheet.update('J2', [[formatted_date]], value_input_option='USER_ENTERED')
+                        else:
+                            # Fallback to raw if parsing fails
+                            worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
+                    else:
+                        worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
+                else:
+                    worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
+            except:
+                # Final fallback
+                worksheet.update('J2', [[str(selected_date)]], value_input_option='RAW')
         
         # Clear cache to force reload of updated data
         load_prodsequence_data.clear()
