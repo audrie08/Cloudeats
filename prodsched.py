@@ -5206,7 +5206,7 @@ def prod_seq_main_page():
         color: white !important;
         border: none !important;
         border-radius: 20px !important;
-        padding: 0.4rem 1rem !important;
+        padding: 0.70rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
         transition: all 0.3s ease !important;
