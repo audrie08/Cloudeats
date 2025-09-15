@@ -5777,10 +5777,6 @@ def machine_calendar():
         st.warning("No machine calendar data available.")
         return
     
-    # Display last modified time if available
-    if last_modified:
-        st.info(f"📊 Data last updated: {last_modified}")
-    
     # Check if we have enough data
     if len(df_machines) <= 2:
         st.warning("Not enough data rows in the machine calendar sheet.")
