@@ -5783,9 +5783,11 @@ def machine_calendar():
         return
     
     try:
-        # Get headers from row 3 (index 2), columns B-P (excluding Q - Manual Labor)
+        # Get headers from row 3 (index 2), columns B-R (excluding Q - Manual Labor)
         headers = ['Time']  # First column header
-        for col_idx in range(2, 18):  # Skip column B, start from C, end at P (exclude Q)
+        for col_idx in range(2, 18):  # Skip column B, start from C
+            if col_idx == 16:  # Skip column Q (Manual Labor) - index 17
+                continue
             if col_idx < len(df_machines.columns):
                 header = str(df_machines.iloc[2, col_idx]).strip()
                 headers.append(header if header else f"Day {col_idx-1}")
