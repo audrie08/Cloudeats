@@ -5200,7 +5200,7 @@ def prod_seq_main_page():
         white-space: nowrap;
     }
     
-    /* Custom button styling */
+     /* Custom button styling with proper alignment */
     .stButton > button {
         background-color: #6b7280 !important;
         color: white !important;
@@ -5209,8 +5209,17 @@ def prod_seq_main_page():
         padding: 0.625rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
+        height: 2.75rem !important;
         transition: all 0.3s ease !important;
         font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
+        margin-top: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .stButton {
+        margin-top: 1.75rem !important;
     }
     
     .stButton > button:hover {
