@@ -5222,11 +5222,7 @@ def prod_seq_main_page():
     if df_weeks.empty:
         st.warning("No week/date reference data available from sheet 6.")
         return
-    
-    # Display last modified time if available
-    if last_modified:
-        st.info(f"Data last updated: {last_modified}")
-    
+
     # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
     week_numbers = []
     week_dates_map = {}
