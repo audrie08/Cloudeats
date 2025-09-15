@@ -5209,7 +5209,7 @@ def prod_seq_main_page():
         padding: 0.625rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
-        height: 2.75rem !important;
+        height: 2.00rem !important;
         transition: all 0.3s ease !important;
         font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
         margin-top: 0.5rem !important;
