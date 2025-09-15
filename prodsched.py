@@ -5568,6 +5568,7 @@ def machine_calendar():
     }
     
     .calendar-header::before {
+        content: '📅';
         font-size: 1.5rem;
         margin-right: 10px;
     }
@@ -5778,7 +5779,7 @@ def machine_calendar():
     
     try:
         # Get headers from row 3 (index 2), columns B-R
-        headers = ['Time']  # First column header
+        headers = ['Machine Name']  # First column header
         for col_idx in range(2, 18):  # Skip column B, start from C
             if col_idx < len(df_machines.columns):
                 header = str(df_machines.iloc[2, col_idx]).strip()
@@ -5882,27 +5883,6 @@ def machine_calendar():
             
             st.markdown(scrollable_html, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Add statistics
-            total_machines = len(machine_data)
-            total_slots = total_machines * (len(headers) - 1)  # Exclude machine name column
-            
-            st.markdown(f"""
-            <div class="calendar-stats">
-                <div class="stat-item">
-                    <span class="stat-number">{total_machines}</span>
-                    <span class="stat-label">Total Machines</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{len(headers) - 1}</span>
-                    <span class="stat-label">Time Periods</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{total_slots}</span>
-                    <span class="stat-label">Total Slots</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
             
         else:
             st.warning("No machine data found with valid machine names in column B.")
