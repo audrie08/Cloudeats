@@ -5568,7 +5568,6 @@ def machine_calendar():
     }
     
     .calendar-header::before {
-        content: '📅';
         font-size: 1.5rem;
         margin-right: 10px;
     }
@@ -5779,7 +5778,7 @@ def machine_calendar():
     
     try:
         # Get headers from row 3 (index 2), columns B-R
-        headers = ['Machine Name']  # First column header
+        headers = ['Time']  # First column header
         for col_idx in range(2, 18):  # Skip column B, start from C
             if col_idx < len(df_machines.columns):
                 header = str(df_machines.iloc[2, col_idx]).strip()
