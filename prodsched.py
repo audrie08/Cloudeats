@@ -5548,40 +5548,36 @@ def machine_calendar():
     
     .calendar-container {
         background: white;
-        border-radius: 20px;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
         border: 1px solid #e2e8f0;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         margin-bottom: 2rem;
-        backdrop-filter: blur(20px);
     }
     
     .calendar-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: white;
-        padding: 24px 30px;
-        font-size: 1.4rem;
-        font-weight: 700;
+        padding: 20px 30px;
+        font-size: 1.3rem;
+        font-weight: 600;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         text-align: center;
         position: relative;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     
     .calendar-header::before {
-        content: '🗓️';
-        font-size: 1.6rem;
-        margin-right: 12px;
+        font-size: 1.5rem;
+        margin-right: 10px;
     }
     
     .scrollable-calendar-container {
         max-height: 700px;
         overflow-y: auto;
         overflow-x: auto;
-        border-radius: 0 0 20px 20px;
+        border-radius: 0 0 16px 16px;
         margin: 0;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     }
     
     .calendar-table {
@@ -5591,157 +5587,102 @@ def machine_calendar():
         background: white;
         font-family: 'TT Norms', 'Segoe UI', sans-serif;
         margin: 0;
-        table-layout: fixed;
     }
     
     .calendar-table th {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #f1f5f9;
+        background: linear-gradient(135deg, #1e2323 0%, #2d3748 100%);
+        color: #f4d602;
         font-weight: 700;
-        padding: 16px 8px;
+        padding: 16px 12px;
         text-align: center;
-        border-bottom: 2px solid #3b82f6;
+        border-bottom: 3px solid #f4d602;
         position: sticky;
         top: 0;
         z-index: 10;
         text-transform: uppercase;
         letter-spacing: 1px;
         font-size: 11px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     .calendar-table th:first-child {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white;
+        background: linear-gradient(135deg, #f4d602 0%, #ffd700 100%);
+        color: #1e2323;
         font-weight: 800;
         font-size: 12px;
-        width: 200px;
-        min-width: 200px;
-        max-width: 200px;
+        min-width: 180px;
         text-transform: none;
         letter-spacing: 0;
-        padding: 16px 12px;
-    }
-    
-    .calendar-table th:not(:first-child) {
-        width: 80px;
-        min-width: 80px;
-        max-width: 80px;
     }
     
     .calendar-table td {
-        padding: 8px 4px;
+        padding: 14px 10px;
         border-bottom: 1px solid #f1f5f9;
         border-right: 1px solid #f1f5f9;
         vertical-align: middle;
         text-align: center;
         font-weight: 500;
         position: relative;
-        transition: all 0.3s ease;
-        min-height: 60px;
+        transition: all 0.2s ease;
+        min-height: 50px;
     }
     
     .calendar-table td:first-child {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         text-align: left;
         font-weight: 700;
         color: #1e293b;
-        border-right: 2px solid #cbd5e1;
-        padding: 12px 20px;
+        border-right: 2px solid #e2e8f0;
+        padding-left: 20px;
         position: sticky;
         left: 0;
         z-index: 5;
-        box-shadow: 4px 0 8px rgba(0,0,0,0.08);
-        width: 200px;
-        min-width: 200px;
-        max-width: 200px;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+        min-width: 180px;
         font-size: 14px;
     }
     
-    .calendar-table td:not(:first-child) {
-        width: 80px;
-        min-width: 80px;
-        max-width: 80px;
-    }
-    
     .calendar-table tr:hover {
-        background-color: rgba(59, 130, 246, 0.05);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+        background-color: rgba(244, 214, 2, 0.08);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     
     .calendar-table tr:hover td:first-child {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        color: white;
+        background: linear-gradient(135deg, #f4d602 0%, #ffd700 100%);
+        color: #1e2323;
     }
     
     .calendar-table tr:last-child td {
         border-bottom: none;
     }
     
-    /* Modern calendar cell styling with consistent width and no borders */
+    /* Calendar cell styling for numeric-based states */
     .calendar-cell {
         position: relative;
-        min-height: 50px;
-        border-radius: 10px;
-        margin: 3px;
+        min-height: 45px;
+        border-radius: 6px;
+        margin: 2px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
-        backdrop-filter: blur(10px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        width: calc(100% - 6px);
-        border: none;
     }
     
-    .calendar-cell:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    .calendar-cell.single {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
     }
     
-    .calendar-cell.available {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        color: #64748b;
+    .calendar-cell.double {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
     }
     
-    .calendar-cell.available:hover {
-        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    }
-    
-    .calendar-cell.low_usage {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-    
-    .calendar-cell.low_usage:hover {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-    }
-    
-    .calendar-cell.moderate_usage {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-    
-    .calendar-cell.moderate_usage:hover {
-        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
-    }
-    
-    .calendar-cell.max_usage {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
-    
-    .calendar-cell.max_usage:hover {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    .calendar-cell.multiple {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
     }
     
     .calendar-stats {
@@ -5851,14 +5792,14 @@ def machine_calendar():
         def classify_cell_content(cell_value):
             """
             Classify cell content based on numeric value:
-            - Empty/null/whitespace → 'available' (white)
-            - Value = 1 → 'low_usage' (green)
-            - Value = 2 → 'moderate_usage' (yellow)  
-            - Value >= 3 → 'max_usage' (red)
+            - Empty/null/whitespace → 'empty' (white)
+            - Value = 1 → 'single' (green)
+            - Value = 2 → 'double' (yellow)  
+            - Value >= 3 → 'multiple' (blue)
             """
             # Handle empty/null values
             if not cell_value or str(cell_value).strip() in ['', 'nan', 'NaN', 'None']:
-                return 'available'
+                return 'empty'
             
             cell_str = str(cell_value).strip()
             
@@ -5866,24 +5807,24 @@ def machine_calendar():
             try:
                 numeric_value = float(cell_str)
                 if numeric_value == 1:
-                    return 'low_usage'
+                    return 'single'
                 elif numeric_value == 2:
-                    return 'moderate_usage'
+                    return 'double'
                 elif numeric_value >= 3:
-                    return 'max_usage'
+                    return 'multiple'
                 else:
-                    return 'available'
+                    return 'empty'
             except ValueError:
                 # If not numeric, count characters/length as fallback
                 content_length = len(cell_str)
                 if content_length == 0:
-                    return 'available'
+                    return 'empty'
                 elif content_length == 1:
-                    return 'low_usage'
+                    return 'single'
                 elif content_length == 2:
-                    return 'moderate_usage'
+                    return 'double'
                 else:
-                    return 'max_usage'
+                    return 'multiple'
         
         # Extract machine data starting from row 4 (index 3)
         machine_data = []
@@ -5934,23 +5875,23 @@ def machine_calendar():
                 
                 return ''.join(html_parts)
             
-            # Add modern legend for usage-based system
+            # Add updated legend for usage-based system
             st.markdown("""
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
+                    <div class="legend-color" style="background: white;</div>
                     <span>Available</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);"></div>
                     <span>Low Usage</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></div>
                     <span>Moderate Usage</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);"></div>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);"></div>
                     <span>Max Usage (3+)</span>
                 </div>
             </div>
@@ -5968,7 +5909,7 @@ def machine_calendar():
             """
             
             st.markdown(scrollable_html, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
             
         else:
             st.warning("No machine data found with valid machine names in column B.")
