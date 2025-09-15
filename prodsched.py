@@ -5915,7 +5915,7 @@ def machine_calendar():
         st.error(f"Error processing machine calendar data: {str(e)}")
         # Show raw data as fallback
         with st.expander("Debug: Raw Data"):
-            st.dataframe(df_machines, use_container_width=True))
+            st.dataframe(df_machines, use_container_width=True)
 
 # ----------------------------------------------------------------------------
 
