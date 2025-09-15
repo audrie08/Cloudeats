@@ -5200,7 +5200,7 @@ def prod_seq_main_page():
         white-space: nowrap;
     }
     
-     /* Custom button styling with proper alignment */
+    /* Custom button styling */
     .stButton > button {
         background-color: #6b7280 !important;
         color: white !important;
@@ -5209,17 +5209,8 @@ def prod_seq_main_page():
         padding: 0.625rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
-        height: 0.5rem !important;
         transition: all 0.3s ease !important;
         font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
-        margin-top: 0.5rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    .stButton {
-        margin-top: 0.50rem !important;
     }
     
     .stButton > button:hover {
@@ -5254,6 +5245,10 @@ def prod_seq_main_page():
     if df_weeks.empty:
         st.warning("No week/date reference data available from sheet 6.")
         return
+    
+    # Display last modified time if available
+    if last_modified:
+        st.info(f"Data last updated: {last_modified}")
     
     # Extract week numbers from sheet 6, row 2 (index 1), columns K-NJ (indices 10-999)
     week_numbers = []
@@ -5293,9 +5288,45 @@ def prod_seq_main_page():
         week_numbers = [1]  # Fallback
         week_dates_map = {1: ["No dates available"]}
     
-    # Initialize session state for selections if not exists
+    # Extract current week/date from J1 and J2 in the main spreadsheet (sheet index 1)
+    current_week_from_sheet = None
+    current_date_from_sheet = None
+    
+    try:
+        if len(df) > 1 and len(df.columns) > 9:
+            # Get current values from J1 and J2
+            j1_value = str(df.iloc[0, 9]).strip()  # J1 - Week No.
+            j2_value = str(df.iloc[1, 9]).strip()  # J2 - Date
+            
+            # Clean up J1 value (remove apostrophe if present)
+            if j1_value.startswith("'"):
+                j1_value = j1_value[1:]
+            
+            # Clean up J2 value (remove apostrophe if present)
+            if j2_value.startswith("'"):
+                j2_value = j2_value[1:]
+            
+            # Convert week number to integer if possible
+            try:
+                current_week_from_sheet = int(float(j1_value)) if j1_value and j1_value != 'nan' else None
+            except (ValueError, TypeError):
+                current_week_from_sheet = None
+            
+            # Store date value
+            current_date_from_sheet = j2_value if j2_value and j2_value != 'nan' else None
+                
+    except Exception as e:
+        st.error(f"Error reading current values from J1/J2: {str(e)}")
+    
+    # Initialize session state with spreadsheet values if not already set
     if 'selected_week_num' not in st.session_state:
-        st.session_state.selected_week_num = week_numbers[0] if week_numbers else 1
+        if current_week_from_sheet and current_week_from_sheet in week_numbers:
+            st.session_state.selected_week_num = current_week_from_sheet
+        else:
+            st.session_state.selected_week_num = week_numbers[0] if week_numbers else 1
+            
+    if 'selected_date' not in st.session_state:
+        st.session_state.selected_date = current_date_from_sheet if current_date_from_sheet else "All Dates"
     
     # Week Selection Filter
     st.markdown('<div class="filters-container">', unsafe_allow_html=True)
@@ -5304,33 +5335,52 @@ def prod_seq_main_page():
     col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
-        # Week dropdown with extracted week numbers
+        # Week dropdown with current spreadsheet value as default
         if not week_numbers:
             week_numbers = [1]  # Fallback
+        
+        # Determine default index based on spreadsheet value
+        default_week_index = 0
+        if current_week_from_sheet and current_week_from_sheet in week_numbers:
+            default_week_index = week_numbers.index(current_week_from_sheet)
+        elif st.session_state.selected_week_num in week_numbers:
+            default_week_index = week_numbers.index(st.session_state.selected_week_num)
             
         selected_week_num = st.selectbox(
             "Select Week Number",
             options=week_numbers,
-            index=week_numbers.index(st.session_state.selected_week_num) if st.session_state.selected_week_num in week_numbers else 0,
+            index=default_week_index,
             key="prod_seq_week_number_filter"
         )
         
         # Update session state if selection changed
         if selected_week_num != st.session_state.selected_week_num:
             st.session_state.selected_week_num = selected_week_num
-            st.session_state.selected_date = "All Dates"  # Reset date when week changes
+            # When week changes, set to first date of the new week
+            new_week_dates = week_dates_map.get(selected_week_num, [])
+            if new_week_dates and new_week_dates[0] != "No dates available":
+                st.session_state.selected_date = new_week_dates[0]
     
     with col2:
-        # Date dropdown based on selected week
+        # Date dropdown based on selected week (no "All Dates" option)
         available_dates = week_dates_map.get(selected_week_num, ["No dates available"])
         if not available_dates:
             available_dates = ["No dates available"]
-            
-        date_options = ["All Dates"] + available_dates
+        
+        # Use available_dates directly (no "All Dates" option)
+        date_options = available_dates
+        
+        # Determine default date index based on spreadsheet value
+        default_date_index = 0
+        if current_date_from_sheet and current_date_from_sheet in date_options:
+            default_date_index = date_options.index(current_date_from_sheet)
+        elif st.session_state.selected_date in date_options:
+            default_date_index = date_options.index(st.session_state.selected_date)
+        
         selected_date = st.selectbox(
             "Select Date",
             options=date_options,
-            index=date_options.index(st.session_state.selected_date) if st.session_state.selected_date in date_options else 0,
+            index=default_date_index,
             key="prod_seq_date_filter"
         )
         
@@ -5340,7 +5390,7 @@ def prod_seq_main_page():
     
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)  # Add spacing to align with dropdowns
-        if st.button("Click to Update Data", type="primary", key="update_spreadsheet_btn"):
+        if st.button("Update Spreadsheet", type="primary", key="update_spreadsheet_btn"):
             # Determine what date to send to spreadsheet
             date_to_update = selected_date if selected_date != "All Dates" else available_dates[0] if available_dates and available_dates[0] != "No dates available" else ""
             
@@ -5349,7 +5399,7 @@ def prod_seq_main_page():
                     st.success("Spreadsheet updated successfully!")
                     st.rerun()  # Refresh to show updated data
                 else:
-                    st.error("Failed to update data")
+                    st.error("Failed to update spreadsheet")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -5460,7 +5510,7 @@ def prod_seq_main_page():
         
     else:
         st.warning("No production sequence data found.")
-
+        
 def machine_calendar():
     """Machine calendar page content"""
     st.markdown("""
