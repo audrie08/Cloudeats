@@ -5517,194 +5517,12 @@ def prod_seq_main_page():
     """, unsafe_allow_html=True)
         
 def machine_calendar():
-    """Enhanced Machine calendar page content - display machine data from sheet index 0"""
-    import pandas as pd
-    import numpy as np
-    
+    """Machine calendar page content - display machine data from sheet index 0"""
     st.markdown("""
     <div class="main-header">
         <h1><b>Machine Calendar</b></h1>
         <p><b>Machine Scheduling and Availability</b></p>
     </div>
-    """, unsafe_allow_html=True)
-    
-    # Enhanced CSS for machine calendar
-    st.markdown("""
-    <style>
-    .machine-calendar-container {
-        margin: 20px 0;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        background: white;
-    }
-    
-    .machine-calendar-header {
-        background: linear-gradient(135deg, #2c3e50, #3498db);
-        color: white;
-        padding: 15px 20px;
-        font-size: 18px;
-        font-weight: bold;
-        text-align: center;
-    }
-    
-    .machine-calendar-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 13px;
-        background: white;
-    }
-    
-    .machine-calendar-table th {
-        background: linear-gradient(135deg, #34495e, #2c3e50);
-        color: white;
-        padding: 12px 8px;
-        text-align: center;
-        font-weight: 600;
-        border: 1px solid #2c3e50;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        min-width: 50px;
-        max-width: 80px;
-        height: 140px;
-        vertical-align: bottom;
-    }
-    
-    .machine-calendar-table th:first-child {
-        writing-mode: horizontal-tb;
-        text-orientation: initial;
-        min-width: 80px;
-        height: auto;
-        vertical-align: middle;
-    }
-    
-    .machine-calendar-table td {
-        padding: 8px;
-        text-align: center;
-        border: 1px solid #ddd;
-        transition: all 0.2s ease;
-        font-weight: 500;
-    }
-    
-    .machine-calendar-table td:first-child {
-        background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
-        font-weight: bold;
-        color: #2c3e50;
-        position: sticky;
-        left: 0;
-        z-index: 5;
-        border-right: 2px solid #34495e;
-        min-width: 80px;
-        text-align: left;
-        padding-left: 12px;
-    }
-    
-    .machine-calendar-table tr:nth-child(even) {
-        background-color: #f8f9fa;
-    }
-    
-    .machine-calendar-table tr:hover {
-        background-color: #e3f2fd;
-        transform: scale(1.01);
-    }
-    
-    .usage-0, .usage-empty {
-        background-color: #f1f3f4 !important;
-        color: #9e9e9e;
-    }
-    
-    .usage-1 {
-        background: linear-gradient(135deg, #c8e6c9, #a5d6a7) !important;
-        color: #1b5e20;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(76, 175, 80, 0.3);
-    }
-    
-    .usage-2 {
-        background: linear-gradient(135deg, #fff3e0, #ffcc02) !important;
-        color: #e65100;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(255, 193, 7, 0.3);
-    }
-    
-    .usage-3 {
-        background: linear-gradient(135deg, #ffebee, #ef5350) !important;
-        color: #b71c1c;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(244, 67, 54, 0.3);
-    }
-    
-    .usage-4, .usage-high {
-        background: linear-gradient(135deg, #e1bee7, #9c27b0) !important;
-        color: white;
-        font-weight: bold;
-        box-shadow: inset 0 2px 4px rgba(156, 39, 176, 0.4);
-    }
-    
-    .scrollable-calendar-container {
-        max-height: 600px;
-        overflow: auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-    }
-    
-    .calendar-legend {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 15px 0;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        flex-wrap: wrap;
-    }
-    
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-    
-    .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-    }
-    
-    .machine-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-    
-    .summary-card {
-        background: white;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #3498db;
-    }
-    
-    .summary-title {
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 5px;
-    }
-    
-    .summary-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #3498db;
-    }
-    </style>
     """, unsafe_allow_html=True)
     
     # Load data from sheet index 0
@@ -5716,288 +5534,85 @@ def machine_calendar():
     
     # Display last modified time if available
     if last_modified:
-        st.info(f"📅 Data last updated: {last_modified}")
+        st.info(f"Data last updated: {last_modified}")
     
-    # Check if we have enough data
+    # Check if we have enough data (need at least 3 rows for header structure)
     if len(df_machines) <= 2:
         st.warning("Not enough data rows in the machine calendar sheet.")
         return
     
+    # Extract machine data from columns B to R (indices 1 to 17)
+    # Row 2 (index 1) = Available machines
+    # Row 3 (index 2) = Headers  
+    # Row 4+ (index 3+) = Machine data
+    
     try:
-        # Debug: Show data structure
-        st.write("Debug - Data shape:", df_machines.shape)
+        # Get headers from row 3 (index 2), columns B-R
+        headers = []
+        for col_idx in range(1, 18):  # Columns B(1) to R(17)
+            if col_idx < len(df_machines.columns):
+                header = str(df_machines.iloc[2, col_idx]).strip()
+                headers.append(header if header else f"Column {chr(65+col_idx)}")
+            else:
+                headers.append(f"Column {chr(65+col_idx)}")
         
-        # Function to safely get cell value
-        def safe_get_cell(df, row, col):
-            try:
-                if row < len(df) and col < len(df.columns):
-                    val = df.iloc[row, col]
-                    if pd.isna(val):
-                        return ""
-                    return str(val).strip()
-                return ""
-            except Exception:
-                return ""
-        
-        # Function to check if value is empty
-        def is_empty_value(val):
-            if val is None:
-                return True
-            if pd.isna(val):
-                return True
-            str_val = str(val).strip().lower()
-            return str_val in ['', 'nan', 'none', 'null']
-        
-        # Auto-detect the time column and data structure
-        time_col_idx = None
-        header_row_idx = None
-        data_start_row = None
-        
-        # Look for time-like patterns in first few columns and rows
-        for col_idx in range(min(5, len(df_machines.columns))):
-            for row_idx in range(min(10, len(df_machines))):
-                val = safe_get_cell(df_machines, row_idx, col_idx)
-                if val and any(time_indicator in val.lower() for time_indicator in ['time', 'am', 'pm', ':', 'hour']):
-                    st.write(f"Found time-like data in Column {chr(65+col_idx)}, Row {row_idx}: '{val}'")
-                    if time_col_idx is None:
-                        time_col_idx = col_idx
-                        # If this looks like a header, data starts next row
-                        if 'time' in val.lower():
-                            header_row_idx = row_idx
-                            data_start_row = row_idx + 1
-                        else:
-                            data_start_row = row_idx
-                    break
-        
-        st.write(f"Debug - Detected time column: {time_col_idx}, header row: {header_row_idx}, data starts: {data_start_row}")
-        
-        # If auto-detection failed, use original assumptions
-        if time_col_idx is None:
-            st.warning("Could not auto-detect time column. Using original assumptions (Column B).")
-            time_col_idx = 1
-            header_row_idx = 2
-            data_start_row = 3
-        
-        # Get headers
-        headers = ['Time']  # First column header
-        max_cols = min(18, len(df_machines.columns))
-        
-        if header_row_idx is not None:
-            # Use detected header row
-            for col_idx in range(time_col_idx + 1, max_cols):
-                header = safe_get_cell(df_machines, header_row_idx, col_idx)
-                if not is_empty_value(header):
-                    if len(header) > 12:
-                        words = header.split()
-                        if len(words) > 1:
-                            header = ' '.join([word[:4] for word in words])
-                        else:
-                            header = header[:10] + '...'
-                    headers.append(header)
-                else:
-                    headers.append(f"Machine {chr(65+col_idx)}")
-        else:
-            # Fallback: create generic headers
-            for col_idx in range(time_col_idx + 1, max_cols):
-                headers.append(f"Machine {chr(65+col_idx)}")
-        
-        st.write("Debug - Final headers:", headers)
-        
-        # Extract machine data starting from detected data row
+        # Extract machine data starting from row 4 (index 3)
         machine_data = []
         
-        if data_start_row is not None:
-            for row_idx in range(data_start_row, len(df_machines)):
-                # Get time from detected time column
-                time_value = safe_get_cell(df_machines, row_idx, time_col_idx)
+        for row_idx in range(3, len(df_machines)):
+            # Check if column B (machine name) has data
+            machine_name = str(df_machines.iloc[row_idx, 1]).strip()  # Column B
+            
+            # Only include rows where column B is not empty
+            if machine_name and machine_name != '' and machine_name.lower() != 'nan':
+                row_data = []
                 
-                # Only process rows with valid time values
-                if not is_empty_value(time_value):
-                    row_data = [time_value]  # Start with time
-                    
-                    # Extract data from other columns
-                    for col_idx in range(time_col_idx + 1, max_cols):
-                        cell_value = safe_get_cell(df_machines, row_idx, col_idx)
-                        row_data.append(cell_value)
-                    
-                    # Only add row if it has the correct number of columns
-                    if len(row_data) == len(headers):
-                        machine_data.append(row_data)
+                # Extract data from columns B to R
+                for col_idx in range(1, 18):  # Columns B(1) to R(17)
+                    if col_idx < len(df_machines.columns):
+                        cell_value = str(df_machines.iloc[row_idx, col_idx]).strip()
+                        row_data.append(cell_value if cell_value else "")
                     else:
-                        # Pad or truncate to match headers
-                        while len(row_data) < len(headers):
-                            row_data.append("")
-                        row_data = row_data[:len(headers)]
-                        machine_data.append(row_data)
+                        row_data.append("")
+                
+                machine_data.append(row_data)
         
-        st.write(f"Debug - Found {len(machine_data)} data rows")
-        
-        if len(machine_data) > 0:
-            # Create DataFrame
+        if machine_data:
+            # Create DataFrame with proper headers
             display_df = pd.DataFrame(machine_data, columns=headers)
             
-            st.write("Debug - Display DataFrame shape:", display_df.shape)
-            st.write("Debug - Display DataFrame columns:", list(display_df.columns))
+            # Display styled table
+            st.markdown('<div class="table-container">', unsafe_allow_html=True)
+            st.markdown('<div class="table-header">Machine Calendar Data</div>', unsafe_allow_html=True)
             
-            # Calculate summary statistics safely
-            total_machines = len(display_df.columns) - 1  # Exclude time column
-            active_slots = 0
-            peak_usage = 0
+            # Create HTML table with same styling as production sequence
+            html_table = display_df.to_html(
+                escape=False, 
+                index=False, 
+                classes='subrecipe-table',
+                table_id='machine-calendar-table'
+            )
             
-            for idx in range(len(display_df)):
-                slot_has_activity = False
-                for col in display_df.columns[1:]:  # Skip time column
-                    cell_value = display_df.iloc[idx][col]
-                    
-                    if not is_empty_value(cell_value):
-                        try:
-                            usage = int(float(cell_value))
-                            if usage > 0:
-                                peak_usage = max(peak_usage, usage)
-                                slot_has_activity = True
-                        except (ValueError, TypeError):
-                            pass
-                
-                if slot_has_activity:
-                    active_slots += 1
+            # Wrap table in scrollable container
+            scrollable_html = f"""
+            <div class="scrollable-subrecipe-container">
+                {html_table}
+            </div>
+            """
             
-            # Display summary cards
-            st.markdown('<div class="machine-summary">', unsafe_allow_html=True)
-            st.markdown(f'''
-            <div class="summary-card">
-                <div class="summary-title">Total Machines</div>
-                <div class="summary-value">{total_machines}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Active Time Slots</div>
-                <div class="summary-value">{active_slots}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Peak Usage Level</div>
-                <div class="summary-value">{peak_usage}</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-title">Total Time Slots</div>
-                <div class="summary-value">{len(display_df)}</div>
-            </div>
-            ''', unsafe_allow_html=True)
+            st.markdown(scrollable_html, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # Create legend
-            st.markdown('''
-            <div class="calendar-legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #f1f3f4;"></div>
-                    <span>Available</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #c8e6c9, #a5d6a7);"></div>
-                    <span>Light Usage (1)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #fff3e0, #ffcc02);"></div>
-                    <span>Moderate Usage (2)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #ffebee, #ef5350);"></div>
-                    <span>Heavy Usage (3)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #e1bee7, #9c27b0);"></div>
-                    <span>Max Usage (4+)</span>
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
-            
-            # Function to apply usage styling
-            def apply_usage_styling(val):
-                if is_empty_value(val):
-                    return 'usage-empty'
-                try:
-                    usage = int(float(val))
-                    if usage == 1:
-                        return 'usage-1'
-                    elif usage == 2:
-                        return 'usage-2'
-                    elif usage == 3:
-                        return 'usage-3'
-                    elif usage >= 4:
-                        return 'usage-high'
-                    else:
-                        return 'usage-0'
-                except (ValueError, TypeError):
-                    return 'usage-0'
-            
-            # Create HTML table manually for better control
-            html_rows = []
-            
-            # Header row
-            header_cells = []
-            for col in display_df.columns:
-                header_cells.append(f'<th>{col}</th>')
-            html_rows.append(f'<tr>{"".join(header_cells)}</tr>')
-            
-            # Data rows
-            for idx in range(len(display_df)):
-                cells = []
-                for col_idx, col in enumerate(display_df.columns):
-                    val = display_df.iloc[idx][col]
-                    
-                    if col_idx == 0:  # Time column
-                        cells.append(f'<td>{val}</td>')
-                    else:  # Usage columns
-                        css_class = apply_usage_styling(val)
-                        display_val = val if not is_empty_value(val) else ''
-                        cells.append(f'<td class="{css_class}">{display_val}</td>')
-                html_rows.append(f'<tr>{"".join(cells)}</tr>')
-            
-            # Complete HTML table
-            html_table = f'''
-            <div class="machine-calendar-container">
-                <div class="machine-calendar-header">Machine Usage Schedule</div>
-                <div class="scrollable-calendar-container">
-                    <table class="machine-calendar-table">
-                        {"".join(html_rows)}
-                    </table>
-                </div>
-            </div>
-            '''
-            
-            st.markdown(html_table, unsafe_allow_html=True)
-            
-            # Show additional info
-            st.caption(f"📊 Displaying {len(display_df)} time slots across {total_machines} machines")
-            
-            # Add filter options
-            with st.expander("🔧 Filter Options"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    time_values = ['All times'] + [str(val) for val in display_df['Time'].unique()]
-                    time_filter = st.selectbox("Filter by time range", time_values)
-                with col2:
-                    usage_filter = st.selectbox("Show usage level", 
-                                               ["All levels", "Available only", "In use only", "Heavy usage (3+)"])
-                
-                if st.button("Apply Filters"):
-                    st.info("Filter functionality can be implemented based on requirements")
-        
+            # Show count
+            st.caption(f"Showing {len(display_df)} machines")
         else:
-            st.warning("No valid machine calendar data found.")
-            st.write("Debug: No rows with valid time values found")
+            st.warning("No machine data found with valid machine names in column B.")
             
     except Exception as e:
         st.error(f"Error processing machine calendar data: {str(e)}")
-        import traceback
-        st.error("Full traceback:")
-        st.code(traceback.format_exc())
-        
         # Show raw data as fallback
-        with st.expander("Debug: Raw Data"):
-            st.write("DataFrame shape:", df_machines.shape)
-            st.write("DataFrame info:")
-            st.write(df_machines.info())
-            st.dataframe(df_machines, use_container_width=True)
-
+        st.subheader("Raw Machine Data")
+        st.dataframe(df_machines, use_container_width=True)
 
 # ----------------------------------------------------------------------------
 
