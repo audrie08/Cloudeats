@@ -5748,46 +5748,87 @@ def machine_calendar():
             str_val = str(val).strip().lower()
             return str_val in ['', 'nan', 'none', 'null']
         
-        # Get headers from row 3 (index 2), columns B-R
+        # Auto-detect the time column and data structure
+        time_col_idx = None
+        header_row_idx = None
+        data_start_row = None
+        
+        # Look for time-like patterns in first few columns and rows
+        for col_idx in range(min(5, len(df_machines.columns))):
+            for row_idx in range(min(10, len(df_machines))):
+                val = safe_get_cell(df_machines, row_idx, col_idx)
+                if val and any(time_indicator in val.lower() for time_indicator in ['time', 'am', 'pm', ':', 'hour']):
+                    st.write(f"Found time-like data in Column {chr(65+col_idx)}, Row {row_idx}: '{val}'")
+                    if time_col_idx is None:
+                        time_col_idx = col_idx
+                        # If this looks like a header, data starts next row
+                        if 'time' in val.lower():
+                            header_row_idx = row_idx
+                            data_start_row = row_idx + 1
+                        else:
+                            data_start_row = row_idx
+                    break
+        
+        st.write(f"Debug - Detected time column: {time_col_idx}, header row: {header_row_idx}, data starts: {data_start_row}")
+        
+        # If auto-detection failed, use original assumptions
+        if time_col_idx is None:
+            st.warning("Could not auto-detect time column. Using original assumptions (Column B).")
+            time_col_idx = 1
+            header_row_idx = 2
+            data_start_row = 3
+        
+        # Get headers
         headers = ['Time']  # First column header
-        max_cols = min(18, len(df_machines.columns))  # Don't go beyond available columns
+        max_cols = min(18, len(df_machines.columns))
         
-        for col_idx in range(1, max_cols):  # Columns B(1) to R(17) or max available
-            header = safe_get_cell(df_machines, 2, col_idx)  # Row 3 (index 2)
-            
-            if not is_empty_value(header):
-                # Clean up header names for better display
-                if len(header) > 12:
-                    words = header.split()
-                    if len(words) > 1:
-                        header = ' '.join([word[:4] for word in words])
-                    else:
-                        header = header[:10] + '...'
-                headers.append(header)
-            else:
-                headers.append(f"Machine {chr(65+col_idx-1)}")
+        if header_row_idx is not None:
+            # Use detected header row
+            for col_idx in range(time_col_idx + 1, max_cols):
+                header = safe_get_cell(df_machines, header_row_idx, col_idx)
+                if not is_empty_value(header):
+                    if len(header) > 12:
+                        words = header.split()
+                        if len(words) > 1:
+                            header = ' '.join([word[:4] for word in words])
+                        else:
+                            header = header[:10] + '...'
+                    headers.append(header)
+                else:
+                    headers.append(f"Machine {chr(65+col_idx)}")
+        else:
+            # Fallback: create generic headers
+            for col_idx in range(time_col_idx + 1, max_cols):
+                headers.append(f"Machine {chr(65+col_idx)}")
         
-        st.write("Debug - Headers:", headers)
+        st.write("Debug - Final headers:", headers)
         
-        # Extract machine data starting from row 4 (index 3)
+        # Extract machine data starting from detected data row
         machine_data = []
         
-        for row_idx in range(3, len(df_machines)):
-            # Get time from column B (index 1)
-            time_value = safe_get_cell(df_machines, row_idx, 1)
-            
-            # Only process rows with valid time values
-            if not is_empty_value(time_value):
-                row_data = [time_value]  # Start with time
+        if data_start_row is not None:
+            for row_idx in range(data_start_row, len(df_machines)):
+                # Get time from detected time column
+                time_value = safe_get_cell(df_machines, row_idx, time_col_idx)
                 
-                # Extract data from columns C onwards (index 2+)
-                for col_idx in range(2, max_cols):
-                    cell_value = safe_get_cell(df_machines, row_idx, col_idx)
-                    row_data.append(cell_value)
-                
-                # Only add row if it has the correct number of columns
-                if len(row_data) == len(headers):
-                    machine_data.append(row_data)
+                # Only process rows with valid time values
+                if not is_empty_value(time_value):
+                    row_data = [time_value]  # Start with time
+                    
+                    # Extract data from other columns
+                    for col_idx in range(time_col_idx + 1, max_cols):
+                        cell_value = safe_get_cell(df_machines, row_idx, col_idx)
+                        row_data.append(cell_value)
+                    
+                    # Only add row if it has the correct number of columns
+                    if len(row_data) == len(headers):
+                        machine_data.append(row_data)
+                    else:
+                        # Pad or truncate to match headers
+                        while len(row_data) < len(headers):
+                            row_data.append("")
+                        row_data = row_data[:len(headers)]
+                        machine_data.append(row_data)
         
         st.write(f"Debug - Found {len(machine_data)} data rows")
         
