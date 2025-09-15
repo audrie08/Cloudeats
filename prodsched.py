@@ -5518,7 +5518,8 @@ def prod_seq_main_page():
         
 def machine_calendar():
     """Enhanced Machine calendar page content - display machine data from sheet index 0"""
-    import pandas as pd  # Make sure pandas is imported
+    import pandas as pd
+    import numpy as np
     
     st.markdown("""
     <div class="main-header">
@@ -5611,7 +5612,6 @@ def machine_calendar():
         transform: scale(1.01);
     }
     
-    /* Usage level styling with better colors and effects */
     .usage-0, .usage-empty {
         background-color: #f1f3f4 !important;
         color: #9e9e9e;
@@ -5724,69 +5724,100 @@ def machine_calendar():
         return
     
     try:
+        # Debug: Show data structure
+        st.write("Debug - Data shape:", df_machines.shape)
+        
+        # Function to safely get cell value
+        def safe_get_cell(df, row, col):
+            try:
+                if row < len(df) and col < len(df.columns):
+                    val = df.iloc[row, col]
+                    if pd.isna(val):
+                        return ""
+                    return str(val).strip()
+                return ""
+            except Exception:
+                return ""
+        
+        # Function to check if value is empty
+        def is_empty_value(val):
+            if val is None:
+                return True
+            if pd.isna(val):
+                return True
+            str_val = str(val).strip().lower()
+            return str_val in ['', 'nan', 'none', 'null']
+        
         # Get headers from row 3 (index 2), columns B-R
         headers = ['Time']  # First column header
-        for col_idx in range(1, 18):  # Columns B(1) to R(17)
-            if col_idx < len(df_machines.columns):
-                header = str(df_machines.iloc[2, col_idx]).strip()
+        max_cols = min(18, len(df_machines.columns))  # Don't go beyond available columns
+        
+        for col_idx in range(1, max_cols):  # Columns B(1) to R(17) or max available
+            header = safe_get_cell(df_machines, 2, col_idx)  # Row 3 (index 2)
+            
+            if not is_empty_value(header):
                 # Clean up header names for better display
-                if header and header.lower() != 'nan':
-                    # Abbreviate long names
-                    if len(header) > 12:
-                        words = header.split()
-                        if len(words) > 1:
-                            header = ' '.join([word[:4] for word in words])
-                        else:
-                            header = header[:10] + '...'
-                    headers.append(header)
-                else:
-                    headers.append(f"Machine {chr(65+col_idx-1)}")
+                if len(header) > 12:
+                    words = header.split()
+                    if len(words) > 1:
+                        header = ' '.join([word[:4] for word in words])
+                    else:
+                        header = header[:10] + '...'
+                headers.append(header)
             else:
                 headers.append(f"Machine {chr(65+col_idx-1)}")
+        
+        st.write("Debug - Headers:", headers)
         
         # Extract machine data starting from row 4 (index 3)
         machine_data = []
         
         for row_idx in range(3, len(df_machines)):
-            # Get time from first column (assuming it's the time column)
-            time_value = str(df_machines.iloc[row_idx, 1]).strip()  # Column B as time
+            # Get time from column B (index 1)
+            time_value = safe_get_cell(df_machines, row_idx, 1)
             
-            if time_value and time_value != '' and time_value.lower() != 'nan':
+            # Only process rows with valid time values
+            if not is_empty_value(time_value):
                 row_data = [time_value]  # Start with time
                 
-                # Extract data from columns C to R (usage data)
-                for col_idx in range(2, 18):  # Columns C(2) to R(17)
-                    if col_idx < len(df_machines.columns):
-                        cell_value = str(df_machines.iloc[row_idx, col_idx]).strip()
-                        if cell_value and cell_value.lower() != 'nan':
-                            row_data.append(cell_value)
-                        else:
-                            row_data.append('')
-                    else:
-                        row_data.append('')
+                # Extract data from columns C onwards (index 2+)
+                for col_idx in range(2, max_cols):
+                    cell_value = safe_get_cell(df_machines, row_idx, col_idx)
+                    row_data.append(cell_value)
                 
-                machine_data.append(row_data)
+                # Only add row if it has the correct number of columns
+                if len(row_data) == len(headers):
+                    machine_data.append(row_data)
         
-        if machine_data:
+        st.write(f"Debug - Found {len(machine_data)} data rows")
+        
+        if len(machine_data) > 0:
             # Create DataFrame
-            display_df = pd.DataFrame(machine_data, columns=headers[:len(machine_data[0])])
+            display_df = pd.DataFrame(machine_data, columns=headers)
             
-            # Calculate summary statistics
+            st.write("Debug - Display DataFrame shape:", display_df.shape)
+            st.write("Debug - Display DataFrame columns:", list(display_df.columns))
+            
+            # Calculate summary statistics safely
             total_machines = len(display_df.columns) - 1  # Exclude time column
             active_slots = 0
             peak_usage = 0
             
-            for _, row in display_df.iterrows():
-                row_usage = 0
+            for idx in range(len(display_df)):
+                slot_has_activity = False
                 for col in display_df.columns[1:]:  # Skip time column
-                    if row[col] and str(row[col]).strip() != '':
+                    cell_value = display_df.iloc[idx][col]
+                    
+                    if not is_empty_value(cell_value):
                         try:
-                            usage = int(row[col])
-                            row_usage += usage
-                            peak_usage = max(peak_usage, usage)
-                        except:
+                            usage = int(float(cell_value))
+                            if usage > 0:
+                                peak_usage = max(peak_usage, usage)
+                                slot_has_activity = True
+                        except (ValueError, TypeError):
                             pass
-                if row_usage > 0:
+                
+                if slot_has_activity:
                     active_slots += 1
             
             # Display summary cards
@@ -5837,12 +5868,12 @@ def machine_calendar():
             </div>
             ''', unsafe_allow_html=True)
             
-            # Convert DataFrame to HTML with custom styling
+            # Function to apply usage styling
             def apply_usage_styling(val):
-                if not val or str(val).strip() == '':
+                if is_empty_value(val):
                     return 'usage-empty'
                 try:
-                    usage = int(val)
+                    usage = int(float(val))
                     if usage == 1:
                         return 'usage-1'
                     elif usage == 2:
@@ -5853,7 +5884,7 @@ def machine_calendar():
                         return 'usage-high'
                     else:
                         return 'usage-0'
-                except:
+                except (ValueError, TypeError):
                     return 'usage-0'
             
             # Create HTML table manually for better control
@@ -5866,14 +5897,16 @@ def machine_calendar():
             html_rows.append(f'<tr>{"".join(header_cells)}</tr>')
             
             # Data rows
-            for _, row in display_df.iterrows():
+            for idx in range(len(display_df)):
                 cells = []
-                for i, (col, val) in enumerate(row.items()):
-                    if i == 0:  # Time column
+                for col_idx, col in enumerate(display_df.columns):
+                    val = display_df.iloc[idx][col]
+                    
+                    if col_idx == 0:  # Time column
                         cells.append(f'<td>{val}</td>')
                     else:  # Usage columns
                         css_class = apply_usage_styling(val)
-                        display_val = val if val and str(val).strip() != '' else ''
+                        display_val = val if not is_empty_value(val) else ''
                         cells.append(f'<td class="{css_class}">{display_val}</td>')
                 html_rows.append(f'<tr>{"".join(cells)}</tr>')
             
@@ -5898,23 +5931,30 @@ def machine_calendar():
             with st.expander("🔧 Filter Options"):
                 col1, col2 = st.columns(2)
                 with col1:
-                    time_filter = st.selectbox("Filter by time range", 
-                                             ["All times"] + list(display_df['Time'].unique()))
+                    time_values = ['All times'] + [str(val) for val in display_df['Time'].unique()]
+                    time_filter = st.selectbox("Filter by time range", time_values)
                 with col2:
                     usage_filter = st.selectbox("Show usage level", 
                                                ["All levels", "Available only", "In use only", "Heavy usage (3+)"])
                 
                 if st.button("Apply Filters"):
-                    # You can add filtering logic here
                     st.info("Filter functionality can be implemented based on requirements")
         
         else:
             st.warning("No valid machine calendar data found.")
+            st.write("Debug: No rows with valid time values found")
             
     except Exception as e:
         st.error(f"Error processing machine calendar data: {str(e)}")
+        import traceback
+        st.error("Full traceback:")
+        st.code(traceback.format_exc())
+        
         # Show raw data as fallback
         with st.expander("Debug: Raw Data"):
+            st.write("DataFrame shape:", df_machines.shape)
+            st.write("DataFrame info:")
+            st.write(df_machines.info())
             st.dataframe(df_machines, use_container_width=True)
 
 
