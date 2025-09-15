@@ -5515,10 +5515,7 @@ def prod_seq_main_page():
             <p style="margin: 0; font-size: 14px;">© 2025 Production Sequence</p>
         </div>
     """, unsafe_allow_html=True)
-        
-def machine_calendar():
-    """Machine calendar page content - display machine data from sheet index 0 with enhanced calendar styling"""
-    
+
 
 def machine_calendar():
     """Machine calendar page content - display machine data from sheet index 0 with enhanced calendar styling"""
@@ -5889,10 +5886,6 @@ def machine_calendar():
             # Add updated legend for usage-based system
             st.markdown("""
             <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: white;</div>
-                    <span>Available</span>
-                </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);"></div>
                     <span>Low Usage</span>
