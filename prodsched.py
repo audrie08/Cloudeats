@@ -5718,26 +5718,32 @@ def machine_calendar():
     .legend {
         display: flex;
         justify-content: center;
-        gap: 24px;
-        padding: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 16px 24px;
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 16px;
-        margin-bottom: 24px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
         backdrop-filter: blur(10px);
         border: 1px solid #e2e8f0;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 13px;
+        gap: 8px;
+        font-size: 12px;
         font-weight: 600;
         color: #374151;
         transition: all 0.2s ease;
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
     }
     
     .legend-item:hover {
@@ -5746,10 +5752,11 @@ def machine_calendar():
     }
     
     .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        flex-shrink: 0;
     }
     </style>
     """, unsafe_allow_html=True)
