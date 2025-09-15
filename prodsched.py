@@ -5206,11 +5206,14 @@ def prod_seq_main_page():
         color: white !important;
         border: none !important;
         border-radius: 20px !important;
-        padding: 0.70rem 1rem !important;
+        padding: 0.65rem 1rem !important;
         font-weight: 500 !important;
         width: 100% !important;
         transition: all 0.3s ease !important;
         font-family: 'TT Norms', 'Segoe UI', sans-serif !important;
+    }
+    .stButton {
+        margin-top: 1.00rem !important;
     }
     
     .stButton > button:hover {
