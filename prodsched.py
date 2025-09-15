@@ -5658,7 +5658,7 @@ def machine_calendar():
         border-bottom: none;
     }
     
-    /* Calendar cell styling for different states */
+    /* Calendar cell styling for numeric-based states */
     .calendar-cell {
         position: relative;
         min-height: 45px;
@@ -5671,25 +5671,25 @@ def machine_calendar():
         font-weight: 600;
     }
     
-    .calendar-cell.available {
+    .calendar-cell.empty {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .calendar-cell.single {
         background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
         color: #166534;
         border: 1px solid #16a34a;
     }
     
-    .calendar-cell.occupied {
-        background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
-        color: #991b1b;
-        border: 1px solid #dc2626;
-    }
-    
-    .calendar-cell.maintenance {
+    .calendar-cell.double {
         background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
         color: #92400e;
         border: 1px solid #f59e0b;
     }
     
-    .calendar-cell.scheduled {
+    .calendar-cell.multiple {
         background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
         color: #1e40af;
         border: 1px solid #3b82f6;
@@ -5787,6 +5787,44 @@ def machine_calendar():
             else:
                 headers.append(f"Day {col_idx-1}")
         
+        # Function to classify cell content based on numeric value
+        def classify_cell_content(cell_value):
+            """
+            Classify cell content based on numeric value:
+            - Empty/null/whitespace → 'empty' (white)
+            - Value = 1 → 'single' (green)
+            - Value = 2 → 'double' (yellow)  
+            - Value >= 3 → 'multiple' (blue)
+            """
+            # Handle empty/null values
+            if not cell_value or str(cell_value).strip() in ['', 'nan', 'NaN', 'None']:
+                return 'empty'
+            
+            cell_str = str(cell_value).strip()
+            
+            # Try to parse as number first
+            try:
+                numeric_value = float(cell_str)
+                if numeric_value == 1:
+                    return 'single'
+                elif numeric_value == 2:
+                    return 'double'
+                elif numeric_value >= 3:
+                    return 'multiple'
+                else:
+                    return 'empty'
+            except ValueError:
+                # If not numeric, count characters/length as fallback
+                content_length = len(cell_str)
+                if content_length == 0:
+                    return 'empty'
+                elif content_length == 1:
+                    return 'single'
+                elif content_length == 2:
+                    return 'double'
+                else:
+                    return 'multiple'
+        
         # Extract machine data starting from row 4 (index 3)
         machine_data = []
         for row_idx in range(3, len(df_machines)):
@@ -5806,7 +5844,7 @@ def machine_calendar():
                 machine_data.append(row_data)
         
         if machine_data:
-            # Create custom HTML table
+            # Create custom HTML table with numeric-based classification
             def create_calendar_html(data, headers):
                 html_parts = []
                 html_parts.append('<table class="calendar-table">')
@@ -5825,47 +5863,35 @@ def machine_calendar():
                         if i == 0:  # Machine name column
                             html_parts.append(f'<td>{cell}</td>')
                         else:
-                            # Determine cell class based on content
-                            cell_class = ""
-                            cell_content = str(cell).lower()
+                            # Classify cell based on numeric content
+                            cell_class = classify_cell_content(cell)
+                            display_content = cell if cell else ""
                             
-                            if cell_content in ['available', 'free', 'open']:
-                                cell_class = "available"
-                            elif cell_content in ['occupied', 'busy', 'running']:
-                                cell_class = "occupied"
-                            elif cell_content in ['maintenance', 'repair', 'service']:
-                                cell_class = "maintenance"
-                            elif cell_content in ['scheduled', 'planned', 'booked']:
-                                cell_class = "scheduled"
-                            
-                            if cell_class:
-                                html_parts.append(f'<td><div class="calendar-cell {cell_class}">{cell}</div></td>')
-                            else:
-                                html_parts.append(f'<td><div class="calendar-cell">{cell}</div></td>')
+                            html_parts.append(f'<td><div class="calendar-cell {cell_class}">{display_content}</div></td>')
                     html_parts.append('</tr>')
                 html_parts.append('</tbody>')
                 html_parts.append('</table>')
                 
                 return ''.join(html_parts)
             
-            # Add legend
+            # Add updated legend for numeric system
             st.markdown("""
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #16a34a;"></div>
-                    <span>Available</span>
+                    <div class="legend-color" style="background: white; border-color: #e2e8f0;"></div>
+                    <span>Empty (0 jobs)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); border-color: #dc2626;"></div>
-                    <span>Occupied</span>
+                    <div class="legend-color" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #16a34a;"></div>
+                    <span>Single (1 job)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b;"></div>
-                    <span>Maintenance</span>
+                    <span>Double (2 jobs)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-color: #3b82f6;"></div>
-                    <span>Scheduled</span>
+                    <span>Multiple (3+ jobs)</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
