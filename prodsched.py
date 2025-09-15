@@ -4823,7 +4823,6 @@ def render_subrecipe_details_page():
     categories = ['All Categories'] + sorted(list(set(unique_categories)))
     
     # Filters section
-    st.markdown('<div class="filters-container">', unsafe_allow_html=True)
     st.markdown("#### Filters & Search")
     
     col1, col2, col3 = st.columns(3)
