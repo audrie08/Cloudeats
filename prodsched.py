@@ -5219,7 +5219,7 @@ def prod_seq_main_page():
     }
     
     .stButton {
-        margin-top: 1.00rem !important;
+        margin-top: 0.50rem !important;
     }
     
     .stButton > button:hover {
