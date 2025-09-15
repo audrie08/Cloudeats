@@ -5712,36 +5712,36 @@ def machine_calendar():
     }
     
     .calendar-cell.low_usage {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        color: #166534;
         box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
     
     .calendar-cell.low_usage:hover {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
         box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
     }
     
     .calendar-cell.moderate_usage {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
         box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
     
     .calendar-cell.moderate_usage:hover {
-        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
         box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
     }
     
     .calendar-cell.max_usage {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
     .calendar-cell.max_usage:hover {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+        background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
     }
     
     .calendar-stats {
@@ -5854,7 +5854,7 @@ def machine_calendar():
             - Empty/null/whitespace → 'available' (white)
             - Value = 1 → 'low_usage' (green)
             - Value = 2 → 'moderate_usage' (yellow)  
-            - Value >= 3 → 'max_usage' (red)
+            - Value >= 3 → 'max_usage' (blue)
             """
             # Handle empty/null values
             if not cell_value or str(cell_value).strip() in ['', 'nan', 'NaN', 'None']:
@@ -5968,7 +5968,7 @@ def machine_calendar():
             """
             
             st.markdown(scrollable_html, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
             
         else:
             st.warning("No machine data found with valid machine names in column B.")
@@ -5978,7 +5978,7 @@ def machine_calendar():
         # Show raw data as fallback
         st.subheader("Raw Machine Data")
         st.dataframe(df_machines, use_container_width=True)
-
+        
 # ----------------------------------------------------------------------------
 
 def main():
