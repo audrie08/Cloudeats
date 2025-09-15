@@ -5984,6 +5984,7 @@ def machine_calendar():
             st.write("DataFrame info:")
             st.write(df_machines.info())
             st.dataframe(df_machines, use_container_width=True)
+            
 # ----------------------------------------------------------------------------
 
 def main():
