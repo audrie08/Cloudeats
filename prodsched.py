@@ -5644,7 +5644,7 @@ def machine_calendar():
     }
     
     .calendar-table tr:hover {
-        background-color: rgba(244, 214, 2, 0.08);
+        background-color: rgba(250, 128, 114, 0.08);
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
