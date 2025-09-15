@@ -5899,12 +5899,8 @@ def machine_calendar():
                     <span>Moderate Usage (2)</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: linear-gradient(135deg, #ffebee, #ef5350);"></div>
-                    <span>Heavy Usage (3)</span>
-                </div>
-                <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(135deg, #e1bee7, #9c27b0);"></div>
-                    <span>Max Usage (4+)</span>
+                    <span>Max Usage (3+)</span>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
