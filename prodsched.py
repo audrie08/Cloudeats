@@ -5734,7 +5734,7 @@ def machine_calendar():
     }
     
     .calendar-table tr:hover td:first-child {
-        background: linear-gradient(135deg, #4a237d 0%, #341d52 100%);
+        background: linear-gradient(135deg, #7b869e 0%, #616a7d 100%);
         color: #1e2323;
     }
     
