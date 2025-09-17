@@ -830,8 +830,8 @@ def get_kpi_color(current, target, kpi_type, kpi_name=""):
             
         current_val = safe_float(current)
         
-        # Special handling for Machine Availability (70%-90% is optimal range)
-        if "machine" in kpi_name.lower() and "availability" in kpi_name.lower():
+        # Special handling for Capacity Utilization (70%-90% is optimal range)
+        if "capacity" in kpi_name.lower() and "utilization" in kpi_name.lower():
             if 70 <= current_val <= 90:
                 return "#22c55e"  # Green (good - within optimal range)
             else:
@@ -940,9 +940,9 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
     # Check if target is empty and conditionally include target line or unit
     target_html = ""
     
-    # Special handling for Machine Availability - don't show range targets
-    if "machine" in title.lower() and "availability" in title.lower():
-        # Don't show target for Machine Availability since it uses special 70-90% logic
+    # Special handling for Capacity Utilization - don't show range targets
+    if "capacity" in title.lower() and "utilization" in title.lower():
+        # Don't show target for Capacity Utilization since it uses special 70-90% logic
         target_html = f"""<div style="
             color: #acb4bf;
             font-size: 14px;
