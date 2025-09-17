@@ -939,7 +939,17 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
 
     # Check if target is empty and conditionally include target line or unit
     target_html = ""
-    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
+    
+    # Special handling for Machine Availability - don't show range targets
+    if "machine" in title.lower() and "availability" in title.lower():
+        # Don't show target for Machine Availability since it uses special 70-90% logic
+        target_html = f"""<div style="
+            color: #acb4bf;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+        ">&nbsp;</div>"""
+    elif target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
         target_html = f"""<div style="
             color: #acb4bf;
             font-size: 14px;
