@@ -940,15 +940,22 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
     # Check if target is empty and conditionally include target line or unit
     target_html = ""
     
-    # Special handling for Capacity Utilization - don't show range targets
+    # Special handling for Capacity Utilization - show the range target as-is
     if "capacity" in title.lower() and "utilization" in title.lower():
-        # Don't show target for Capacity Utilization since it uses special 70-90% logic
-        target_html = f"""<div style="
-            color: #acb4bf;
-            font-size: 14px;
-            font-weight: 500;
-            opacity: 0;
-        ">&nbsp;</div>"""
+        if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
+            # Show the original range target like "70-90%"
+            target_html = f"""<div style="
+                color: #acb4bf;
+                font-size: 14px;
+                font-weight: 500;
+            ">Target: {target}</div>"""
+        else:
+            target_html = f"""<div style="
+                color: #acb4bf;
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0;
+            ">&nbsp;</div>"""
     elif target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
         target_html = f"""<div style="
             color: #acb4bf;
