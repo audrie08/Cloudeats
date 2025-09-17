@@ -800,7 +800,7 @@ def format_kpi_value(value, kpi_type):
             return f"{num_value:.2f}%"
         elif kpi_type in ['currency', 'labor_cost']:
             return f"₱{num_value:,.2f}"
-        elif kpi_type == 'volume':  # Special handling for volume
+        elif kpi_type == 'volume':  # Special handling for volume with 2 decimals
             return f"{num_value:,.2f}"
         elif kpi_type in ['count', 'manpower']:
             return f"{int(num_value):,}"
@@ -809,7 +809,7 @@ def format_kpi_value(value, kpi_type):
     except:
         return "N/A"
 
-def get_kpi_color(current, target, kpi_type):
+def get_kpi_color(current, target, kpi_type, kpi_name=""):
     """Determine color based on KPI performance vs target"""
     try:
         # Return gray for empty/NA values
@@ -817,6 +817,14 @@ def get_kpi_color(current, target, kpi_type):
             return "#64748b"  # Gray for empty data
             
         current_val = safe_float(current)
+        
+        # Special handling for Machine Availability/Utilization (70%-90% is good)
+        if "machine" in kpi_name.lower() and "availability" in kpi_name.lower():
+            if 70 <= current_val <= 90:
+                return "#22c55e"  # Green (good - within range)
+            else:
+                return "#ef4444"  # Red (bad - outside range)
+        
         target_str = str(target).strip()
         
         # Handle symbolic targets (>, <)
@@ -874,7 +882,6 @@ def get_kpi_color(current, target, kpi_type):
     except:
         return "#64748b"  # Gray for errors
 
-# --- DASHBOARD COMPONENTS ---
 def create_kpi_card(title, value, target, kpi_type, size="small"):
     """Create a modern KPI card with hover effects"""
     # Check if value is empty and show N/A - FIXED: Handle pd.NA properly
@@ -889,7 +896,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
                 color = "#64748b"
             else:
                 formatted_value = format_kpi_value(value, kpi_type)
-                color = get_kpi_color(value, target, kpi_type)
+                color = get_kpi_color(value, target, kpi_type, title)  # Pass title as kpi_name
         except:
             formatted_value = "N/A"
             color = "#64748b"
@@ -954,73 +961,6 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
                 font-weight: 500;
                 opacity: 0;
             ">&nbsp;</div>"""
-    
-    card_html = f"""
-    <div class="kpi-card" style="height: {card_height};">
-        <div style="
-            color: #94a3b8;
-            font-size: {title_size};
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        ">{title}</div>
-        <div class="kpi-number" style="
-            color: {color};
-            font-size: {value_size};
-            font-weight: 700;
-            line-height: 1;
-            margin: 10px 0;
-        ">{formatted_value}</div>
-        {target_html}
-    </div>
-    """
-    return card_html
-    
-    # Preserve the < and > symbols from the target
-    target_str = str(target)
-    if target_str.startswith(('<', '>')):
-        symbol = target_str[0]
-        numeric_part = target_str[1:]
-        try:
-            numeric_value = float(numeric_part.strip('%'))
-            if kpi_type == "percentage":
-                formatted_numeric = f"{numeric_value:.1f}%"
-            elif kpi_type == "currency":
-                formatted_numeric = f"₱{numeric_value:,.2f}" if kpi_type == "currency" else f"${numeric_value:,.2f}"
-            else:
-                formatted_numeric = f"{numeric_value:,.0f}"
-            formatted_target = f"{symbol}{formatted_numeric}"
-        except ValueError:
-            formatted_target = target_str
-    else:
-        formatted_target = format_kpi_value(target, kpi_type)
-        
-    if size == "large":
-        card_height = "200px"
-        title_size = "18px"
-        value_size = "50px"
-    else:
-        card_height = "140px"
-        title_size = "12px"
-        value_size = "32px"
-
-    # Check if target is empty and conditionally include target line
-    target_html = ""
-    if target and str(target).strip() and str(target).strip().lower() not in ['', 'nan', 'none', '0', '0.0', '0.00']:
-        target_html = f"""<div style="
-            color: #acb4bf;
-            font-size: 14px;
-            font-weight: 500;
-        ">Target: {formatted_target}</div>"""
-    else:
-        # Add empty space if no target for consistent spacing
-        target_html = f"""<div style="
-            color: #acb4bf;
-            font-size: 14px;
-            font-weight: 500;
-            opacity: 0;
-        ">&nbsp;</div>"""
     
     card_html = f"""
     <div class="kpi-card" style="height: {card_height};">
