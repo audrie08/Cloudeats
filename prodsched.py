@@ -818,12 +818,12 @@ def get_kpi_color(current, target, kpi_type, kpi_name=""):
             
         current_val = safe_float(current)
         
-        # Special handling for Machine Availability/Utilization (70%-90% is good)
+        # Special handling for Machine Availability (70%-90% is optimal range)
         if "machine" in kpi_name.lower() and "availability" in kpi_name.lower():
             if 70 <= current_val <= 90:
-                return "#22c55e"  # Green (good - within range)
+                return "#22c55e"  # Green (good - within optimal range)
             else:
-                return "#ef4444"  # Red (bad - outside range)
+                return "#ef4444"  # Red (bad - outside optimal range)
         
         target_str = str(target).strip()
         
@@ -832,13 +832,11 @@ def get_kpi_color(current, target, kpi_type, kpi_name=""):
             # Target is "greater than" value
             target_val = safe_float(target_str[1:])
             if kpi_type in ['spoilage', 'variance', 'labor_cost', 'overtime']:
-                # For cost-based KPIs with > target: current should be LESS than target
                 if current_val < target_val:
                     return "#22c55e"  # Green (good)
                 else:
                     return "#ef4444"  # Red (bad)
             else:
-                # For performance KPIs with > target: current should be GREATER than target
                 if current_val > target_val:
                     return "#22c55e"  # Green (good)
                 else:
@@ -848,13 +846,11 @@ def get_kpi_color(current, target, kpi_type, kpi_name=""):
             # Target is "less than" value
             target_val = safe_float(target_str[1:])
             if kpi_type in ['spoilage', 'variance', 'labor_cost', 'overtime']:
-                # For cost-based KPIs with < target: current should be LESS than target
                 if current_val < target_val:
                     return "#22c55e"  # Green (good)
                 else:
                     return "#ef4444"  # Red (bad)
             else:
-                # For performance KPIs with < target: current should be LESS than target
                 if current_val < target_val:
                     return "#22c55e"  # Green (good)
                 else:
@@ -896,7 +892,7 @@ def create_kpi_card(title, value, target, kpi_type, size="small"):
                 color = "#64748b"
             else:
                 formatted_value = format_kpi_value(value, kpi_type)
-                color = get_kpi_color(value, target, kpi_type, title)  # Pass title as kpi_name
+                color = get_kpi_color(value, target, kpi_type, title)
         except:
             formatted_value = "N/A"
             color = "#64748b"
