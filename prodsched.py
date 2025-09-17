@@ -1758,7 +1758,7 @@ def display_kpi_dashboard():
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
 
-          st.markdown("""
+        st.markdown("""
         <div class="main-header">
             <h1><b>2025 KPI Dashboard</b></h1>
             <p><b>Weekly Performance Metrics</b></p>
