@@ -777,8 +777,20 @@ def safe_float(value, default=0.0):
     try:
         if value == '' or value is None or pd.isna(value):
             return default
-        # Remove % and other characters
-        clean_value = str(value).replace('%', '').replace(',', '').replace('₱', '').strip()
+        
+        # Handle range values like "70-90%" or "70% to 90%" - extract the first number
+        str_value = str(value).strip()
+        if " to " in str_value.lower() or "-" in str_value:
+            # Extract the first number from a range
+            if " to " in str_value.lower():
+                first_part = str_value.split(" to ")[0].strip()
+            else:
+                first_part = str_value.split("-")[0].strip()
+            clean_value = first_part.replace('%', '').replace(',', '').replace('₱', '').strip()
+            return float(clean_value)
+        
+        # Remove % and other characters for normal values
+        clean_value = str_value.replace('%', '').replace(',', '').replace('₱', '').strip()
         return float(clean_value)
     except (ValueError, TypeError):
         return default
