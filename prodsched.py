@@ -1758,7 +1758,7 @@ def display_kpi_dashboard():
             st.error("No KPI data available. Please check if the spreadsheet is accessible and contains data.")
             return
 
-        st.markdown("""
+          st.markdown("""
         <div class="main-header">
             <h1><b>2025 KPI Dashboard</b></h1>
             <p><b>Weekly Performance Metrics</b></p>
@@ -1783,16 +1783,18 @@ def display_kpi_dashboard():
         if week_column is None:
             week_column = kpi_data.columns[1] if len(kpi_data.columns) > 1 else kpi_data.columns[0]
         
-        # Get available weeks - FIXED: Create week_options here
+        # Get available weeks and add YTD option
         weeks = kpi_data[week_column].dropna().unique()
         weeks = [str(w).strip() for w in weeks if str(w).strip() != '']
-        week_options = weeks  # This was missing!
+        
+        # Add YTD option at the beginning of the list
+        week_options = ["YTD"] + weeks
         
         if not weeks:
             st.error(f"No week data available in column '{week_column}'.")
             return
         
-        # Find default week (most recent with data) - FIXED: Create current_week here
+        # Find default week (most recent with data)
         default_week_index = None
         for i in range(len(kpi_data) - 1, -1, -1):
             if kpi_data.iloc[i, 2:22].notna().any():
@@ -1802,33 +1804,63 @@ def display_kpi_dashboard():
         if default_week_index is not None:
             current_week = kpi_data.iloc[default_week_index][week_column]
             current_week = str(current_week).strip()
-            if current_week in weeks:
-                default_index = weeks.index(current_week)
-            else:
-                default_index = len(weeks) - 1
-                current_week = weeks[default_index] if weeks else ""
+            default_selection = current_week if current_week in weeks else (weeks[-1] if weeks else "YTD")
         else:
-            default_index = len(weeks) - 1
-            current_week = weeks[default_index] if weeks else ""
+            default_selection = weeks[-1] if weeks else "YTD"
         
-        # Week selection - FIXED: Now using the correctly defined variables
+        # Week selection with YTD support
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             selected_week = st.selectbox(
                 "Select Week",
                 options=week_options,
-                index=week_options.index(current_week) if current_week in week_options else 0,
-                key="kpi_week_selector",  # Unique key for KPI dashboard
-                help="Select week to view KPI data"
+                index=week_options.index(default_selection) if default_selection in week_options else 0,
+                key="kpi_week_selector",
+                help="Select week to view KPI data or YTD for year-to-date"
             )
         
-        # Filter data for selected week
-        week_data = kpi_data[kpi_data[week_column] == selected_week]
-        if week_data.empty:
-            st.warning(f"No data available for {selected_week}")
-            return
-            
-        week_row = week_data.iloc[0]
+        # Filter data for selected week or get YTD data
+        if selected_week == "YTD":
+            # Get YTD data from row 4 (index 3) in the original data structure
+            ytd_data = load_kpi_data()[0]  # Get fresh data
+            if len(ytd_data) > 0:
+                # YTD data is in row 4 of the original sheet (index 3 in data rows)
+                # Since we start data_rows from row 5 (index 4), YTD would be at index -1 from our perspective
+                # Let's get it directly from the sheet structure
+                credentials = load_credentials_kpi()
+                if credentials:
+                    try:
+                        gc = gspread.authorize(credentials)
+                        spreadsheet_id = "12ScL8L6Se7jRTqM2nL3hboxQkc8MLhEp7hEDlGUPKZg"
+                        sh = gc.open_by_key(spreadsheet_id)
+                        worksheet = sh.get_worksheet(3)  # Same sheet index
+                        data = worksheet.get_all_values()
+                        
+                        if len(data) >= 4:
+                            headers = data[1]  # Row 2
+                            ytd_values = data[3]  # Row 4 (YTD data)
+                            
+                            # Create YTD series
+                            week_row = pd.Series(ytd_values, index=headers)
+                        else:
+                            st.warning("YTD data not available")
+                            return
+                    except Exception as e:
+                        st.error(f"Error loading YTD data: {str(e)}")
+                        return
+                else:
+                    st.error("Cannot load YTD data - credentials not available")
+                    return
+            else:
+                st.warning("YTD data not available")
+                return
+        else:
+            # Regular week data
+            week_data = kpi_data[kpi_data[week_column] == selected_week]
+            if week_data.empty:
+                st.warning(f"No data available for {selected_week}")
+                return
+            week_row = week_data.iloc[0]
         target_row = targets_data.iloc[0] if not targets_data.empty else pd.Series()
         
         # Dashboard title
